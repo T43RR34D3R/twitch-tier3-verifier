@@ -1,17 +1,21 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useSession, signIn, signOut } from "next-auth/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import Image from "next/image";
 
 export default function AccountPage() {
   const { data: session, status, update } = useSession();
+  const hasUpdated = useRef(false);
 
-  // Force session refresh when component mounts
+  // Force session refresh when component mounts (only once)
   useEffect(() => {
-    if (session) {
-      update(); // This will refresh the session data
+    if (session && !hasUpdated.current) {
+      update(); // Refresh the session data
+      hasUpdated.current = true;
     }
-  }, []);
+  }, [session, update]);
 
   if (status === "loading") {
     return (
@@ -42,11 +46,13 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-cover bg-center bg-no-repeat p-4 relative" style={{backgroundImage: 'url(/buckfoozle-bg.jpg)'}}>
-      {/* Optional overlay for better text readability */}
-      <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+    <div className="min-h-screen p-4 relative">
+      {/* Background with blur */}
+      <div className="absolute inset-0 bg-purple-900 bg-cover bg-center bg-no-repeat" style={{backgroundImage: 'url(/buckfoozle-bg.png)', filter: 'blur(3px)'}}></div>
+      {/* Gradient overlay - darker at top */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/15"></div>
       <div className="max-w-2xl mx-auto relative z-10">
-        <div className="bg-white rounded-xl shadow-2xl p-8">
+        <div className="bg-white rounded-xl shadow-2xl p-8" style={{filter: 'drop-shadow(0 25px 50px rgba(0, 0, 0, 0.5))'}}>
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-gray-800">Your Twitch Account</h1>
             <button
@@ -61,9 +67,11 @@ export default function AccountPage() {
             {/* Profile Picture and Basic Info */}
             <div className="flex items-center space-x-4">
               {session.user?.image && (
-                <img
+                <Image
                   src={session.user.image}
                   alt={session.user.name || "User"}
+                  width={64}
+                  height={64}
                   className="w-16 h-16 rounded-full"
                 />
               )}
@@ -75,7 +83,8 @@ export default function AccountPage() {
                   {session.user?.email || "uggeenholm@hotmail.com"}
                 </p>
                 <p className="text-xs text-gray-600">
-                  User ID: {session.user?.id || "441862265"}
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  User ID: {(session as any).user?.id || "441862265"}
                 </p>
               </div>
             </div>
@@ -83,11 +92,14 @@ export default function AccountPage() {
             {/* Session Data */}
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold text-gray-800 mb-2">Session Information</h3>
-              <div className="space-y-2 text-sm">
-                <p><span className="font-medium">User ID:</span> {session.user?.id || "Not available"}</p>
-                <p><span className="font-medium">Access Token:</span> {session.accessToken ? "✅ Present" : "❌ Missing"}</p>
-                {session.error && (
-                  <p className="text-red-600"><span className="font-medium">Error:</span> {session.error}</p>
+              <div className="space-y-2 text-sm text-gray-800">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                <p><span className="font-medium text-gray-900">User ID:</span> {(session as any).user?.id || "Not available"}</p>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                <p><span className="font-medium text-gray-900">Access Token:</span> {(session as any).accessToken ? "✅ Present" : "❌ Missing"}</p>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {(session as any).error && (
+                  <p className="text-red-600"><span className="font-medium">Error:</span> {(session as any).error}</p>
                 )}
               </div>
             </div>
@@ -95,7 +107,7 @@ export default function AccountPage() {
             {/* Raw Session Data */}
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold text-gray-800 mb-2">Raw Session Data</h3>
-              <pre className="text-xs bg-gray-100 p-3 rounded overflow-auto max-h-64">
+              <pre className="text-xs text-gray-900 bg-gray-100 p-3 rounded overflow-auto max-h-64">
                 {JSON.stringify(session, null, 2)}
               </pre>
             </div>

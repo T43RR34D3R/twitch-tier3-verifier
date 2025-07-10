@@ -24,7 +24,7 @@ export async function GET() {
       clientId: process.env.TWITCH_CLIENT_ID,
       secretLength: process.env.TWITCH_CLIENT_SECRET?.length,
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to test credentials" }, { status: 500 })
   }
 }

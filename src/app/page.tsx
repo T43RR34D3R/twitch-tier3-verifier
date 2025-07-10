@@ -1,11 +1,13 @@
 "use client";
 
-import { useSession, signIn } from "next-auth/react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useContent } from "../../hooks/useContent";
 
 export default function Home() {
   const { data: session, status } = useSession();
+  const { content } = useContent();
   const [isChecking, setIsChecking] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -56,10 +58,13 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 relative" style={{backgroundImage: 'url(/buckfoozle-bg.jpg)'}}>
-      {/* Optional overlay for better text readability */}
-      <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-      <div className="max-w-md w-full bg-white rounded-xl shadow-2xl p-8 text-center relative z-10">
+    <div className="min-h-screen flex items-center justify-center p-4 relative">
+      {/* Background with blur */}
+      <div className="absolute inset-0 bg-purple-900 bg-cover bg-center bg-no-repeat" style={{backgroundImage: 'url(/buckfoozle-bg.png)', filter: 'blur(3px)'}}></div>
+      {/* Gradient overlay - darker at top */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/15"></div>
+      <div className="max-w-md w-full bg-white rounded-xl shadow-2xl" style={{filter: 'drop-shadow(0 25px 50px rgba(0, 0, 0, 0.5))'}}>
+        <div className="p-8 text-center">
         <div className="mb-8">
           <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -67,10 +72,10 @@ export default function Home() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-black mb-2">
-            Tier 3 Verification
+            {content.mainPage.title}
           </h1>
           <p className="text-black">
-            Verify your Tier 3 subscription to access exclusive content
+            {content.mainPage.subtitle}
           </p>
         </div>
 
@@ -86,7 +91,7 @@ export default function Home() {
         {!session && status !== "loading" && (
           <div>
             <p className="text-black mb-6">
-              Please sign in with your Twitch account to verify your subscription status.
+              {content.mainPage.signInPrompt}
             </p>
             <button
               onClick={handleSignIn}
@@ -123,16 +128,28 @@ export default function Home() {
             )}
 
             {message && (
-              <div className={`p-4 rounded-lg mb-4 ${
-                message.includes("verified") || message.includes("confirmed") 
-                  ? "bg-green-100 text-green-800" 
-                  : "bg-red-100 text-red-800"
-              }`}>
-                {message}
+              <div>
+                <div className={`p-4 rounded-lg mb-4 ${
+                  message.includes("verified") || message.includes("confirmed") 
+                    ? "bg-green-100 text-green-800" 
+                    : "bg-red-100 text-red-800"
+                }`}>
+                  {message}
+                </div>
+                {/* Show sign out button for error messages */}
+                {!(message.includes("verified") || message.includes("confirmed")) && (
+                  <button
+                    onClick={() => signOut()}
+                    className="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                )}
               </div>
             )}
           </div>
         )}
+        </div>
       </div>
     </div>
   );
