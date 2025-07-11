@@ -54,6 +54,45 @@ export async function GET(request: NextRequest) {
         const chatData = await getChatAnalytics(broadcasterId, days)
         return NextResponse.json({ data: chatData })
 
+      case 'subscriber_list':
+        const searchQuery = searchParams.get('search') || ''
+        const tierFilter = searchParams.get('tier')
+        const sortBy = searchParams.get('sort') || 'date_subscribed'
+        const sortOrder = searchParams.get('order') || 'desc'
+        
+        let query = `
+          SELECT 
+            username,
+            tier,
+            is_gift,
+            gift_from,
+            date_subscribed,
+            months_subscribed
+          FROM subscription_history 
+          WHERE broadcaster_id = $1
+        `
+        
+        const queryParams = [broadcasterId]
+        
+        if (searchQuery) {
+          query += ` AND LOWER(username) LIKE $${queryParams.length + 1}`
+          queryParams.push(`%${searchQuery.toLowerCase()}%`)
+        }
+        
+        if (tierFilter) {
+          query += ` AND tier = $${queryParams.length + 1}`
+          queryParams.push(tierFilter)
+        }
+        
+        query += ` ORDER BY ${sortBy} ${sortOrder.toUpperCase()}`
+        
+        const subscriberResult = await sql.query(query, queryParams)
+        
+        return NextResponse.json({ 
+          subscribers: subscriberResult.rows,
+          total: subscriberResult.rows.length 
+        })
+
       default:
         return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 })
     }

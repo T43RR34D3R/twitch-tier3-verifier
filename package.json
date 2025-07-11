@@ -12,6 +12,7 @@
     "@supabase/supabase-js": "^2.50.5",
     "@twurple/api": "^7.3.0",
     "@twurple/auth": "^7.3.0",
+    "@vercel/postgres": "^0.10.0",
     "chart.js": "^4.5.0",
     "date-fns": "^4.1.0",
     "next": "15.3.5",

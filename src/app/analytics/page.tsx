@@ -64,6 +64,36 @@ interface SubStats {
   total: number;
 }
 
+interface Subscriber {
+  id: string;
+  user_id: string;
+  username: string;
+  display_name: string;
+  tier: '1000' | '2000' | '3000';
+  subscribed_at: string;
+  is_gift: boolean;
+  gifter_id?: string;
+  gifter_username?: string;
+  gifter_display_name?: string;
+  months_total: number;
+  months_streak: number;
+  cumulative_months: number;
+}
+
+interface SubscriberData {
+  subscribers: Subscriber[];
+  total: number;
+  tier1_count: number;
+  tier2_count: number;
+  tier3_count: number;
+  estimated_earnings: {
+    tier1: number;
+    tier2: number;
+    tier3: number;
+    total: number;
+  };
+}
+
 export default function AnalyticsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -85,16 +115,24 @@ export default function AnalyticsPage() {
     unique_chatters: number;
   }[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState(30);
+  const [subscriberData, setSubscriberData] = useState<SubscriberData | null>(null);
+  const [subscriberSearch, setSubscriberSearch] = useState("");
+  const [subscriberTierFilter, setSubscriberTierFilter] = useState<'all' | '1000' | '2000' | '3000'>('all');
+  const [subscriberPage, setSubscriberPage] = useState(1);
+  const [subscriberSortBy, setSubscriberSortBy] = useState<'username' | 'subscribed_at' | 'tier' | 'months_total'>('subscribed_at');
+  const [subscriberSortOrder, setSubscriberSortOrder] = useState<'asc' | 'desc'>('desc');
+  const subscribersPerPage = 20;
 
   const loadAnalytics = useCallback(async () => {
     setLoading(true);
     try {
-      const [summaryRes, streamRes, growthRes, subRes, chatRes] = await Promise.all([
+      const [summaryRes, streamRes, growthRes, subRes, chatRes, subscriberRes] = await Promise.all([
         fetch('/api/analytics?type=summary'),
         fetch(`/api/analytics?type=stream&days=${selectedPeriod}`),
         fetch('/api/analytics?type=growth'),
         fetch('/api/analytics?type=subscriptions'),
         fetch(`/api/analytics?type=chat&days=${selectedPeriod}`),
+        fetch('/api/analytics?type=subscriber_list'),
       ]);
 
       const summaryData = await summaryRes.json();
@@ -102,12 +140,14 @@ export default function AnalyticsPage() {
       const growthResult = await growthRes.json();
       const subResult = await subRes.json();
       const chatResult = await chatRes.json();
+      const subscriberResult = await subscriberRes.json();
 
       setSummary(summaryData.summary);
       setStreamData(streamResult.data || []);
       setGrowthData(growthResult.growth);
       setSubStats(subResult.stats);
       setChatData(chatResult.data || []);
+      setSubscriberData(subscriberResult.data || null);
     } catch (error) {
       console.error('Error loading analytics:', error);
     } finally {
@@ -229,6 +269,103 @@ export default function AnalyticsPage() {
         },
       ],
     };
+  };
+
+  const getFilteredSubscribers = () => {
+    if (!subscriberData) return [];
+    
+    let filtered = subscriberData.subscribers;
+    
+    // Apply search filter
+    if (subscriberSearch) {
+      const searchLower = subscriberSearch.toLowerCase();
+      filtered = filtered.filter(sub => 
+        sub.username.toLowerCase().includes(searchLower) ||
+        sub.display_name.toLowerCase().includes(searchLower) ||
+        (sub.gifter_username && sub.gifter_username.toLowerCase().includes(searchLower)) ||
+        (sub.gifter_display_name && sub.gifter_display_name.toLowerCase().includes(searchLower))
+      );
+    }
+    
+    // Apply tier filter
+    if (subscriberTierFilter !== 'all') {
+      filtered = filtered.filter(sub => sub.tier === subscriberTierFilter);
+    }
+    
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (subscriberSortBy) {
+        case 'username':
+          aValue = a.username.toLowerCase();
+          bValue = b.username.toLowerCase();
+          break;
+        case 'subscribed_at':
+          aValue = new Date(a.subscribed_at).getTime();
+          bValue = new Date(b.subscribed_at).getTime();
+          break;
+        case 'tier':
+          aValue = parseInt(a.tier);
+          bValue = parseInt(b.tier);
+          break;
+        case 'months_total':
+          aValue = a.months_total;
+          bValue = b.months_total;
+          break;
+        default:
+          return 0;
+      }
+      
+      if (subscriberSortOrder === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+      }
+    });
+    
+    return filtered;
+  };
+
+  const getPaginatedSubscribers = () => {
+    const filtered = getFilteredSubscribers();
+    const startIndex = (subscriberPage - 1) * subscribersPerPage;
+    const endIndex = startIndex + subscribersPerPage;
+    return filtered.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = () => {
+    return Math.ceil(getFilteredSubscribers().length / subscribersPerPage);
+  };
+
+  const getTierDisplay = (tier: string) => {
+    switch (tier) {
+      case '1000': return 'Tier 1';
+      case '2000': return 'Tier 2';
+      case '3000': return 'Tier 3';
+      default: return 'Unknown';
+    }
+  };
+
+  const getTierColor = (tier: string) => {
+    switch (tier) {
+      case '1000': return 'bg-green-100 text-green-800';
+      case '2000': return 'bg-blue-100 text-blue-800';
+      case '3000': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatEstimatedEarnings = (amount: number) => {
+    return `$${amount.toFixed(2)}`;
   };
 
   if (loading) {
@@ -423,6 +560,212 @@ export default function AnalyticsPage() {
                   <div className="text-2xl font-bold text-purple-600">{subStats.tier3}</div>
                   <div className="text-sm text-gray-600">Tier 3</div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Subscriber Management */}
+          {subscriberData && (
+            <div className="mt-8 bg-gray-50 rounded-lg p-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
+                <h2 className="text-xl font-bold text-black mb-4 lg:mb-0">Subscriber Management</h2>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">Search:</span>
+                    <input
+                      type="text"
+                      value={subscriberSearch}
+                      onChange={(e) => {
+                        setSubscriberSearch(e.target.value);
+                        setSubscriberPage(1);
+                      }}
+                      placeholder="Username or gifter..."
+                      className="px-3 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">Tier:</span>
+                    <select
+                      value={subscriberTierFilter}
+                      onChange={(e) => {
+                        setSubscriberTierFilter(e.target.value as 'all' | '1000' | '2000' | '3000');
+                        setSubscriberPage(1);
+                      }}
+                      className="px-3 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                    >
+                      <option value="all">All Tiers</option>
+                      <option value="1000">Tier 1</option>
+                      <option value="2000">Tier 2</option>
+                      <option value="3000">Tier 3</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">Sort by:</span>
+                    <select
+                      value={subscriberSortBy}
+                      onChange={(e) => setSubscriberSortBy(e.target.value as 'username' | 'subscribed_at' | 'tier' | 'months_total')}
+                      className="px-3 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                    >
+                      <option value="subscribed_at">Subscribe Date</option>
+                      <option value="username">Username</option>
+                      <option value="tier">Tier</option>
+                      <option value="months_total">Total Months</option>
+                    </select>
+                    <button
+                      onClick={() => setSubscriberSortOrder(subscriberSortOrder === 'asc' ? 'desc' : 'asc')}
+                      className="px-2 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm"
+                    >
+                      {subscriberSortOrder === 'asc' ? '↑' : '↓'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Earnings Summary */}
+              {subscriberData.estimated_earnings && (
+                <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatEstimatedEarnings(subscriberData.estimated_earnings.tier1)}
+                    </div>
+                    <div className="text-sm text-gray-600">Tier 1 Earnings</div>
+                    <div className="text-xs text-gray-500">{subscriberData.tier1_count} subscribers</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {formatEstimatedEarnings(subscriberData.estimated_earnings.tier2)}
+                    </div>
+                    <div className="text-sm text-gray-600">Tier 2 Earnings</div>
+                    <div className="text-xs text-gray-500">{subscriberData.tier2_count} subscribers</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {formatEstimatedEarnings(subscriberData.estimated_earnings.tier3)}
+                    </div>
+                    <div className="text-sm text-gray-600">Tier 3 Earnings</div>
+                    <div className="text-xs text-gray-500">{subscriberData.tier3_count} subscribers</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-gray-600">
+                      {formatEstimatedEarnings(subscriberData.estimated_earnings.total)}
+                    </div>
+                    <div className="text-sm text-gray-600">Total Earnings</div>
+                    <div className="text-xs text-gray-500">{subscriberData.total} subscribers</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Subscriber List */}
+              <div className="bg-white rounded-lg overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Username
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Tier
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Subscribe Date
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Months
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Type
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Gifter
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {getPaginatedSubscribers().map((subscriber) => (
+                        <tr key={subscriber.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {subscriber.display_name}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  @{subscriber.username}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTierColor(subscriber.tier)}`}>
+                              {getTierDisplay(subscriber.tier)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {formatDate(subscriber.subscribed_at)}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div className="flex flex-col">
+                              <span>Total: {subscriber.months_total}</span>
+                              <span className="text-xs text-gray-500">Streak: {subscriber.months_streak}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              subscriber.is_gift ? 'bg-pink-100 text-pink-800' : 'bg-green-100 text-green-800'
+                            }`}>
+                              {subscriber.is_gift ? 'Gift' : 'Direct'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {subscriber.is_gift && subscriber.gifter_display_name ? (
+                              <div>
+                                <div className="text-sm font-medium">
+                                  {subscriber.gifter_display_name}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  @{subscriber.gifter_username}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                {getTotalPages() > 1 && (
+                  <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                    <div className="text-sm text-gray-700">
+                      Showing {Math.min((subscriberPage - 1) * subscribersPerPage + 1, getFilteredSubscribers().length)} to{' '}
+                      {Math.min(subscriberPage * subscribersPerPage, getFilteredSubscribers().length)} of{' '}
+                      {getFilteredSubscribers().length} subscribers
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setSubscriberPage(Math.max(1, subscriberPage - 1))}
+                        disabled={subscriberPage === 1}
+                        className="px-3 py-1 bg-white border border-gray-300 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-700">
+                        Page {subscriberPage} of {getTotalPages()}
+                      </span>
+                      <button
+                        onClick={() => setSubscriberPage(Math.min(getTotalPages(), subscriberPage + 1))}
+                        disabled={subscriberPage === getTotalPages()}
+                        className="px-3 py-1 bg-white border border-gray-300 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
