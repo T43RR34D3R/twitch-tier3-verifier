@@ -305,14 +305,22 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Back to Main */}
-          <div className="mt-8 text-center">
-            <button
-              onClick={() => router.push("/")}
-              className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
-            >
-              Back to Main App
-            </button>
+          {/* Navigation */}
+          <div className="mt-8 text-center space-y-4">
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => router.push("/analytics")}
+                className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
+              >
+                View Analytics Dashboard
+              </button>
+              <button
+                onClick={() => router.push("/")}
+                className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
+              >
+                Back to Main App
+              </button>
+            </div>
           </div>
         </div>
       </div>
