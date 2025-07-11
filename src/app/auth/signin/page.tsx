@@ -1,6 +1,6 @@
 "use client";
 
-import { getProviders, signIn, getSession } from "next-auth/react";
+import { getProviders, signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
 
 export default function SignIn() {

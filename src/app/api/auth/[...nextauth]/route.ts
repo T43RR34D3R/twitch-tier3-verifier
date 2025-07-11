@@ -1,6 +1,5 @@
 import NextAuth from "next-auth"
 import { NextAuthOptions } from "next-auth"
-import TwitchProvider from "next-auth/providers/twitch"
 
 /**
  * Takes a token, and returns a new token with updated
@@ -87,7 +86,7 @@ const authOptions: NextAuthOptions = {
               client_secret: context.provider.clientSecret!,
               code: context.params.code!,
               grant_type: "authorization_code",
-              redirect_uri: context.params.redirect_uri || context.provider.callbackUrl!,
+              redirect_uri: (context.params.redirect_uri as string) || context.provider.callbackUrl!,
             }),
           });
           

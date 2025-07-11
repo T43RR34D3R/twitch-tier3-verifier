@@ -2,6 +2,7 @@
 
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useEffect } from "react";
+import Image from "next/image";
 
 export default function AccountPage() {
   const { data: session, status, update } = useSession();
@@ -11,7 +12,7 @@ export default function AccountPage() {
     if (session) {
       update(); // This will refresh the session data
     }
-  }, []);
+  }, [session, update]);
 
   if (status === "loading") {
     return (
@@ -61,9 +62,11 @@ export default function AccountPage() {
             {/* Profile Picture and Basic Info */}
             <div className="flex items-center space-x-4">
               {session.user?.image && (
-                <img
+                <Image
                   src={session.user.image}
                   alt={session.user.name || "User"}
+                  width={64}
+                  height={64}
                   className="w-16 h-16 rounded-full"
                 />
               )}
@@ -75,7 +78,7 @@ export default function AccountPage() {
                   {session.user?.email || "uggeenholm@hotmail.com"}
                 </p>
                 <p className="text-xs text-gray-600">
-                  User ID: {session.user?.id || "441862265"}
+                  User ID: {(session as any)?.user?.id || (session as any)?.sub || "441862265"}
                 </p>
               </div>
             </div>
@@ -84,7 +87,7 @@ export default function AccountPage() {
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold text-gray-800 mb-2">Session Information</h3>
               <div className="space-y-2 text-sm">
-                <p><span className="font-medium">User ID:</span> {session.user?.id || "Not available"}</p>
+                <p><span className="font-medium">User ID:</span> {(session as any)?.user?.id || (session as any)?.sub || "Not available"}</p>
                 <p><span className="font-medium">Access Token:</span> {session.accessToken ? "✅ Present" : "❌ Missing"}</p>
                 {session.error && (
                   <p className="text-red-600"><span className="font-medium">Error:</span> {session.error}</p>
