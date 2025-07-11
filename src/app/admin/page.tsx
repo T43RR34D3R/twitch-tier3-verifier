@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 
 interface VerificationLog {
   id: string;
-  userName: string;
-  userId: string;
-  timestamp: string;
+  user_name: string;
+  user_id: string;
+  created_at: string;
   success: boolean;
   message: string;
 }
@@ -64,40 +64,57 @@ export default function AdminDashboard() {
       });
   }, [session, status, router]);
 
-  const loadVerificationLogs = () => {
-    // This would typically load from a database
-    // For now, we'll use mock data
-    const mockLogs: VerificationLog[] = [
-      {
-        id: "1",
-        userName: "TearReader",
-        userId: "441862265",
-        timestamp: new Date().toISOString(),
-        success: true,
-        message: "Tier 3 subscription verified! (Override for TearReader)"
-      },
-      {
-        id: "2", 
-        userName: "TestUser",
-        userId: "123456789",
-        timestamp: new Date(Date.now() - 3600000).toISOString(),
-        success: false,
-        message: "Not subscribed to the channel"
+  const loadVerificationLogs = async () => {
+    try {
+      const response = await fetch('/api/admin/verification-logs');
+      if (response.ok) {
+        const data = await response.json();
+        setVerificationLogs(data.logs || []);
+      } else {
+        console.error('Failed to load verification logs');
       }
-    ];
-    setVerificationLogs(mockLogs);
+    } catch (error) {
+      console.error('Error loading verification logs:', error);
+    }
   };
 
-  const loadPageTexts = () => {
-    // Load current page texts (would come from database/config)
-    setPageTexts(pageTexts);
-    setEditingTexts(pageTexts);
+  const loadPageTexts = async () => {
+    try {
+      const response = await fetch('/api/admin/page-settings');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.settings) {
+          setPageTexts(data.settings);
+          setEditingTexts(data.settings);
+        }
+      } else {
+        console.error('Failed to load page settings');
+      }
+    } catch (error) {
+      console.error('Error loading page settings:', error);
+    }
   };
 
-  const savePageTexts = () => {
-    // Save texts to database/config
-    setPageTexts(editingTexts);
-    alert("Page texts saved successfully!");
+  const savePageTexts = async () => {
+    try {
+      const response = await fetch('/api/admin/page-settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editingTexts),
+      });
+      
+      if (response.ok) {
+        setPageTexts(editingTexts);
+        alert("Page texts saved successfully!");
+      } else {
+        alert("Failed to save page texts");
+      }
+    } catch (error) {
+      console.error('Error saving page settings:', error);
+      alert("Error saving page texts");
+    }
   };
 
   if (loading) {
@@ -137,7 +154,7 @@ export default function AdminDashboard() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-black mb-2">Admin Dashboard</h1>
-            <p className="text-gray-600">Welcome, {session?.user?.name}! Manage your Tier 3 verifier.</p>
+            <p className="text-black">Welcome, {session?.user?.name}! Manage your Tier 3 verifier.</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -147,7 +164,7 @@ export default function AdminDashboard() {
               
               <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
                 {verificationLogs.length === 0 ? (
-                  <p className="text-gray-500">No verification attempts yet.</p>
+                  <p className="text-black">No verification attempts yet.</p>
                 ) : (
                   <div className="space-y-3">
                     {verificationLogs.map((log) => (
@@ -156,14 +173,14 @@ export default function AdminDashboard() {
                       }`}>
                         <div className="flex justify-between items-start">
                           <div>
-                            <div className="font-medium text-black">{log.userName}</div>
-                            <div className="text-sm text-gray-600">ID: {log.userId}</div>
+                            <div className="font-medium text-black">{log.user_name}</div>
+                            <div className="text-sm text-black">ID: {log.user_id}</div>
                             <div className={`text-sm ${log.success ? 'text-green-700' : 'text-red-700'}`}>
                               {log.message}
                             </div>
                           </div>
-                          <div className="text-xs text-gray-500">
-                            {new Date(log.timestamp).toLocaleString()}
+                          <div className="text-xs text-black">
+                            {new Date(log.created_at).toLocaleString()}
                           </div>
                         </div>
                       </div>

@@ -95,8 +95,8 @@ export default function AccountPage() {
               <h3 className="font-semibold text-black mb-2">Session Information</h3>
               <div className="space-y-2 text-sm">
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <p><span className="font-medium">User ID:</span> {(session as any)?.user?.id || (session as any)?.sub || "Not available"}</p>
-                <p><span className="font-medium">Access Token:</span> {session.accessToken ? "✅ Present" : "❌ Missing"}</p>
+                <p className="text-black"><span className="font-medium">User ID:</span> {(session as any)?.user?.id || (session as any)?.sub || "Not available"}</p>
+                <p className="text-black"><span className="font-medium">Access Token:</span> {session.accessToken ? "✅ Present" : "❌ Missing"}</p>
                 {session.error && (
                   <p className="text-red-600"><span className="font-medium">Error:</span> {session.error}</p>
                 )}

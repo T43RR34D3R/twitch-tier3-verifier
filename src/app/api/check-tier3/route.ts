@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
+import { addVerificationLog } from "@/lib/database"
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,6 +25,15 @@ export async function GET(request: NextRequest) {
     // Override for testing - TearReader always passes
     if (token.name === "TearReader") {
       console.log("TearReader override: granting Tier 3 access");
+      
+      // Log the verification attempt
+      await addVerificationLog({
+        user_name: token.name || "Unknown",
+        user_id: token.sub,
+        success: true,
+        message: "Tier 3 subscription verified! (Override for TearReader)"
+      });
+      
       return NextResponse.json({ 
         isTier3: true, 
         message: "Tier 3 subscription verified! (Override for TearReader)" 
