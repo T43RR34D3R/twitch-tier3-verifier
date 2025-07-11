@@ -10,6 +10,35 @@ export default function Home() {
   const [isChecking, setIsChecking] = useState(false);
   const [message, setMessage] = useState("");
   const [currentStep, setCurrentStep] = useState(0);
+  const [pageTexts, setPageTexts] = useState({
+    title: "Tier 3 Verification",
+    subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
+    signInText: "Please sign in with your Twitch account to verify your subscription status.",
+    steps: ["Signed In", "Checking Follow", "Checking Tier 3", "Verified"]
+  });
+
+  // Load page texts from database
+  useEffect(() => {
+    const loadPageTexts = async () => {
+      try {
+        const response = await fetch('/api/admin/page-settings');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.settings) {
+            setPageTexts({
+              title: data.settings.title,
+              subtitle: data.settings.subtitle,
+              signInText: data.settings.sign_in_text,
+              steps: data.settings.steps
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error loading page settings:', error);
+      }
+    };
+    loadPageTexts();
+  }, []);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -85,10 +114,10 @@ export default function Home() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-black mb-2">
-            Tier 3 Verification
+            {pageTexts.title}
           </h1>
           <p className="text-black">
-            Verify your Tier 3 subscription to submit info for your custom T3 cheer!
+            {pageTexts.subtitle}
           </p>
         </div>
 
@@ -104,7 +133,7 @@ export default function Home() {
         {!session && status !== "loading" && (
           <div>
             <p className="text-black mb-6">
-              Please sign in with your Twitch account to verify your subscription status.
+              {pageTexts.signInText}
             </p>
             <button
               onClick={handleSignIn}
@@ -136,7 +165,7 @@ export default function Home() {
             {/* Progress Indicator */}
             <ProgressIndicator
               currentStep={currentStep}
-              steps={["Signed In", "Checking Follow", "Checking Tier 3", "Verified"]}
+              steps={pageTexts.steps}
             />
 
             {isChecking && (

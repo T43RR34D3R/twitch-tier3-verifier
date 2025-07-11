@@ -201,7 +201,7 @@ export default function AdminDashboard() {
                     type="text"
                     value={editingTexts.title}
                     onChange={(e) => setEditingTexts({...editingTexts, title: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-black"
                   />
                 </div>
 
@@ -211,7 +211,7 @@ export default function AdminDashboard() {
                     value={editingTexts.subtitle}
                     onChange={(e) => setEditingTexts({...editingTexts, subtitle: e.target.value})}
                     rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-black"
                   />
                 </div>
 
@@ -221,7 +221,7 @@ export default function AdminDashboard() {
                     value={editingTexts.signInText}
                     onChange={(e) => setEditingTexts({...editingTexts, signInText: e.target.value})}
                     rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-black"
                   />
                 </div>
 
@@ -237,7 +237,7 @@ export default function AdminDashboard() {
                         newSteps[index] = e.target.value;
                         setEditingTexts({...editingTexts, steps: newSteps});
                       }}
-                      className="w-full px-3 py-2 mb-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full px-3 py-2 mb-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-black"
                       placeholder={`Step ${index + 1}`}
                     />
                   ))}
