@@ -1,7 +1,6 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { getProviders, signIn } from "next-auth/react";
+import { getProviders, signIn, getSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
 export default function SignIn() {
@@ -19,12 +18,10 @@ export default function SignIn() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative">
-      {/* Background with blur */}
-      <div className="absolute inset-0 bg-purple-900 bg-cover bg-center bg-no-repeat" style={{backgroundImage: 'url(/buckfoozle-bg.png)', filter: 'blur(3px)'}}></div>
-      {/* Gradient overlay - darker at top */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/15"></div>
-      <div className="max-w-md w-full bg-white rounded-xl shadow-2xl p-8 text-center relative z-10" style={{filter: 'drop-shadow(0 25px 50px rgba(0, 0, 0, 0.5))'}}>
+    <div className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 relative" style={{backgroundImage: 'url(/buckfoozle-bg.jpg)'}}>
+      {/* Optional overlay for better text readability */}
+      <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+      <div className="max-w-md w-full bg-white rounded-xl shadow-2xl p-8 text-center relative z-10">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Sign in to continue</h1>
         
         {Object.values(providers).map((provider: any) => (

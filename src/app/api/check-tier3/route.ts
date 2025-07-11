@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
-import { logUserActivity } from "../../../../lib/userActivityLog"
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,23 +9,11 @@ export async function GET(request: NextRequest) {
       hasToken: !!token,
       hasAccessToken: !!token?.accessToken,
       sub: token?.sub,
-      tokenKeys: token ? Object.keys(token) : [],
-      name: token?.name
+      tokenKeys: token ? Object.keys(token) : []
     })
     
     if (!token || !token.accessToken) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
-    }
-    
-    // Admin bypass - admins are automatically tier 3
-    const allowedAdmins = ["TearReader", "BuckFoozle", "tearreader", "buckfoozle"];
-    if (allowedAdmins.includes(token?.name || "")) {
-      logUserActivity(token.name || "Unknown", "tier3_check", "success", "Admin bypass - granted tier 3 access");
-      return NextResponse.json({ 
-        isTier3: true, 
-        tier: "admin",
-        message: "Admin access granted - Tier 3 verified!"
-      })
     }
     
     if (!token.sub) {
@@ -61,7 +48,6 @@ export async function GET(request: NextRequest) {
       console.log("Subscription API response status:", response.status);
       
       if (response.status === 404) {
-        logUserActivity(token.name || "Unknown", "tier3_check", "failed", "Not subscribed to the channel");
         return NextResponse.json({ 
           isTier3: false, 
           message: "Not subscribed to the channel" 
@@ -82,19 +68,12 @@ export async function GET(request: NextRequest) {
         // Check if it's Tier 3 (tier "3000" in Twitch API)
         const isTier3 = subscription.tier === "3000"
         
-        if (isTier3) {
-          logUserActivity(token.name || "Unknown", "tier3_check", "success", `Tier 3 subscription confirmed - tier: ${subscription.tier}`);
-        } else {
-          logUserActivity(token.name || "Unknown", "tier3_check", "failed", `User has subscription but not tier 3 - current tier: ${subscription.tier}`);
-        }
-        
         return NextResponse.json({ 
           isTier3, 
           tier: subscription.tier,
           message: isTier3 ? "Tier 3 subscription confirmed!" : `Current tier: ${subscription.tier}`
         })
       } else {
-        logUserActivity(token.name || "Unknown", "tier3_check", "failed", "Not subscribed to the channel");
         return NextResponse.json({ 
           isTier3: false, 
           message: "Not subscribed to the channel" 
@@ -104,7 +83,6 @@ export async function GET(request: NextRequest) {
     } catch (subscriptionError) {
       // User is not subscribed or we don't have permission to check
       console.log("Subscription check failed:", subscriptionError);
-      logUserActivity(token.name || "Unknown", "tier3_check", "failed", `Subscription check failed: ${subscriptionError}`);
       return NextResponse.json({ 
         isTier3: false, 
         message: "Not subscribed or unable to verify subscription" 
@@ -113,7 +91,6 @@ export async function GET(request: NextRequest) {
     
   } catch (error) {
     console.error("Error checking tier 3 status:", error)
-    logUserActivity("Unknown", "tier3_check", "failed", `Internal server error: ${error}`);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
