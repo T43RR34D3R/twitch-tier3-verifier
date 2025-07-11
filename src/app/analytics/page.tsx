@@ -85,18 +85,6 @@ export default function AnalyticsPage() {
   }[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState(30);
 
-  useEffect(() => {
-    if (status === "loading") return;
-    
-    if (!session) {
-      // Don't redirect immediately, let them see the login option
-      setLoading(false);
-      return;
-    }
-
-    loadAnalytics();
-  }, [session, status, selectedPeriod, loadAnalytics]);
-
   const loadAnalytics = useCallback(async () => {
     setLoading(true);
     try {
@@ -125,6 +113,18 @@ export default function AnalyticsPage() {
       setLoading(false);
     }
   }, [selectedPeriod]);
+
+  useEffect(() => {
+    if (status === "loading") return;
+    
+    if (!session) {
+      // Don't redirect immediately, let them see the login option
+      setLoading(false);
+      return;
+    }
+
+    loadAnalytics();
+  }, [session, status, selectedPeriod, loadAnalytics]);
 
   const getViewerChartData = () => {
     if (!streamData.length) return { labels: [], datasets: [] };
