@@ -3,11 +3,15 @@
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import ProgressIndicator from "../components/ProgressIndicator";
+import Confetti from "../components/Confetti";
 
 export default function Home() {
   const { data: session, status } = useSession();
   const [isChecking, setIsChecking] = useState(false);
   const [message, setMessage] = useState("");
+  const [currentStep, setCurrentStep] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -19,11 +23,13 @@ export default function Home() {
 
     // Check follow status first (for testing)
     setIsChecking(true);
+    setCurrentStep(1);
     fetch("/api/check-follow")
       .then((res) => res.json())
       .then((data) => {
         if (data.isFollowing) {
           setMessage("Following confirmed! Now checking Tier 3 subscription...");
+          setCurrentStep(2);
           // If following, then check subscription
           return fetch("/api/check-tier3");
         } else {
@@ -35,9 +41,11 @@ export default function Home() {
       .then((data) => {
         if (data?.isTier3) {
           setMessage("Tier 3 subscription verified! Redirecting to form...");
+          setCurrentStep(3);
+          setShowConfetti(true);
           setTimeout(() => {
             window.location.href = process.env.NEXT_PUBLIC_NOTION_FORM_URL || "#";
-          }, 2000);
+          }, 3000);
         } else {
           setMessage(data?.message || "You need to be a Tier 3 subscriber to access this form.");
         }
@@ -48,6 +56,9 @@ export default function Home() {
       })
       .finally(() => {
         setIsChecking(false);
+        if (!message.includes("verified")) {
+          setCurrentStep(0);
+        }
       });
   }, [session, status]);
 
@@ -120,6 +131,12 @@ export default function Home() {
                 Welcome, {session.user?.name}!
               </p>
             </div>
+            
+            {/* Progress Indicator */}
+            <ProgressIndicator
+              currentStep={currentStep}
+              steps={["Signed In", "Checking Follow", "Checking Tier 3", "Verified"]}
+            />
 
             {isChecking && (
               <div className="flex items-center justify-center space-x-2 mb-4">
@@ -150,6 +167,9 @@ export default function Home() {
             )}
           </div>
         )}
+        
+        {/* Confetti Animation */}
+        <Confetti show={showConfetti} />
       </div>
     </div>
   );
