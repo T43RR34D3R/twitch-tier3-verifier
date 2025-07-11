@@ -83,10 +83,10 @@ export default function DebugPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">Instructions</h2>
           <div className="space-y-2 text-gray-700">
-            <p>1. Click <strong>"Force Sign Out & Clear Cache"</strong> to completely clear your session</p>
-            <p>2. Click <strong>"Force Fresh Sign In"</strong> to start a new authorization flow</p>
+            <p>1. Click <strong>&quot;Force Sign Out &amp; Clear Cache&quot;</strong> to completely clear your session</p>
+            <p>2. Click <strong>&quot;Force Fresh Sign In&quot;</strong> to start a new authorization flow</p>
             <p>3. This should show the Twitch authorization screen again</p>
-            <p>4. If it still doesn't work, try using an incognito/private browser window</p>
+            <p>4. If it still doesn&apos;t work, try using an incognito/private browser window</p>
           </div>
         </div>
       </div>
