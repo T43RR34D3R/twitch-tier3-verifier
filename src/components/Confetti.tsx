@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 
 interface ConfettiProps {
   show: boolean;
@@ -21,24 +21,42 @@ interface ConfettiPiece {
 
 export default function Confetti({ show, onComplete }: ConfettiProps) {
   const [pieces, setPieces] = useState<ConfettiPiece[]>([]);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
-  const colors = useMemo(() => ["#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4", "#feca57", "#ff9ff3", "#54a0ff"], []);
+  const colors = useMemo(() => ["#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4", "#feca57", "#ff9ff3", "#54a0ff", "#a29bfe", "#fd79a8", "#00b894"], []);
+
+  // Get screen dimensions safely
+  useEffect(() => {
+    const updateDimensions = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
+
+  const createConfettiPiece = useCallback((id: number): ConfettiPiece => ({
+    id,
+    x: Math.random() * dimensions.width,
+    y: -Math.random() * 100 - 10, // Start above screen with some variation
+    color: colors[Math.floor(Math.random() * colors.length)],
+    rotation: Math.random() * 360,
+    scale: Math.random() * 0.6 + 0.4,
+    velocityX: (Math.random() - 0.5) * 6,
+    velocityY: Math.random() * 4 + 3,
+    rotationSpeed: (Math.random() - 0.5) * 15,
+  }), [dimensions.width, colors]);
 
   useEffect(() => {
-    if (show) {
+    if (show && dimensions.width > 0) {
+      // Create more confetti pieces for better coverage
       const newPieces: ConfettiPiece[] = [];
-      for (let i = 0; i < 50; i++) {
-        newPieces.push({
-          id: i,
-          x: Math.random() * window.innerWidth,
-          y: -10,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          rotation: Math.random() * 360,
-          scale: Math.random() * 0.5 + 0.5,
-          velocityX: (Math.random() - 0.5) * 4,
-          velocityY: Math.random() * 3 + 2,
-          rotationSpeed: (Math.random() - 0.5) * 10,
-        });
+      for (let i = 0; i < 100; i++) {
+        newPieces.push(createConfettiPiece(i));
       }
       setPieces(newPieces);
 
@@ -49,8 +67,8 @@ export default function Confetti({ show, onComplete }: ConfettiProps) {
             x: piece.x + piece.velocityX,
             y: piece.y + piece.velocityY,
             rotation: piece.rotation + piece.rotationSpeed,
-            velocityY: piece.velocityY + 0.1, // gravity
-          })).filter(piece => piece.y < window.innerHeight + 100)
+            velocityY: piece.velocityY + 0.15, // gravity
+          })).filter(piece => piece.y < dimensions.height + 100)
         );
       }, 16);
 
@@ -58,14 +76,14 @@ export default function Confetti({ show, onComplete }: ConfettiProps) {
         clearInterval(interval);
         setPieces([]);
         onComplete?.();
-      }, 3000);
+      }, 4000); // Slightly longer duration
 
       return () => {
         clearInterval(interval);
         clearTimeout(timeout);
       };
     }
-  }, [show, onComplete, colors]);
+  }, [show, onComplete, dimensions, createConfettiPiece]);
 
   if (!show) return null;
 
