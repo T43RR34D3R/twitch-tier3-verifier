@@ -17,6 +17,49 @@ export interface TwitchUser {
   created_at: string;
 }
 
+export interface TwitchSubscription {
+  broadcaster_id: string;
+  broadcaster_login: string;
+  broadcaster_name: string;
+  gifter_id: string;
+  gifter_login: string;
+  gifter_name: string;
+  is_gift: boolean;
+  plan_name: string;
+  tier: string;
+  user_id: string;
+  user_login: string;
+  user_name: string;
+}
+
+export interface TwitchChannelInfo {
+  broadcaster_id: string;
+  broadcaster_login: string;
+  broadcaster_name: string;
+  broadcaster_language: string;
+  game_id: string;
+  game_name: string;
+  title: string;
+  delay: number;
+}
+
+export interface TwitchStreamInfo {
+  id: string;
+  user_id: string;
+  user_login: string;
+  user_name: string;
+  game_id: string;
+  game_name: string;
+  type: string;
+  title: string;
+  viewer_count: number;
+  started_at: string;
+  language: string;
+  thumbnail_url: string;
+  tag_ids: string[];
+  is_mature: boolean;
+}
+
 export async function validateTwitchToken(token: string): Promise<TwitchUser | null> {
   try {
     // First validate the token
@@ -32,7 +75,6 @@ export async function validateTwitchToken(token: string): Promise<TwitchUser | n
       return null;
     }
 
-    const validationData = await validateResponse.json();
     
     // If token is valid, get user information
     const userResponse = await fetch('https://api.twitch.tv/helix/users', {
@@ -66,9 +108,9 @@ export async function validateTwitchToken(token: string): Promise<TwitchUser | n
  * Get user subscriptions for a broadcaster
  * @param token - The Twitch access token
  * @param broadcasterId - The broadcaster's Twitch ID
- * @returns Promise<any[]> - Array of subscription data
+ * @returns Promise<TwitchSubscription[]> - Array of subscription data
  */
-export async function getUserSubscriptions(token: string, broadcasterId: string): Promise<any[]> {
+export async function getUserSubscriptions(token: string, broadcasterId: string): Promise<TwitchSubscription[]> {
   try {
     const response = await fetch(`https://api.twitch.tv/helix/subscriptions?broadcaster_id=${broadcasterId}`, {
       method: 'GET',
@@ -95,9 +137,9 @@ export async function getUserSubscriptions(token: string, broadcasterId: string)
  * Get channel information
  * @param token - The Twitch access token
  * @param broadcasterId - The broadcaster's Twitch ID
- * @returns Promise<any | null> - Channel information
+ * @returns Promise<TwitchChannelInfo | null> - Channel information
  */
-export async function getChannelInfo(token: string, broadcasterId: string): Promise<any | null> {
+export async function getChannelInfo(token: string, broadcasterId: string): Promise<TwitchChannelInfo | null> {
   try {
     const response = await fetch(`https://api.twitch.tv/helix/channels?broadcaster_id=${broadcasterId}`, {
       method: 'GET',
@@ -124,9 +166,9 @@ export async function getChannelInfo(token: string, broadcasterId: string): Prom
  * Get stream information
  * @param token - The Twitch access token
  * @param broadcasterId - The broadcaster's Twitch ID
- * @returns Promise<any | null> - Stream information
+ * @returns Promise<TwitchStreamInfo | null> - Stream information
  */
-export async function getStreamInfo(token: string, broadcasterId: string): Promise<any | null> {
+export async function getStreamInfo(token: string, broadcasterId: string): Promise<TwitchStreamInfo | null> {
   try {
     const response = await fetch(`https://api.twitch.tv/helix/streams?user_id=${broadcasterId}`, {
       method: 'GET',
