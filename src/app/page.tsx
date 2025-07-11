@@ -5,12 +5,19 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import ProgressIndicator from "../components/ProgressIndicator";
 
+interface PageTexts {
+  title: string;
+  subtitle: string;
+  signInText: string;
+  steps: string[];
+}
+
 export default function Home() {
   const { data: session, status } = useSession();
   const [isChecking, setIsChecking] = useState(false);
   const [message, setMessage] = useState("");
   const [currentStep, setCurrentStep] = useState(0);
-  const [pageTexts, setPageTexts] = useState(null);
+  const [pageTexts, setPageTexts] = useState<PageTexts | null>(null);
   const [pageTextsLoaded, setPageTextsLoaded] = useState(false);
 
   // Load page texts from database
@@ -164,10 +171,10 @@ export default function Home() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-black mb-2">
-            {pageTexts.title}
+            {pageTexts?.title}
           </h1>
           <p className="text-black">
-            {pageTexts.subtitle}
+            {pageTexts?.subtitle}
           </p>
         </div>
 
@@ -183,7 +190,7 @@ export default function Home() {
         {!session && status !== "loading" && (
           <div>
             <p className="text-black mb-6">
-              {pageTexts.signInText}
+              {pageTexts?.signInText}
             </p>
             <button
               onClick={handleSignIn}
@@ -215,7 +222,7 @@ export default function Home() {
             {/* Progress Indicator */}
             <ProgressIndicator
               currentStep={currentStep}
-              steps={pageTexts.steps}
+              steps={pageTexts?.steps || []}
             />
 
             {isChecking && (
