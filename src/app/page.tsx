@@ -70,7 +70,7 @@ export default function Home() {
             Tier 3 Verification
           </h1>
           <p className="text-black">
-            Verify your Tier 3 subscription to access exclusive content
+            Verify your Tier 3 subscription to submit info for your custom T3 cheer!
           </p>
         </div>
 
