@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Line, Bar, Doughnut } from "react-chartjs-2";
 import {
@@ -95,9 +95,9 @@ export default function AnalyticsPage() {
     }
 
     loadAnalytics();
-  }, [session, status, selectedPeriod]); // Removed router and added loadAnalytics dependency warning will be handled
+  }, [session, status, selectedPeriod, loadAnalytics]);
 
-  const loadAnalytics = async () => {
+  const loadAnalytics = useCallback(async () => {
     setLoading(true);
     try {
       const [summaryRes, streamRes, growthRes, subRes, chatRes] = await Promise.all([
@@ -124,7 +124,7 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedPeriod]);
 
   const getViewerChartData = () => {
     if (!streamData.length) return { labels: [], datasets: [] };

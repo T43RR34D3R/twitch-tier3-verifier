@@ -20,9 +20,9 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type')
     const days = parseInt(searchParams.get('days') || '30')
     
-    // For now, we'll use the user's ID as broadcaster_id
+    // For now, we'll use a test broadcaster ID
     // In a real app, you'd have a way to determine if this user is a broadcaster
-    const broadcasterId = session.user.id || 'test_broadcaster'
+    const broadcasterId = 'test_broadcaster'
 
     switch (type) {
       case 'summary':
