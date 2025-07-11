@@ -40,7 +40,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     await savePageSettings(body)
 
-    return NextResponse.json({ success: true })
+    // Create response with cache invalidation headers
+    const response = NextResponse.json({ success: true })
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    
+    return response
     
   } catch (error) {
     console.error("Error saving page settings:", error)

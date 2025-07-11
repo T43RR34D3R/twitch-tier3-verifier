@@ -24,7 +24,12 @@ export default function Home() {
   useEffect(() => {
     const loadPageTexts = async () => {
       try {
-        const response = await fetch('/api/admin/page-settings');
+        const response = await fetch('/api/page-settings', {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        });
         if (response.ok) {
           const data = await response.json();
           if (data.settings) {
