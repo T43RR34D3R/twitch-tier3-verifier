@@ -78,6 +78,7 @@ export default function AccountPage() {
                   {session.user?.email || "uggeenholm@hotmail.com"}
                 </p>
                 <p className="text-xs text-gray-600">
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   User ID: {(session as any)?.user?.id || (session as any)?.sub || "441862265"}
                 </p>
               </div>
@@ -87,6 +88,7 @@ export default function AccountPage() {
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold text-gray-800 mb-2">Session Information</h3>
               <div className="space-y-2 text-sm">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 <p><span className="font-medium">User ID:</span> {(session as any)?.user?.id || (session as any)?.sub || "Not available"}</p>
                 <p><span className="font-medium">Access Token:</span> {session.accessToken ? "✅ Present" : "❌ Missing"}</p>
                 {session.error && (
