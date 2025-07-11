@@ -50,6 +50,16 @@ export async function GET(request: NextRequest) {
       if (!response.ok) {
         const errorText = await response.text();
         console.log("Follow API error:", errorText);
+        
+        // If token is invalid, return a special error to force re-authentication
+        if (response.status === 401) {
+          return NextResponse.json({ 
+            error: "Invalid token", 
+            forceReauth: true,
+            message: "Your session has expired. Please sign in again."
+          }, { status: 401 });
+        }
+        
         throw new Error(`API request failed: ${response.status} - ${errorText}`);
       }
 

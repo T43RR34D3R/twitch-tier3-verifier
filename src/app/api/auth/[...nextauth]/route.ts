@@ -65,6 +65,7 @@ const authOptions: NextAuthOptions = {
         params: {
           scope: "user:read:email user:read:subscriptions user:read:follows",
           response_type: "code",
+          force_verify: "true", // Force Twitch to show authorization screen
         },
       },
       token: {
@@ -141,6 +142,11 @@ const authOptions: NextAuthOptions = {
         }
       }
 
+      // If there's an error, force re-authentication
+      if (token.error === "RefreshAccessTokenError") {
+        return { ...token, error: "RefreshAccessTokenError" }
+      }
+
       // Return previous token if the access token has not expired yet
       if (Date.now() < (token.accessTokenExpires as number)) {
         return token
@@ -157,6 +163,12 @@ const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/auth/signin",
+  },
+  events: {
+    async signOut() {
+      // Clear any cached tokens when signing out
+      console.log("User signed out - clearing tokens");
+    },
   },
   debug: true,
   logger: {

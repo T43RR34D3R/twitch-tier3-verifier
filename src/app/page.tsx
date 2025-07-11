@@ -84,6 +84,17 @@ export default function Home() {
     fetch("/api/check-follow")
       .then((res) => res.json())
       .then((data) => {
+        // Check if we need to force re-authentication
+        if (data.forceReauth) {
+          setMessage("Your session has expired. Signing you out...");
+          setTimeout(() => {
+            signOut({ redirect: false }).then(() => {
+              window.location.reload();
+            });
+          }, 2000);
+          return;
+        }
+        
         if (data.isFollowing) {
           setMessage("Following confirmed! Now checking Tier 3 subscription...");
           setCurrentStep(2);
