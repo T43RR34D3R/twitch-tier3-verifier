@@ -67,6 +67,14 @@ export async function GET(request: NextRequest) {
       console.log("Subscription API response status:", response.status);
       
       if (response.status === 404) {
+        // Log the failed verification attempt
+        await addVerificationLog({
+          user_name: token.name || "Unknown",
+          user_id: token.sub,
+          success: false,
+          message: "Not subscribed to the channel"
+        });
+        
         return NextResponse.json({ 
           isTier3: false, 
           message: "Not subscribed to the channel" 
@@ -87,12 +95,28 @@ export async function GET(request: NextRequest) {
         // Check if it's Tier 3 (tier "3000" in Twitch API)
         const isTier3 = subscription.tier === "3000"
         
+        // Log the verification attempt
+        await addVerificationLog({
+          user_name: token.name || "Unknown",
+          user_id: token.sub,
+          success: isTier3,
+          message: isTier3 ? "Tier 3 subscription confirmed!" : `Current tier: ${subscription.tier} (not Tier 3)`
+        });
+        
         return NextResponse.json({ 
           isTier3, 
           tier: subscription.tier,
           message: isTier3 ? "Tier 3 subscription confirmed!" : `Current tier: ${subscription.tier}`
         })
       } else {
+        // Log the failed verification attempt
+        await addVerificationLog({
+          user_name: token.name || "Unknown",
+          user_id: token.sub,
+          success: false,
+          message: "Not subscribed to the channel"
+        });
+        
         return NextResponse.json({ 
           isTier3: false, 
           message: "Not subscribed to the channel" 
@@ -102,6 +126,15 @@ export async function GET(request: NextRequest) {
     } catch (subscriptionError) {
       // User is not subscribed or we don't have permission to check
       console.log("Subscription check failed:", subscriptionError);
+      
+      // Log the failed verification attempt
+      await addVerificationLog({
+        user_name: token.name || "Unknown",
+        user_id: token.sub,
+        success: false,
+        message: "Not subscribed or unable to verify subscription"
+      });
+      
       return NextResponse.json({ 
         isTier3: false, 
         message: "Not subscribed or unable to verify subscription" 

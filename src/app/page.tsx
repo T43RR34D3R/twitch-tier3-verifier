@@ -10,12 +10,8 @@ export default function Home() {
   const [isChecking, setIsChecking] = useState(false);
   const [message, setMessage] = useState("");
   const [currentStep, setCurrentStep] = useState(0);
-  const [pageTexts, setPageTexts] = useState({
-    title: "Tier 3 Verification",
-    subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
-    signInText: "Please sign in with your Twitch account to verify your subscription status.",
-    steps: ["Signed In", "Checking Follow", "Checking Tier 3", "Verified"]
-  });
+  const [pageTexts, setPageTexts] = useState(null);
+  const [pageTextsLoaded, setPageTextsLoaded] = useState(false);
 
   // Load page texts from database
   useEffect(() => {
@@ -31,10 +27,35 @@ export default function Home() {
               signInText: data.settings.sign_in_text,
               steps: data.settings.steps
             });
+          } else {
+            // Use defaults if no settings found
+            setPageTexts({
+              title: "Tier 3 Verification",
+              subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
+              signInText: "Please sign in with your Twitch account to verify your subscription status.",
+              steps: ["Signed In", "Checking Follow", "Checking Tier 3", "Verified"]
+            });
           }
+        } else {
+          // Use defaults if API call fails
+          setPageTexts({
+            title: "Tier 3 Verification",
+            subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
+            signInText: "Please sign in with your Twitch account to verify your subscription status.",
+            steps: ["Signed In", "Checking Follow", "Checking Tier 3", "Verified"]
+          });
         }
       } catch (error) {
         console.error('Error loading page settings:', error);
+        // Use defaults if error occurs
+        setPageTexts({
+          title: "Tier 3 Verification",
+          subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
+          signInText: "Please sign in with your Twitch account to verify your subscription status.",
+          steps: ["Signed In", "Checking Follow", "Checking Tier 3", "Verified"]
+        });
+      } finally {
+        setPageTextsLoaded(true);
       }
     };
     loadPageTexts();
@@ -95,6 +116,35 @@ export default function Home() {
   const handleSignIn = () => {
     signIn("twitch");
   };
+
+  // Show loading state until page texts are loaded
+  if (!pageTextsLoaded) {
+    return (
+      <div className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 relative" style={{backgroundImage: 'url(/buckfoozle-bg.png)'}}>
+        {/* Backdrop blur and vignette overlay */}
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+        <div 
+          className="absolute inset-0" 
+          style={{
+            background: 'radial-gradient(circle at center, transparent 0%, transparent 60%, rgba(0,0,0,0.4) 100%)'
+          }}
+        ></div>
+        <div className="max-w-md w-full bg-white rounded-xl shadow-2xl drop-shadow-2xl p-4 sm:p-8 text-center relative z-10 mx-4">
+          <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
+            </svg>
+          </div>
+          <div className="flex items-center justify-center space-x-2">
+            <div className="w-4 h-4 bg-purple-600 rounded-full animate-pulse"></div>
+            <div className="w-4 h-4 bg-purple-600 rounded-full animate-pulse" style={{animationDelay: "0.2s"}}></div>
+            <div className="w-4 h-4 bg-purple-600 rounded-full animate-pulse" style={{animationDelay: "0.4s"}}></div>
+            <span className="text-black ml-2">Loading...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 relative" style={{backgroundImage: 'url(/buckfoozle-bg.png)'}}>

@@ -33,6 +33,7 @@ export default function AdminDashboard() {
     steps: ["Signed In", "Checking Follow", "Checking Tier 3", "Verified"]
   });
   const [editingTexts, setEditingTexts] = useState<PageTexts>(pageTexts);
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   useEffect(() => {
     if (status === "loading") return;
@@ -96,6 +97,8 @@ export default function AdminDashboard() {
   };
 
   const savePageTexts = async () => {
+    setSaveState('saving');
+    
     try {
       const response = await fetch('/api/admin/page-settings', {
         method: 'POST',
@@ -107,13 +110,19 @@ export default function AdminDashboard() {
       
       if (response.ok) {
         setPageTexts(editingTexts);
-        alert("Page texts saved successfully!");
+        setSaveState('saved');
+        
+        // Reset to idle state after 2 seconds
+        setTimeout(() => {
+          setSaveState('idle');
+        }, 2000);
       } else {
-        alert("Failed to save page texts");
+        setSaveState('idle');
+        console.error('Failed to save page texts');
       }
     } catch (error) {
       console.error('Error saving page settings:', error);
-      alert("Error saving page texts");
+      setSaveState('idle');
     }
   };
 
@@ -245,9 +254,28 @@ export default function AdminDashboard() {
 
                 <button
                   onClick={savePageTexts}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+                  disabled={saveState === 'saving'}
+                  className={`w-full font-bold py-3 px-6 rounded-lg transition-all duration-500 transform ${
+                    saveState === 'saving' 
+                      ? 'bg-yellow-500 hover:bg-yellow-600 text-white scale-105' 
+                      : saveState === 'saved'
+                      ? 'bg-green-500 hover:bg-green-600 text-white scale-105 shadow-lg'
+                      : 'bg-purple-600 hover:bg-purple-700 text-white scale-100'
+                  }`}
                 >
-                  Save Changes
+                  <div className="flex items-center justify-center space-x-2">
+                    {saveState === 'saving' && (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    )}
+                    {saveState === 'saved' && (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                    <span>
+                      {saveState === 'saving' ? 'Saving...' : saveState === 'saved' ? 'Saved!' : 'Save Changes'}
+                    </span>
+                  </div>
                 </button>
               </div>
             </div>
