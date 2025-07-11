@@ -10,7 +10,6 @@ export default function Home() {
   const [isChecking, setIsChecking] = useState(false);
   const [message, setMessage] = useState("");
   const [currentStep, setCurrentStep] = useState(0);
-  const [isVerified, setIsVerified] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -43,7 +42,6 @@ export default function Home() {
         if (data?.isTier3) {
           setMessage("Tier 3 subscription verified! Redirecting to form...");
           setCurrentStep(3);
-          setIsVerified(true);
           verificationSuccessful = true;
           setTimeout(() => {
             window.location.href = process.env.NEXT_PUBLIC_NOTION_FORM_URL || "#";
