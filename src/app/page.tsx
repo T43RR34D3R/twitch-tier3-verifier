@@ -4,14 +4,12 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import ProgressIndicator from "../components/ProgressIndicator";
-import Confetti from "../components/Confetti";
 
 export default function Home() {
   const { data: session, status } = useSession();
   const [isChecking, setIsChecking] = useState(false);
   const [message, setMessage] = useState("");
   const [currentStep, setCurrentStep] = useState(0);
-  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -42,7 +40,6 @@ export default function Home() {
         if (data?.isTier3) {
           setMessage("Tier 3 subscription verified! Redirecting to form...");
           setCurrentStep(3);
-          setShowConfetti(true);
           setTimeout(() => {
             window.location.href = process.env.NEXT_PUBLIC_NOTION_FORM_URL || "#";
           }, 3000);
@@ -167,9 +164,6 @@ export default function Home() {
             )}
           </div>
         )}
-        
-        {/* Confetti Animation */}
-        <Confetti show={showConfetti} />
       </div>
     </div>
   );
