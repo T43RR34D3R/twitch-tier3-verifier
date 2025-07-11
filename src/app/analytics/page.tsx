@@ -30,7 +30,13 @@ ChartJS.register(
 );
 
 interface AnalyticsSummary {
-  latest: any;
+  latest: {
+    follower_count: number;
+    subscriber_count: number;
+    tier1_subs: number;
+    tier2_subs: number;
+    tier3_subs: number;
+  } | null;
   totalStreamsLast30Days: number;
   totalStreamsLast7Days: number;
   avgViewersLast30Days: number;
@@ -62,10 +68,21 @@ export default function AnalyticsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
-  const [streamData, setStreamData] = useState<any[]>([]);
+  const [streamData, setStreamData] = useState<{
+    date: string;
+    average_viewers: number;
+    peak_viewers: number;
+    follower_count: number;
+    subscriber_count: number;
+    total_bits: number;
+  }[]>([]);
   const [growthData, setGrowthData] = useState<GrowthData | null>(null);
   const [subStats, setSubStats] = useState<SubStats | null>(null);
-  const [chatData, setChatData] = useState<any[]>([]);
+  const [chatData, setChatData] = useState<{
+    date: string;
+    total_messages: number;
+    unique_chatters: number;
+  }[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState(30);
 
   useEffect(() => {
@@ -78,7 +95,7 @@ export default function AnalyticsPage() {
     }
 
     loadAnalytics();
-  }, [session, status, router, selectedPeriod]);
+  }, [session, status, selectedPeriod]); // Removed router and added loadAnalytics dependency warning will be handled
 
   const loadAnalytics = async () => {
     setLoading(true);

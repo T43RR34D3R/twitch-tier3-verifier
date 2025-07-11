@@ -201,7 +201,7 @@ export async function getGrowthAnalytics(broadcasterId: string) {
 }
 
 // Mock data generator for testing (remove in production)
-export async function generateMockData(broadcasterId: string, broadcasterName: string) {
+export async function generateMockData(broadcasterId: string) {
   try {
     const analytics = await getStreamAnalytics(broadcasterId, 1)
     if (analytics.length > 0) {

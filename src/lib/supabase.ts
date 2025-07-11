@@ -88,7 +88,7 @@ export interface ChatAnalytics {
   total_messages: number
   unique_chatters: number
   average_messages_per_hour: number
-  top_chatters: any
-  most_used_emotes: any
+  top_chatters: Record<string, number> | null
+  most_used_emotes: Record<string, number> | null
   created_at?: string
 }
