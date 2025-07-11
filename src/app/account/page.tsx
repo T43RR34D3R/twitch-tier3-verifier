@@ -12,7 +12,7 @@ export default function AccountPage() {
     if (session) {
       update(); // This will refresh the session data
     }
-  }, [session, update]);
+  }, []); // Remove dependencies to prevent infinite loop
 
   if (status === "loading") {
     return (
@@ -43,11 +43,17 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-cover bg-center bg-no-repeat p-4 relative" style={{backgroundImage: 'url(/buckfoozle-bg.jpg)'}}>
-      {/* Optional overlay for better text readability */}
-      <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 p-4 relative">
+      {/* Backdrop blur and vignette overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-black/40 backdrop-blur-sm"></div>
+      <div 
+        className="absolute inset-0" 
+        style={{
+          background: 'radial-gradient(circle at center, transparent 0%, transparent 60%, rgba(0,0,0,0.3) 100%)'
+        }}
+      ></div>
       <div className="max-w-2xl mx-auto relative z-10">
-        <div className="bg-white rounded-xl shadow-2xl p-8">
+        <div className="bg-white rounded-xl shadow-2xl drop-shadow-2xl p-8">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-gray-800">Your Twitch Account</h1>
             <button
