@@ -56,13 +56,13 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 flex items-center justify-center p-4 relative">
+    <div className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 relative" style={{backgroundImage: 'url(/buckfoozle-bg.png)'}}>
       {/* Backdrop blur and vignette overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-black/40 backdrop-blur-sm"></div>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
       <div 
         className="absolute inset-0" 
         style={{
-          background: 'radial-gradient(circle at center, transparent 0%, transparent 60%, rgba(0,0,0,0.3) 100%)'
+          background: 'radial-gradient(circle at center, transparent 0%, transparent 60%, rgba(0,0,0,0.4) 100%)'
         }}
       ></div>
       <div className="max-w-md w-full bg-white rounded-xl shadow-2xl drop-shadow-2xl p-8 text-center relative z-10">

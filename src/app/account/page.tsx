@@ -43,19 +43,19 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 p-4 relative">
+    <div className="min-h-screen bg-cover bg-center bg-no-repeat p-4 relative" style={{backgroundImage: 'url(/buckfoozle-bg.png)'}}>
       {/* Backdrop blur and vignette overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-black/40 backdrop-blur-sm"></div>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
       <div 
         className="absolute inset-0" 
         style={{
-          background: 'radial-gradient(circle at center, transparent 0%, transparent 60%, rgba(0,0,0,0.3) 100%)'
+          background: 'radial-gradient(circle at center, transparent 0%, transparent 60%, rgba(0,0,0,0.4) 100%)'
         }}
       ></div>
       <div className="max-w-2xl mx-auto relative z-10">
         <div className="bg-white rounded-xl shadow-2xl drop-shadow-2xl p-8">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">Your Twitch Account</h1>
+            <h1 className="text-2xl font-bold text-black">Your Twitch Account</h1>
             <button
               onClick={() => signOut()}
               className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
@@ -77,13 +77,13 @@ export default function AccountPage() {
                 />
               )}
               <div>
-                <h2 className="text-xl font-semibold text-gray-800">
+                <h2 className="text-xl font-semibold text-black">
                   {session.user?.name || "TearReader"}
                 </h2>
-                <p className="text-gray-700">
+                <p className="text-black">
                   {session.user?.email || "uggeenholm@hotmail.com"}
                 </p>
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-black">
                   {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   User ID: {(session as any)?.user?.id || (session as any)?.sub || "441862265"}
                 </p>
@@ -92,7 +92,7 @@ export default function AccountPage() {
 
             {/* Session Data */}
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-gray-800 mb-2">Session Information</h3>
+              <h3 className="font-semibold text-black mb-2">Session Information</h3>
               <div className="space-y-2 text-sm">
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 <p><span className="font-medium">User ID:</span> {(session as any)?.user?.id || (session as any)?.sub || "Not available"}</p>
@@ -105,7 +105,7 @@ export default function AccountPage() {
 
             {/* Raw Session Data */}
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-gray-800 mb-2">Raw Session Data</h3>
+              <h3 className="font-semibold text-black mb-2">Raw Session Data</h3>
               <pre className="text-xs bg-gray-100 p-3 rounded overflow-auto max-h-64">
                 {JSON.stringify(session, null, 2)}
               </pre>
