@@ -39,20 +39,25 @@ export default function Confetti({ show, onComplete }: ConfettiProps) {
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
 
-  const createConfettiPiece = useCallback((id: number): ConfettiPiece => ({
-    id,
-    x: Math.random() * dimensions.width,
-    y: -Math.random() * 100 - 10, // Start above screen with some variation
-    color: colors[Math.floor(Math.random() * colors.length)],
-    rotation: Math.random() * 360,
-    scale: Math.random() * 0.6 + 0.4,
-    velocityX: (Math.random() - 0.5) * 6,
-    velocityY: Math.random() * 4 + 3,
-    rotationSpeed: (Math.random() - 0.5) * 15,
-  }), [dimensions.width, colors]);
+  const createConfettiPiece = useCallback((id: number): ConfettiPiece => {
+    // Use window dimensions directly if dimensions state isn't ready
+    const width = dimensions.width || (typeof window !== 'undefined' ? window.innerWidth : 1200);
+    
+    return {
+      id,
+      x: Math.random() * width,
+      y: -Math.random() * 100 - 10, // Start above screen with some variation
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+      scale: Math.random() * 0.6 + 0.4,
+      velocityX: (Math.random() - 0.5) * 6,
+      velocityY: Math.random() * 4 + 3,
+      rotationSpeed: (Math.random() - 0.5) * 15,
+    };
+  }, [dimensions.width, colors]);
 
   useEffect(() => {
-    if (show && dimensions.width > 0) {
+    if (show) {
       // Create more confetti pieces for better coverage
       const newPieces: ConfettiPiece[] = [];
       for (let i = 0; i < 100; i++) {
@@ -61,15 +66,16 @@ export default function Confetti({ show, onComplete }: ConfettiProps) {
       setPieces(newPieces);
 
       const interval = setInterval(() => {
-        setPieces(prev => 
-          prev.map(piece => ({
+        setPieces(prev => {
+          const maxHeight = dimensions.height || (typeof window !== 'undefined' ? window.innerHeight : 800);
+          return prev.map(piece => ({
             ...piece,
             x: piece.x + piece.velocityX,
             y: piece.y + piece.velocityY,
             rotation: piece.rotation + piece.rotationSpeed,
             velocityY: piece.velocityY + 0.15, // gravity
-          })).filter(piece => piece.y < dimensions.height + 100)
-        );
+          })).filter(piece => piece.y < maxHeight + 100);
+        });
       }, 16);
 
       const timeout = setTimeout(() => {
@@ -83,7 +89,7 @@ export default function Confetti({ show, onComplete }: ConfettiProps) {
         clearTimeout(timeout);
       };
     }
-  }, [show, onComplete, dimensions, createConfettiPiece]);
+  }, [show, onComplete, createConfettiPiece]);
 
   if (!show) return null;
 
