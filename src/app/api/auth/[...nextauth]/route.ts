@@ -158,6 +158,10 @@ const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       session.accessToken = token.accessToken
       session.error = token.error
+      // Expose the Twitch user ID in the session
+      if (session.user) {
+        session.user.id = token.sub as string
+      }
       return session
     },
   },

@@ -1,6 +1,17 @@
 -- Analytics Database Tables
 -- Run this in your Supabase SQL Editor to add analytics functionality
 
+-- Analytics Access Control
+CREATE TABLE IF NOT EXISTS analytics_access (
+  id BIGSERIAL PRIMARY KEY,
+  user_id TEXT NOT NULL UNIQUE,
+  user_name TEXT NOT NULL,
+  enabled BOOLEAN DEFAULT TRUE,
+  granted_by TEXT,
+  granted_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
 -- Stream Analytics Data
 CREATE TABLE IF NOT EXISTS stream_analytics (
   id BIGSERIAL PRIMARY KEY,

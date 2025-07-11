@@ -7,22 +7,31 @@ import {
   getGrowthAnalytics,
   getChatAnalytics 
 } from '@/lib/analytics'
+import { sql } from '@vercel/postgres'
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession()
     
-    if (!session?.user) {
+    if (!session?.user || !session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const broadcasterId = session.user.id
+
+    // Check if user has analytics access
+    const accessCheck = await sql`
+      SELECT enabled FROM analytics_access 
+      WHERE twitch_user_id = ${broadcasterId}
+    `
+    
+    if (accessCheck.rows.length === 0 || !accessCheck.rows[0].enabled) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
     const searchParams = request.nextUrl.searchParams
     const type = searchParams.get('type')
     const days = parseInt(searchParams.get('days') || '30')
-    
-    // For now, we'll use a test broadcaster ID
-    // In a real app, you'd have a way to determine if this user is a broadcaster
-    const broadcasterId = 'test_broadcaster'
 
     switch (type) {
       case 'summary':

@@ -92,3 +92,13 @@ export interface ChatAnalytics {
   most_used_emotes: Record<string, number> | null
   created_at?: string
 }
+
+export interface AnalyticsAccess {
+  id?: number
+  user_id: string
+  user_name: string
+  enabled: boolean
+  granted_by?: string
+  granted_at?: string
+  created_at?: string
+}
