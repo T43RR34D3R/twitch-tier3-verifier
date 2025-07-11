@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession, signIn } from "next-auth/react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
@@ -56,10 +56,16 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 relative" style={{backgroundImage: 'url(/buckfoozle-bg.jpg)'}}>
-      {/* Optional overlay for better text readability */}
-      <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-      <div className="max-w-md w-full bg-white rounded-xl shadow-2xl p-8 text-center relative z-10">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 flex items-center justify-center p-4 relative">
+      {/* Backdrop blur and vignette overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-black/40 backdrop-blur-sm"></div>
+      <div 
+        className="absolute inset-0" 
+        style={{
+          background: 'radial-gradient(circle at center, transparent 0%, transparent 60%, rgba(0,0,0,0.3) 100%)'
+        }}
+      ></div>
+      <div className="max-w-md w-full bg-white rounded-xl shadow-2xl drop-shadow-2xl p-8 text-center relative z-10">
         <div className="mb-8">
           <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -123,12 +129,23 @@ export default function Home() {
             )}
 
             {message && (
-              <div className={`p-4 rounded-lg mb-4 ${
-                message.includes("verified") || message.includes("confirmed") 
-                  ? "bg-green-100 text-green-800" 
-                  : "bg-red-100 text-red-800"
-              }`}>
-                {message}
+              <div>
+                <div className={`p-4 rounded-lg mb-4 ${
+                  message.includes("verified") || message.includes("confirmed") 
+                    ? "bg-green-100 text-green-800" 
+                    : "bg-red-100 text-red-800"
+                }`}>
+                  {message}
+                </div>
+                {/* Show sign out button when verification fails */}
+                {!message.includes("verified") && !message.includes("confirmed") && !message.includes("checking") && (
+                  <button
+                    onClick={() => signOut()}
+                    className="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors mt-2"
+                  >
+                    Sign Out & Try Different Account
+                  </button>
+                )}
               </div>
             )}
           </div>
