@@ -103,6 +103,6 @@ function getDefaultPageSettings(): PageSettings {
     title: "Tier 3 Verification",
     subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
     sign_in_text: "Please sign in with your Twitch account to verify your subscription status.",
-    steps: ["Signed In", "Checking Follow", "Checking Tier 3", "Verified"]
+    steps: ["Signed In", "Verifying Account", "Checking Tier 3", "Verified"]
   }
 }

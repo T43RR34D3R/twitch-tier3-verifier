@@ -21,75 +21,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "User ID not found in token" }, { status: 400 })
     }
 
-    // Use broadcaster ID directly from environment
-    const broadcasterId = process.env.TWITCH_CHANNEL_ID!
+    console.log("Performing fake follow check for user:", token.sub);
+
+    // Simulate a brief delay for the "check"
+    await new Promise(resolve => setTimeout(resolve, 800));
     
-    if (!broadcasterId) {
-      return NextResponse.json({ error: "Channel ID not configured" }, { status: 500 })
-    }
-
-    console.log("Checking follow status:", {
-      userId: token.sub,
-      broadcasterId: broadcasterId
+    // Always return success - this is now a fake check
+    return NextResponse.json({ 
+      isFollowing: true, 
+      message: `Welcome ${token.name || 'to the verification process'}! Moving to subscription check...`
     })
-
-    // Check if user is following the channel using direct API call
-    try {
-      const response = await fetch(
-        `https://api.twitch.tv/helix/channels/followed?user_id=${token.sub}&broadcaster_id=${broadcasterId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token.accessToken}`,
-            'Client-Id': process.env.TWITCH_CLIENT_ID!,
-          },
-        }
-      );
-
-      console.log("Follow API response status:", response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log("Follow API error:", errorText);
-        
-        // If token is invalid, return a special error to force re-authentication
-        if (response.status === 401) {
-          return NextResponse.json({ 
-            error: "Invalid token", 
-            forceReauth: true,
-            message: "Your session has expired. Please sign in again."
-          }, { status: 401 });
-        }
-        
-        throw new Error(`API request failed: ${response.status} - ${errorText}`);
-      }
-
-      const followData = await response.json();
-      console.log("Follow API response:", followData);
-      
-      if (followData.data && followData.data.length > 0) {
-        const follow = followData.data[0];
-        return NextResponse.json({ 
-          isFollowing: true, 
-          followedAt: follow.followed_at,
-          message: `You are following ${process.env.TWITCH_CHANNEL_NAME || 'the channel'} since ${new Date(follow.followed_at).toDateString()}!`
-        })
-      } else {
-        return NextResponse.json({ 
-          isFollowing: false, 
-          message: `You are not following ${process.env.TWITCH_CHANNEL_NAME || 'the channel'}`
-        })
-      }
-      
-    } catch (followError) {
-      console.log("Follow check failed:", followError);
-      return NextResponse.json({ 
-        isFollowing: false, 
-        message: "Unable to verify follow status"
-      })
-    }
     
   } catch (error) {
-    console.error("Error checking follow status:", error)
+    console.error("Error in fake follow check:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

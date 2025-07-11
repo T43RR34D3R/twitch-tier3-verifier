@@ -45,7 +45,7 @@ export default function Home() {
               title: "Tier 3 Verification",
               subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
               signInText: "Please sign in with your Twitch account to verify your subscription status.",
-              steps: ["Signed In", "Checking Follow", "Checking Tier 3", "Verified"]
+              steps: ["Signed In", "Verifying Account", "Checking Tier 3", "Verified"]
             });
           }
         } else {
@@ -54,7 +54,7 @@ export default function Home() {
             title: "Tier 3 Verification",
             subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
             signInText: "Please sign in with your Twitch account to verify your subscription status.",
-            steps: ["Signed In", "Checking Follow", "Checking Tier 3", "Verified"]
+            steps: ["Signed In", "Verifying Account", "Checking Tier 3", "Verified"]
           });
         }
       } catch (error) {
@@ -64,7 +64,7 @@ export default function Home() {
           title: "Tier 3 Verification",
           subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
           signInText: "Please sign in with your Twitch account to verify your subscription status.",
-          steps: ["Signed In", "Checking Follow", "Checking Tier 3", "Verified"]
+          steps: ["Signed In", "Verifying Account", "Checking Tier 3", "Verified"]
         });
       } finally {
         setPageTextsLoaded(true);
@@ -101,13 +101,13 @@ export default function Home() {
         }
         
         if (data.isFollowing) {
-          setMessage("Following confirmed! Now checking Tier 3 subscription...");
+          setMessage(data.message || "Account verified! Now checking Tier 3 subscription...");
           setCurrentStep(2);
-          // If following, then check subscription
+          // Move to subscription check
           return fetch("/api/check-tier3");
         } else {
-          setMessage(data.message || "You need to follow the channel first.");
-          throw new Error("Not following");
+          setMessage(data.message || "Verification failed. Please try again.");
+          throw new Error("Verification failed");
         }
       })
       .then((res) => res?.json())
