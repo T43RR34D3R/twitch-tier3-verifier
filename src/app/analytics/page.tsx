@@ -1,4 +1,5 @@
 "use client";
+// Analytics dashboard with comprehensive charts
 
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useCallback } from "react";
