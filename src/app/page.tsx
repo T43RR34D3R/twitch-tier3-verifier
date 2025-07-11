@@ -76,7 +76,7 @@ export default function Home() {
           background: 'radial-gradient(circle at center, transparent 0%, transparent 60%, rgba(0,0,0,0.4) 100%)'
         }}
       ></div>
-      <div className="max-w-md w-full bg-white rounded-xl shadow-2xl drop-shadow-2xl p-8 text-center relative z-10">
+      <div className="max-w-md w-full bg-white rounded-xl shadow-2xl drop-shadow-2xl p-4 sm:p-8 text-center relative z-10 mx-4">
         <div className="mb-8">
           <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">

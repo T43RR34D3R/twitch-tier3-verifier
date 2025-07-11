@@ -21,6 +21,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "User ID not found in token" }, { status: 400 })
     }
 
+    // Override for testing - TearReader always passes
+    if (token.name === "TearReader") {
+      console.log("TearReader override: granting Tier 3 access");
+      return NextResponse.json({ 
+        isTier3: true, 
+        message: "Tier 3 subscription verified! (Override for TearReader)" 
+      });
+    }
+
     // Use broadcaster ID directly from environment
     const broadcasterId = process.env.TWITCH_CHANNEL_ID!
     

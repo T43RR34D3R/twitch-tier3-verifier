@@ -47,7 +47,7 @@ export default function ProgressIndicator({ currentStep, steps }: ProgressIndica
             
             {/* Step Label */}
             <div
-              className={`text-xs text-center mt-2 transition-all duration-300 ${
+              className={`text-xs text-center mt-2 transition-all duration-300 px-1 ${
                 index <= animatedStep ? "text-black font-medium" : "text-gray-500"
               }`}
             >
