@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Twitch Tier 3 Verifier",
-  description: "Verify your Tier 3 subscription to access exclusive content",
+  description: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
 };
 
 export default function RootLayout({

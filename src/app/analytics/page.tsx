@@ -423,12 +423,20 @@ export default function AnalyticsPage() {
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4">
               <h1 className="text-3xl font-bold text-black">Stream Analytics Dashboard</h1>
-              <button
-                onClick={() => router.push('/')}
-                className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-              >
-                Back to Main
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => router.push('/analytics_test')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                >
+                  View Test Data
+                </button>
+                <button
+                  onClick={() => router.push('/')}
+                  className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                >
+                  Back to Main
+                </button>
+              </div>
             </div>
             <div className="flex gap-4 mb-4">
               <select

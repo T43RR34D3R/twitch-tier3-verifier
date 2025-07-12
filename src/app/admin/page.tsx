@@ -20,6 +20,15 @@ interface PageTexts {
   steps: string[];
 }
 
+interface AnalyticsAccess {
+  user_id: string;
+  user_name: string;
+  enabled: boolean;
+  granted_by: string;
+  granted_at: string;
+  created_at: string;
+}
+
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -34,6 +43,10 @@ export default function AdminDashboard() {
   });
   const [editingTexts, setEditingTexts] = useState<PageTexts>(pageTexts);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [analyticsAccess, setAnalyticsAccess] = useState<AnalyticsAccess[]>([]);
+  const [newUserId, setNewUserId] = useState('');
+  const [newUserName, setNewUserName] = useState('');
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -52,6 +65,7 @@ export default function AdminDashboard() {
           // Load verification logs and page texts here
           loadVerificationLogs();
           loadPageTexts();
+          loadAnalyticsAccess();
         } else {
           router.push("/");
         }
@@ -123,6 +137,116 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error saving page settings:', error);
       setSaveState('idle');
+    }
+  };
+
+  const loadAnalyticsAccess = async () => {
+    try {
+      const response = await fetch('/api/admin/analytics-access');
+      if (response.ok) {
+        const data = await response.json();
+        setAnalyticsAccess(data.accessList || []);
+      } else {
+        console.error('Failed to load analytics access list');
+      }
+    } catch (error) {
+      console.error('Error loading analytics access:', error);
+    }
+  };
+
+  const addAnalyticsAccess = async () => {
+    if (!newUserId) {
+      alert('Please enter a User ID');
+      return;
+    }
+
+    setAnalyticsLoading(true);
+    try {
+      const response = await fetch('/api/admin/analytics-access', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'add',
+          userId: newUserId,
+          userName: newUserName,
+        }),
+      });
+
+      if (response.ok) {
+        setNewUserId('');
+        setNewUserName('');
+        loadAnalyticsAccess();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to add user to analytics access');
+      }
+    } catch (error) {
+      console.error('Error adding analytics access:', error);
+      alert('Error adding user to analytics access');
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  const toggleAnalyticsAccess = async (userId: string) => {
+    setAnalyticsLoading(true);
+    try {
+      const response = await fetch('/api/admin/analytics-access', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'toggle',
+          userId: userId,
+        }),
+      });
+
+      if (response.ok) {
+        loadAnalyticsAccess();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to toggle user access');
+      }
+    } catch (error) {
+      console.error('Error toggling analytics access:', error);
+      alert('Error toggling user access');
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  const removeAnalyticsAccess = async (userId: string) => {
+    if (!confirm('Are you sure you want to remove this user from analytics access?')) {
+      return;
+    }
+
+    setAnalyticsLoading(true);
+    try {
+      const response = await fetch('/api/admin/analytics-access', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'remove',
+          userId: userId,
+        }),
+      });
+
+      if (response.ok) {
+        loadAnalyticsAccess();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to remove user from analytics access');
+      }
+    } catch (error) {
+      console.error('Error removing analytics access:', error);
+      alert('Error removing user from analytics access');
+    } finally {
+      setAnalyticsLoading(false);
     }
   };
 
@@ -302,6 +426,96 @@ export default function AdminDashboard() {
                 {Math.round((verificationLogs.filter(log => log.success).length / Math.max(verificationLogs.length, 1)) * 100)}%
               </div>
               <div className="text-blue-600">Success Rate</div>
+            </div>
+          </div>
+
+          {/* Analytics Access Management */}
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold text-black mb-6">Analytics Access Management</h2>
+            
+            {/* Add New User */}
+            <div className="bg-gray-50 rounded-lg p-6 mb-6">
+              <h3 className="text-lg font-semibold text-black mb-4">Add User to Analytics Whitelist</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">Twitch User ID</label>
+                  <input
+                    type="text"
+                    value={newUserId}
+                    onChange={(e) => setNewUserId(e.target.value)}
+                    placeholder="e.g., 123456789"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-black"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-black mb-1">Twitch Username (Optional)</label>
+                  <input
+                    type="text"
+                    value={newUserName}
+                    onChange={(e) => setNewUserName(e.target.value)}
+                    placeholder="e.g., username (optional)"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-black"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={addAnalyticsAccess}
+                    disabled={analyticsLoading}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {analyticsLoading ? 'Adding...' : 'Add User'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Current Access List */}
+            <div className="bg-gray-50 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-black mb-4">Current Analytics Access</h3>
+              {analyticsAccess.length === 0 ? (
+                <p className="text-black">No users have analytics access yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {analyticsAccess.map((access) => (
+                    <div key={access.user_id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                      <div className="flex-1">
+                        <div className="font-medium text-black">{access.user_name}</div>
+                        <div className="text-sm text-gray-600">ID: {access.user_id}</div>
+                        <div className="text-xs text-gray-500">
+                          Granted: {new Date(access.granted_at).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          access.enabled 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {access.enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                        <button
+                          onClick={() => toggleAnalyticsAccess(access.user_id)}
+                          disabled={analyticsLoading}
+                          className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+                            access.enabled
+                              ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                              : 'bg-green-500 hover:bg-green-600 text-white'
+                          }`}
+                        >
+                          {access.enabled ? 'Disable' : 'Enable'}
+                        </button>
+                        <button
+                          onClick={() => removeAnalyticsAccess(access.user_id)}
+                          disabled={analyticsLoading}
+                          className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
