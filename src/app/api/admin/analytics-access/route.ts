@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const { action, userId, userName } = await request.json()
+    const { action, userId, userName: requestUserName } = await request.json()
 
     switch (action) {
       case 'add':
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Use provided username or default to 'Unknown User'
-        const displayName = userName || 'Unknown User'
+        const displayName = requestUserName || 'Unknown User'
 
         // Add user to analytics access
         const { error: insertError } = await supabase
