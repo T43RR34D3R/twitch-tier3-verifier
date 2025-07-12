@@ -77,7 +77,15 @@ export default function Home() {
     if (status === "loading") return;
 
     if (!session) {
-      // Don't auto-sign in, let user click the button
+      // Clear any existing state when user is signed out
+      setMessage("");
+      setCurrentStep(0);
+      setIsChecking(false);
+      return;
+    }
+
+    // Only proceed with verification if user is actually authenticated
+    if (status !== "authenticated") {
       return;
     }
 
@@ -179,6 +187,16 @@ export default function Home() {
           background: 'radial-gradient(circle at center, transparent 0%, transparent 60%, rgba(0,0,0,0.4) 100%)'
         }}
       ></div>
+      
+      {/* Persistent Sign Out Button */}
+      {session && (
+        <button
+          onClick={() => signOut()}
+          className="absolute top-4 right-4 z-20 bg-white/90 hover:bg-white text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors shadow-lg"
+        >
+          Sign Out
+        </button>
+      )}
       <div className="max-w-md w-full bg-white rounded-xl shadow-2xl drop-shadow-2xl p-4 sm:p-8 text-center relative z-10 mx-4">
         <div className="mb-8">
           <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
