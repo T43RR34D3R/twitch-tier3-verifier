@@ -270,19 +270,19 @@ export default function FollowersPage() {
           {stats && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <div className="bg-purple-50 rounded-lg p-6">
-                <div className="text-2xl font-bold text-purple-700">{stats.totalFollowers.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-purple-700">{(stats.totalFollowers ?? 0).toLocaleString()}</div>
                 <div className="text-purple-600">Total Followers</div>
               </div>
               <div className="bg-green-50 rounded-lg p-6">
-                <div className="text-2xl font-bold text-green-700">{stats.followersLast7Days.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-green-700">{(stats.followersLast7Days ?? 0).toLocaleString()}</div>
                 <div className="text-green-600">New Followers (7d)</div>
               </div>
               <div className="bg-blue-50 rounded-lg p-6">
-                <div className="text-2xl font-bold text-blue-700">{stats.followersLast30Days.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-blue-700">{(stats.followersLast30Days ?? 0).toLocaleString()}</div>
                 <div className="text-blue-600">New Followers (30d)</div>
               </div>
               <div className="bg-orange-50 rounded-lg p-6">
-                <div className="text-2xl font-bold text-orange-700">{stats.averageFollowersPerDay.toFixed(1)}</div>
+                <div className="text-2xl font-bold text-orange-700">{(stats.averageFollowersPerDay ?? 0).toFixed(1)}</div>
                 <div className="text-orange-600">Avg per Day</div>
               </div>
             </div>
