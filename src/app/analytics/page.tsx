@@ -94,6 +94,7 @@ interface SubscriberData {
   };
 }
 
+
 export default function AnalyticsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -498,6 +499,14 @@ export default function AnalyticsPage() {
                   <div className="text-sm text-purple-500 mt-1">
                     {growthData.followerGrowth >= 0 ? '+' : ''}{growthData.followerGrowth} ({growthData.followerGrowthPercentage}%) last 30 days
                   </div>
+                )}
+                {summary.latest?.follower_count && summary.latest.follower_count > 0 && (
+                  <button
+                    onClick={() => router.push('/followers')}
+                    className="mt-3 w-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium py-2 px-3 rounded-md transition-colors"
+                  >
+                    View Followers
+                  </button>
                 )}
               </div>
 
