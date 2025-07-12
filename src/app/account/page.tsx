@@ -7,12 +7,12 @@ import Image from "next/image";
 export default function AccountPage() {
   const { data: session, status, update } = useSession();
 
-  // Force session refresh when component mounts
+  // Force session refresh when component mounts (only once)
   useEffect(() => {
     if (session) {
       update(); // This will refresh the session data
     }
-  }, [session, update]); // Add dependencies
+  }, []); // Empty dependency array to run only once
 
   if (status === "loading") {
     return (

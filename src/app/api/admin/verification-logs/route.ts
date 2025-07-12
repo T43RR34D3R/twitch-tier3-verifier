@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { getVerificationLogs, addVerificationLog } from "@/lib/database"
 
+const ADMIN_USERS = ["TearReader", "BuckFoozle"];
+
 export async function GET(request: NextRequest) {
   try {
     const token = await getToken({ req: request })
@@ -10,8 +12,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    // Check if user is admin (only TearReader for now)
-    if (token.name !== "TearReader") {
+    // Check if user is admin
+    const userName = token.name;
+    const isAdmin = ADMIN_USERS.includes(userName || "");
+    
+    if (!isAdmin) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 })
     }
 
