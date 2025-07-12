@@ -1,9 +1,10 @@
 "use client";
 // Analytics dashboard with comprehensive charts
 
-import { useSession, signOut } from "next-auth/react";
-import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { Line, Bar, Doughnut } from "react-chartjs-2";
 import {
   CategoryScale,
@@ -448,9 +449,11 @@ export default function AnalyticsPage() {
             <div className="flex items-center justify-between mb-4 p-4 bg-purple-50 rounded-lg">
               <div className="flex items-center space-x-3">
                 {session.user?.image && (
-                  <img
+                  <Image
                     src={session.user.image}
                     alt={session.user.name || "User"}
+                    width={40}
+                    height={40}
                     className="w-10 h-10 rounded-full"
                   />
                 )}
