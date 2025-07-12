@@ -7,11 +7,12 @@ import {
   getGrowthAnalytics,
   getChatAnalytics 
 } from '@/lib/analytics'
-import { sql } from '@vercel/postgres'
+import { supabase } from '@/lib/supabase'
+import { authOptions } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     
     if (!session?.user || !session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -20,12 +21,13 @@ export async function GET(request: NextRequest) {
     const broadcasterId = session.user.id
 
     // Check if user has analytics access
-    const accessCheck = await sql`
-      SELECT enabled FROM analytics_access 
-      WHERE twitch_user_id = ${broadcasterId}
-    `
+    const { data: accessCheck } = await supabase
+      .from('analytics_access')
+      .select('enabled')
+      .eq('user_id', broadcasterId)
+      .single()
     
-    if (accessCheck.rows.length === 0 || !accessCheck.rows[0].enabled) {
+    if (!accessCheck || !accessCheck.enabled) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
@@ -57,40 +59,66 @@ export async function GET(request: NextRequest) {
       case 'subscriber_list':
         const searchQuery = searchParams.get('search') || ''
         const tierFilter = searchParams.get('tier')
-        const sortBy = searchParams.get('sort') || 'date_subscribed'
+        const sortBy = searchParams.get('sort') || 'created_at'
         const sortOrder = searchParams.get('order') || 'desc'
         
-        let query = `
-          SELECT 
-            username,
-            tier,
-            is_gift,
-            gift_from,
-            date_subscribed,
-            months_subscribed
-          FROM subscription_history 
-          WHERE broadcaster_id = $1
-        `
-        
-        const queryParams = [broadcasterId]
+        let query = supabase
+          .from('subscription_history')
+          .select('*')
+          .eq('broadcaster_id', broadcasterId)
         
         if (searchQuery) {
-          query += ` AND LOWER(username) LIKE $${queryParams.length + 1}`
-          queryParams.push(`%${searchQuery.toLowerCase()}%`)
+          query = query.or(`subscriber_name.ilike.%${searchQuery}%,gifter_name.ilike.%${searchQuery}%`)
         }
         
         if (tierFilter) {
-          query += ` AND tier = $${queryParams.length + 1}`
-          queryParams.push(tierFilter)
+          query = query.eq('tier', parseInt(tierFilter))
         }
         
-        query += ` ORDER BY ${sortBy} ${sortOrder.toUpperCase()}`
+        query = query.order(sortBy, { ascending: sortOrder === 'asc' })
         
-        const subscriberResult = await sql.query(query, queryParams)
+        const { data: subscriberResult, error } = await query
+        
+        if (error) {
+          console.error('Error fetching subscriber list:', error)
+          return NextResponse.json({ error: 'Failed to fetch subscriber data' }, { status: 500 })
+        }
+        
+        // Calculate estimated earnings
+        const tier1_count = subscriberResult?.filter(s => s.tier === 1000).length || 0
+        const tier2_count = subscriberResult?.filter(s => s.tier === 2000).length || 0
+        const tier3_count = subscriberResult?.filter(s => s.tier === 3000).length || 0
+        
+        const estimated_earnings = {
+          tier1: tier1_count * 2.5, // Approximate earnings after platform cut
+          tier2: tier2_count * 5.0,
+          tier3: tier3_count * 12.5,
+          total: (tier1_count * 2.5) + (tier2_count * 5.0) + (tier3_count * 12.5)
+        }
         
         return NextResponse.json({ 
-          subscribers: subscriberResult.rows,
-          total: subscriberResult.rows.length 
+          data: {
+            subscribers: subscriberResult?.map(sub => ({
+              id: sub.id,
+              user_id: sub.subscriber_id,
+              username: sub.subscriber_name,
+              display_name: sub.subscriber_name,
+              tier: sub.tier.toString(),
+              subscribed_at: sub.created_at,
+              is_gift: sub.is_gift,
+              gifter_id: sub.gifter_id,
+              gifter_username: sub.gifter_name,
+              gifter_display_name: sub.gifter_name,
+              months_total: sub.cumulative_months,
+              months_streak: sub.streak_months,
+              cumulative_months: sub.cumulative_months
+            })) || [],
+            total: subscriberResult?.length || 0,
+            tier1_count,
+            tier2_count,
+            tier3_count,
+            estimated_earnings
+          }
         })
 
       default:
