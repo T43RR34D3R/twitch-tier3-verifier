@@ -1,24 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
+import { getToken } from 'next-auth/jwt'
 import { supabase } from '../../../../lib/supabase'
-import { authOptions } from '../../../../lib/auth'
 
-export async function GET() {
+const ADMIN_USERS = ["TearReader", "BuckFoozle"];
+
+export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const token = await getToken({ req: request })
     
-    if (!session?.user?.id) {
+    if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Check if user is admin
-    const { data: adminCheck } = await supabase
-      .from('users')
-      .select('is_admin')
-      .eq('twitch_user_id', session.user.id)
-      .single()
+    const userName = token.name;
+    const isAdmin = ADMIN_USERS.includes(userName || "");
     
-    if (!adminCheck?.is_admin) {
+    if (!isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
@@ -41,20 +39,17 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const token = await getToken({ req: request })
     
-    if (!session?.user?.id) {
+    if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Check if user is admin
-    const { data: adminCheck } = await supabase
-      .from('users')
-      .select('is_admin')
-      .eq('twitch_user_id', session.user.id)
-      .single()
+    const userName = token.name;
+    const isAdmin = ADMIN_USERS.includes(userName || "");
     
-    if (!adminCheck?.is_admin) {
+    if (!isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
@@ -87,7 +82,7 @@ export async function POST(request: NextRequest) {
             user_id: userId,
             user_name: displayName,
             enabled: true,
-            granted_by: session.user.id
+            granted_by: token.sub
           })
 
         if (insertError) {
