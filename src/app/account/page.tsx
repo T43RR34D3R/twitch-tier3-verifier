@@ -12,7 +12,7 @@ export default function AccountPage() {
     if (session) {
       update(); // This will refresh the session data
     }
-  }, []); // Empty dependency array to run only once
+  }, [session, update]); // Include dependencies
 
   if (status === "loading") {
     return (

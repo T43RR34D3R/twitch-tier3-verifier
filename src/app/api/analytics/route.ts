@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { 
-  getAnalyticsSummary, 
-  getStreamAnalytics, 
-  getSubscriptionStats,
-  getGrowthAnalytics,
-  getChatAnalytics 
-} from '@/lib/analytics'
 import { supabase } from '@/lib/supabase'
 import { authOptions } from '@/lib/auth'
+import { ApiClient } from '@twurple/api'
+import { StaticAuthProvider } from '@twurple/auth'
+
+// Initialize Twitch API client with user token
+const getApiClient = (accessToken: string) => {
+  const authProvider = new StaticAuthProvider(
+    process.env.TWITCH_CLIENT_ID!,
+    accessToken
+  )
+  return new ApiClient({ authProvider })
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,30 +35,127 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
+    // Get user's access token from session
+    if (!session.accessToken) {
+      return NextResponse.json({ error: 'No access token available' }, { status: 401 })
+    }
+
     const searchParams = request.nextUrl.searchParams
     const type = searchParams.get('type')
-    const days = parseInt(searchParams.get('days') || '30')
+    const apiClient = getApiClient(session.accessToken)
 
     switch (type) {
       case 'summary':
-        const summary = await getAnalyticsSummary(broadcasterId)
-        return NextResponse.json({ summary })
+        try {
+          // Get channel info
+          // const channel = await apiClient.channels.getChannelInfoById(broadcasterId)
+          const user = await apiClient.users.getUserById(broadcasterId)
+          
+          // Get current stream if live
+          const stream = await apiClient.streams.getStreamByUserId(broadcasterId)
+          
+          // Get follower count (requires special scope, may not work)
+          let followerCount = 0
+          try {
+            const followers = await apiClient.channels.getChannelFollowerCount(broadcasterId)
+            followerCount = followers
+          } catch (error) {
+            console.log('Follower count not available:', error)
+          }
+          
+          // Get subscriber count (requires broadcaster token, may not work with app token)
+          const subscriberCount = 0
+          try {
+            // const subs = await apiClient.subscriptions.getSubscriptions(broadcasterId, { limit: 1 })
+            // This will likely fail with app token, we'd need user token
+          } catch (error) {
+            console.log('Subscriber count not available:', error)
+          }
+          
+          const summary = {
+            latest: {
+              follower_count: followerCount,
+              subscriber_count: subscriberCount,
+              tier1_subs: 0, // Would need EventSub for real data
+              tier2_subs: 0,
+              tier3_subs: 0
+            },
+            totalStreamsLast30Days: 0, // Would need to track over time
+            totalStreamsLast7Days: 0,
+            avgViewersLast30Days: stream?.viewers || 0,
+            peakViewersLast30Days: stream?.viewers || 0,
+            totalBitsLast30Days: 0, // Would need EventSub
+            totalStreamTimeLast30Days: 0, // Would need to track over time
+            currentStream: stream ? {
+              title: stream.title,
+              game: stream.gameName,
+              viewers: stream.viewers,
+              startedAt: stream.startDate,
+              isLive: true
+            } : null,
+            channelInfo: {
+              displayName: user?.displayName,
+              description: user?.description,
+              profilePictureUrl: user?.profilePictureUrl,
+              createdAt: user?.creationDate
+            }
+          }
+          
+          return NextResponse.json({ summary })
+        } catch (error) {
+          console.error('Error fetching channel summary:', error)
+          return NextResponse.json({ error: 'Failed to fetch channel data' }, { status: 500 })
+        }
 
       case 'stream':
-        const streamData = await getStreamAnalytics(broadcasterId, days)
-        return NextResponse.json({ data: streamData })
+        try {
+          // For stream analytics over time, we'd need to store data or use Twitch Analytics API
+          // For now, return current stream data
+          const stream = await apiClient.streams.getStreamByUserId(broadcasterId)
+          const streamData = stream ? [{
+            date: new Date().toISOString().split('T')[0],
+            average_viewers: stream.viewers,
+            peak_viewers: stream.viewers,
+            follower_count: 0, // Would need to track over time
+            subscriber_count: 0, // Would need to track over time
+            total_bits: 0 // Would need EventSub
+          }] : []
+          
+          return NextResponse.json({ data: streamData })
+        } catch (error) {
+          console.error('Error fetching stream data:', error)
+          return NextResponse.json({ data: [] })
+        }
 
       case 'subscriptions':
-        const subStats = await getSubscriptionStats(broadcasterId)
-        return NextResponse.json({ stats: subStats })
+        // Subscription stats would require EventSub or user access token
+        return NextResponse.json({ 
+          stats: {
+            newSubs: 0,
+            reSubs: 0,
+            gifts: 0,
+            tier1: 0,
+            tier2: 0,
+            tier3: 0,
+            total: 0
+          }
+        })
 
       case 'growth':
-        const growth = await getGrowthAnalytics(broadcasterId)
-        return NextResponse.json({ growth })
+        // Growth analytics would need historical data tracking
+        return NextResponse.json({ 
+          growth: {
+            followerGrowth: 0,
+            subscriberGrowth: 0,
+            tier3Growth: 0,
+            followerGrowthPercentage: '0.0',
+            subscriberGrowthPercentage: '0.0'
+          }
+        })
 
       case 'chat':
-        const chatData = await getChatAnalytics(broadcasterId, days)
-        return NextResponse.json({ data: chatData })
+        // Chat analytics would need EventSub for real-time chat data
+        return NextResponse.json({ data: [] })
 
       case 'subscriber_list':
         const searchQuery = searchParams.get('search') || ''
