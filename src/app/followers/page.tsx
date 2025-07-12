@@ -53,6 +53,7 @@ export default function FollowersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [followers, setFollowers] = useState<Follower[]>([]);
   const [stats, setStats] = useState<FollowerStats | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -67,10 +68,22 @@ export default function FollowersPage() {
     try {
       // Load follower statistics
       const statsResponse = await fetch('/api/analytics?type=follower_stats');
+      
+      if (statsResponse.status === 403) {
+        setAccessDenied(true);
+        return;
+      }
+      
       const statsData = await statsResponse.json();
       
       // Load follower list
       const followersResponse = await fetch('/api/analytics?type=followers');
+      
+      if (followersResponse.status === 403) {
+        setAccessDenied(true);
+        return;
+      }
+      
       const followersData = await followersResponse.json();
       
       if (statsData) {
@@ -234,6 +247,26 @@ export default function FollowersPage() {
       },
     },
   };
+
+  if (accessDenied) {
+    return (
+      <div className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center" style={{backgroundImage: 'url(/buckfoozle-bg.png)'}}>
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+        <div className="bg-white rounded-xl shadow-2xl p-8 relative z-10">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded max-w-md">
+            <h2 className="text-lg font-bold mb-2">Access Denied</h2>
+            <p className="mb-4">You don&apos;t have permission to view analytics data.</p>
+            <button
+              onClick={() => window.location.href = '/'}
+              className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+            >
+              Back to Main App
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
