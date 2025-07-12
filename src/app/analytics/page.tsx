@@ -122,6 +122,7 @@ export default function AnalyticsPage() {
   const [subscriberPage, setSubscriberPage] = useState(1);
   const [subscriberSortBy, setSubscriberSortBy] = useState<'username' | 'subscribed_at' | 'tier' | 'months_total'>('subscribed_at');
   const [subscriberSortOrder, setSubscriberSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [accessDenied, setAccessDenied] = useState(false);
   const subscribersPerPage = 20;
 
   const loadAnalytics = useCallback(async () => {
@@ -135,6 +136,12 @@ export default function AnalyticsPage() {
         fetch(`/api/analytics?type=chat&days=${selectedPeriod}`),
         fetch('/api/analytics?type=subscriber_list'),
       ]);
+
+      // Check if any request returned 403 (access denied)
+      if (summaryRes.status === 403) {
+        setAccessDenied(true);
+        return;
+      }
 
       const summaryData = await summaryRes.json();
       const streamResult = await streamRes.json();
@@ -167,6 +174,21 @@ export default function AnalyticsPage() {
 
     loadAnalytics();
   }, [session, status, selectedPeriod, loadAnalytics]);
+
+  if (accessDenied) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
+        <p className="mb-4">You do not have permission to access this page.</p>
+        <button
+          onClick={() => router.push('/')}
+          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          Back to Main App
+        </button>
+      </div>
+    );
+  }
 
   const getViewerChartData = () => {
     if (!streamData.length) return { labels: [], datasets: [] };

@@ -24,16 +24,16 @@ export async function GET(request: NextRequest) {
 
     const broadcasterId = session.user.id
 
-    // Check if user has analytics access (temporarily disabled for testing)
-    // const { data: accessCheck } = await supabase
-    //   .from('analytics_access')
-    //   .select('enabled')
-    //   .eq('user_id', broadcasterId)
-    //   .single()
-    // 
-    // if (!accessCheck || !accessCheck.enabled) {
-    //   return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-    // }
+    // Check if user has analytics access
+    const { data: accessCheck } = await supabase
+      .from('analytics_access')
+      .select('enabled')
+      .eq('user_id', broadcasterId)
+      .single()
+    
+    if (!accessCheck || !accessCheck.enabled) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
 
     // Get user's access token from session
     if (!session.accessToken) {

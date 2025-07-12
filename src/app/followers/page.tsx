@@ -73,13 +73,13 @@ export default function FollowersPage() {
       const followersResponse = await fetch('/api/analytics?type=followers');
       const followersData = await followersResponse.json();
       
-      if (statsData.success) {
-        setStats(statsData.data);
+      if (statsData) {
+        setStats(statsData);
       }
       
-      if (followersData.success) {
-        setFollowers(followersData.data.followers || []);
-        setTotalFollowers(followersData.data.total || 0);
+      if (followersData) {
+        setFollowers(followersData.followers || []);
+        setTotalFollowers(followersData.total || 0);
       }
     } catch (error) {
       console.error('Error loading followers:', error);
@@ -92,7 +92,7 @@ export default function FollowersPage() {
     if (status === "loading") return;
     
     if (!session) {
-      router.push('/analytics');
+      router.push('/auth/signin');
       return;
     }
 
