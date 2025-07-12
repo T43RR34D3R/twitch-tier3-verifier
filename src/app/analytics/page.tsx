@@ -1,7 +1,7 @@
 "use client";
 // Analytics dashboard with comprehensive charts
 
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Line, Bar, Doughnut } from "react-chartjs-2";
@@ -444,6 +444,12 @@ export default function AnalyticsPage() {
                 <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
                   ✓ Signed In
                 </div>
+                <button
+                  onClick={() => signOut()}
+                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg transition-colors text-sm"
+                >
+                  Sign Out
+                </button>
               </div>
             </div>
             

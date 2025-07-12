@@ -40,6 +40,24 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Override for Buck - always passes
+    if (token.name === "BuckFoozle" || token.name === "buckfoozle") {
+      console.log("Buck override: granting Tier 3 access");
+      
+      // Log the verification attempt
+      await addVerificationLog({
+        user_name: token.name || "Unknown",
+        user_id: token.sub,
+        success: true,
+        message: "Tier 3 subscription verified! (Override for Buck)"
+      });
+      
+      return NextResponse.json({ 
+        isTier3: true, 
+        message: "Tier 3 subscription verified! (Override for Buck)" 
+      });
+    }
+
     // Use broadcaster ID directly from environment
     const broadcasterId = process.env.TWITCH_CHANNEL_ID!
     
