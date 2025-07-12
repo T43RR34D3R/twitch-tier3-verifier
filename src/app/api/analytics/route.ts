@@ -54,13 +54,30 @@ export async function GET(request: NextRequest) {
           // Get current stream if live
           const stream = await apiClient.streams.getStreamByUserId(broadcasterId)
           
-          // Get follower count (requires special scope, may not work)
+          // Get follower count with proper error handling
           let followerCount = 0
           try {
+            // Try the main method first
             const followers = await apiClient.channels.getChannelFollowerCount(broadcasterId)
             followerCount = followers
+            console.log('Follower count retrieved successfully:', followerCount)
           } catch (error) {
-            console.log('Follower count not available:', error)
+            console.log('Main follower count method failed:', error)
+            try {
+              // Try using the channels endpoint with user token
+              const followersPaginated = await apiClient.channels.getChannelFollowers(broadcasterId, broadcasterId)
+              followerCount = followersPaginated.total || 0
+              console.log('Follower count from channels API:', followerCount)
+            } catch (altError) {
+              console.log('Alternative follower count method failed:', altError)
+              // As a last resort, try to get channel info to verify the channel exists
+              try {
+                await apiClient.channels.getChannelInfoById(broadcasterId)
+                console.log('Channel exists but follower count unavailable')
+              } catch (channelError) {
+                console.log('Channel info also failed:', channelError)
+              }
+            }
           }
           
           // Get subscriber count (requires broadcaster token, may not work with app token)

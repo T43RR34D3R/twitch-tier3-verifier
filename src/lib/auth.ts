@@ -6,6 +6,21 @@ export const authOptions: AuthOptions = {
     TwitchProvider({
       clientId: process.env.TWITCH_CLIENT_ID!,
       clientSecret: process.env.TWITCH_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          scope: [
+            'openid',
+            'user:read:email',
+            'channel:read:subscriptions',
+            'moderator:read:followers',
+            'channel:read:stream_key',
+            'user:read:follows',
+            'channel:moderate',
+            'chat:read',
+            'chat:edit'
+          ].join(' ')
+        }
+      }
     }),
   ],
   callbacks: {

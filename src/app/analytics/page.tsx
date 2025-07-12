@@ -421,6 +421,32 @@ export default function AnalyticsPage() {
         <div className="bg-white rounded-xl shadow-2xl p-8">
           {/* Header */}
           <div className="mb-8">
+            {/* User indicator */}
+            <div className="flex items-center justify-between mb-4 p-4 bg-purple-50 rounded-lg">
+              <div className="flex items-center space-x-3">
+                {session.user?.image && (
+                  <img
+                    src={session.user.image}
+                    alt={session.user.name || "User"}
+                    className="w-10 h-10 rounded-full"
+                  />
+                )}
+                <div>
+                  <div className="font-semibold text-black">
+                    {session.user?.name || "Unknown User"}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Analytics for {session.user?.name || "your channel"}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                  ✓ Signed In
+                </div>
+              </div>
+            </div>
+            
             <div className="flex justify-between items-center mb-4">
               <h1 className="text-3xl font-bold text-black">Stream Analytics Dashboard</h1>
               <div className="flex gap-2">
@@ -457,6 +483,11 @@ export default function AnalyticsPage() {
               <div className="bg-purple-50 rounded-lg p-6">
                 <div className="text-2xl font-bold text-purple-700">{summary.latest?.follower_count?.toLocaleString() || 0}</div>
                 <div className="text-purple-600">Total Followers</div>
+                {summary.latest?.follower_count === 0 && (
+                  <div className="text-xs text-purple-500 mt-1">
+                    Requires channel:read:subscriptions scope
+                  </div>
+                )}
                 {growthData && (
                   <div className="text-sm text-purple-500 mt-1">
                     {growthData.followerGrowth >= 0 ? '+' : ''}{growthData.followerGrowth} ({growthData.followerGrowthPercentage}%) last 30 days
