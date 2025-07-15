@@ -84,6 +84,17 @@ export default function Home() {
       return;
     }
 
+    // Check if there's a token refresh error
+    if (session.error === "RefreshAccessTokenError") {
+      setMessage("Your session has expired. Please sign in again.");
+      setTimeout(() => {
+        signOut({ redirect: false }).then(() => {
+          window.location.reload();
+        });
+      }, 2000);
+      return;
+    }
+
     // Only proceed with verification if user is actually authenticated
     if (status !== "authenticated") {
       return;
