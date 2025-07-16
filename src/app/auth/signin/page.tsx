@@ -1,11 +1,13 @@
 "use client";
 
-import { getProviders, signIn } from "next-auth/react";
+import { getProviders, signIn, signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
 export default function SignIn() {
+  const { data: session, status } = useSession();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [providers, setProviders] = useState<Record<string, any> | null>(null);
+  const [isClearing, setIsClearing] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -13,6 +15,16 @@ export default function SignIn() {
       setProviders(res);
     })();
   }, []);
+
+  // Clear any existing session that might have errors
+  useEffect(() => {
+    if (status === "authenticated" && session?.error === "RefreshAccessTokenError") {
+      setIsClearing(true);
+      signOut({ redirect: false }).then(() => {
+        setIsClearing(false);
+      });
+    }
+  }, [session, status]);
 
   if (!providers) {
     return <div className="flex justify-center items-center min-h-screen text-gray-800">Loading...</div>;
@@ -33,18 +45,44 @@ export default function SignIn() {
         
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {Object.values(providers).map((provider: any) => (
-          <div key={provider.name}>
+          <div key={provider.name} className="space-y-3">
             <button
               onClick={() => signIn(provider.id)}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2"
+              disabled={isClearing}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
               </svg>
-              <span>Sign in with {provider.name}</span>
+              <span>{isClearing ? 'Clearing Session...' : `Sign in with ${provider.name}`}</span>
             </button>
+            
+            {/* Clear Session Button for users stuck in sign-in loop */}
+            {status === "authenticated" && session?.error && (
+              <button
+                onClick={() => {
+                  setIsClearing(true);
+                  signOut({ redirect: false }).then(() => {
+                    setIsClearing(false);
+                    window.location.reload();
+                  });
+                }}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm"
+              >
+                Clear Session & Try Again
+              </button>
+            )}
           </div>
         ))}
+        
+        {/* Show error message if user has session errors */}
+        {status === "authenticated" && session?.error && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800">
+              Session error detected. Please clear your session and try signing in again.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

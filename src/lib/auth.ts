@@ -48,7 +48,17 @@ export const authOptions: AuthOptions = {
       }
 
       // Access token has expired, try to update it
-      return refreshAccessToken(token)
+      const refreshedToken = await refreshAccessToken(token)
+      
+      // If refresh failed, force re-authentication
+      if (refreshedToken.error) {
+        return {
+          ...token,
+          error: "RefreshAccessTokenError",
+        }
+      }
+      
+      return refreshedToken
     },
     async session({ session, token }) {
       if (session.user && token.sub) {
