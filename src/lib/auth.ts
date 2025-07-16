@@ -51,7 +51,7 @@ export const authOptions: AuthOptions = {
       const refreshedToken = await refreshAccessToken(token)
       
       // If refresh failed, force re-authentication
-      if (refreshedToken.error) {
+      if ('error' in refreshedToken) {
         return {
           ...token,
           error: "RefreshAccessTokenError",
