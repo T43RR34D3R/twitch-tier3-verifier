@@ -11,6 +11,7 @@ export const authOptions: AuthOptions = {
           scope: [
             'openid',
             'user:read:email',
+            'user:read:subscriptions',
             'channel:read:subscriptions',
             'moderator:read:followers',
             'channel:read:stream_key',
