@@ -531,9 +531,9 @@ export async function GET(request: NextRequest) {
                 gifter_id: sub.gifterId || null,
                 gifter_username: sub.gifterName || null,
                 gifter_display_name: sub.gifterDisplayName || null,
-                months_total: sub.monthCount || 1,
-                months_streak: sub.consecutiveMonths || 1,
-                cumulative_months: sub.monthCount || 1
+                months_total: 1, // API doesn't provide month count data
+                months_streak: 1, // API doesn't provide consecutive months data
+                cumulative_months: 1 // API doesn't provide cumulative month data
               }
             })
           } catch (error) {
