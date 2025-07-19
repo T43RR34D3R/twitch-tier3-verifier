@@ -1,5 +1,6 @@
 import { AuthOptions } from "next-auth"
 import TwitchProvider from "next-auth/providers/twitch"
+import { storeUserToken } from "./data-collector"
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -33,13 +34,28 @@ export const authOptions: AuthOptions = {
     async jwt({ token, account, user }) {
       // Initial sign in
       if (account && user) {
-        return {
+        const newToken = {
           ...token,
           accessToken: account.access_token,
           refreshToken: account.refresh_token,
           accessTokenExpires: account.expires_at ? account.expires_at * 1000 : Date.now() + 4 * 60 * 60 * 1000, // 4 hours
           user,
         }
+        
+        // Store token for background data collection
+        if (account.access_token && account.refresh_token && token.sub) {
+          await storeUserToken(
+            token.sub,
+            user.name || 'Unknown',
+            account.access_token,
+            account.refresh_token,
+            newToken.accessTokenExpires as number
+          ).catch(error => {
+            console.error('Failed to store user token:', error)
+          })
+        }
+        
+        return newToken
       }
 
       // Return previous token if the access token has not expired yet

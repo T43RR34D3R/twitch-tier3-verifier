@@ -48,7 +48,6 @@ export async function GET(request: NextRequest) {
       case 'summary':
         try {
           // Get channel info
-          // const channel = await apiClient.channels.getChannelInfoById(broadcasterId)
           const user = await apiClient.users.getUserById(broadcasterId)
           
           // Get current stream if live
@@ -80,22 +79,49 @@ export async function GET(request: NextRequest) {
             }
           }
           
-          // Get subscriber count (requires broadcaster token, may not work with app token)
-          const subscriberCount = 0
+          // Get subscriber data from Twitch API
+          let subscriberCount = 0
+          let tier1_subs = 0
+          let tier2_subs = 0
+          let tier3_subs = 0
+          
           try {
-            // const subs = await apiClient.subscriptions.getSubscriptions(broadcasterId, { limit: 1 })
-            // This will likely fail with app token, we'd need user token
+            console.log('Attempting to fetch subscriber data...')
+            // Get subscribers using the user token (requires channel:read:subscriptions scope)
+            const subscriptions = await apiClient.subscriptions.getSubscriptions(broadcasterId)
+            
+            subscriberCount = subscriptions.total || 0
+            console.log(`Total subscribers: ${subscriberCount}`)
+            
+            // Count subscribers by tier
+            subscriptions.data.forEach(sub => {
+              switch (sub.tier) {
+                case '1000':
+                  tier1_subs++
+                  break
+                case '2000':
+                  tier2_subs++
+                  break
+                case '3000':
+                  tier3_subs++
+                  break
+              }
+            })
+            
+            console.log(`Tier breakdown - T1: ${tier1_subs}, T2: ${tier2_subs}, T3: ${tier3_subs}`)
           } catch (error) {
-            console.log('Subscriber count not available:', error)
+            console.log('Subscriber data not available:', error)
+            console.log('Error details:', error instanceof Error ? error.message : 'Unknown error')
+            // This might fail if the token doesn't have channel:read:subscriptions scope
           }
           
           const summary = {
             latest: {
               follower_count: followerCount,
               subscriber_count: subscriberCount,
-              tier1_subs: 0, // Would need EventSub for real data
-              tier2_subs: 0,
-              tier3_subs: 0
+              tier1_subs: tier1_subs,
+              tier2_subs: tier2_subs,
+              tier3_subs: tier3_subs
             },
             totalStreamsLast30Days: 0, // Would need to track over time
             totalStreamsLast7Days: 0,
@@ -126,37 +152,105 @@ export async function GET(request: NextRequest) {
 
       case 'stream':
         try {
-          // For stream analytics over time, we'd need to store data or use Twitch Analytics API
-          // For now, return current stream data
-          const stream = await apiClient.streams.getStreamByUserId(broadcasterId)
-          const streamData = stream ? [{
-            date: new Date().toISOString().split('T')[0],
-            average_viewers: stream.viewers,
-            peak_viewers: stream.viewers,
-            follower_count: 0, // Would need to track over time
-            subscriber_count: 0, // Would need to track over time
-            total_bits: 0 // Would need EventSub
-          }] : []
+          const days = parseInt(searchParams.get('days') || '30')
+          console.log(`Fetching stream analytics for last ${days} days`)
           
-          return NextResponse.json({ data: streamData })
+          // Get historical data from database
+          const startDate = new Date()
+          startDate.setDate(startDate.getDate() - days)
+          
+          const { data: streamData, error } = await supabase
+            .from('stream_analytics')
+            .select('*')
+            .eq('broadcaster_id', broadcasterId)
+            .gte('date', startDate.toISOString().split('T')[0])
+            .order('date', { ascending: true })
+          
+          if (error) {
+            console.error('Error fetching historical stream data:', error)
+            return NextResponse.json({ data: [] })
+          }
+          
+          // Transform data to expected format
+          const transformedData = streamData?.map(record => ({
+            date: record.date,
+            average_viewers: record.average_viewers,
+            peak_viewers: record.peak_viewers,
+            follower_count: record.follower_count,
+            subscriber_count: record.subscriber_count,
+            total_bits: record.total_bits
+          })) || []
+          
+          console.log(`Found ${transformedData.length} historical records`)
+          return NextResponse.json({ data: transformedData })
         } catch (error) {
           console.error('Error fetching stream data:', error)
           return NextResponse.json({ data: [] })
         }
 
       case 'subscriptions':
-        // Subscription stats would require EventSub or user access token
-        return NextResponse.json({ 
-          stats: {
-            newSubs: 0,
-            reSubs: 0,
-            gifts: 0,
-            tier1: 0,
-            tier2: 0,
-            tier3: 0,
-            total: 0
+        try {
+          console.log('Fetching subscription stats from Twitch API...')
+          
+          let tier1 = 0
+          let tier2 = 0
+          let tier3 = 0
+          let gifts = 0
+          let total = 0
+          
+          try {
+            const subscriptions = await apiClient.subscriptions.getSubscriptions(broadcasterId)
+            total = subscriptions.total || 0
+            
+            // Count by tier and gift status
+            subscriptions.data.forEach(sub => {
+              if (sub.isGift) {
+                gifts++
+              }
+              
+              switch (sub.tier) {
+                case '1000':
+                  tier1++
+                  break
+                case '2000':
+                  tier2++
+                  break
+                case '3000':
+                  tier3++
+                  break
+              }
+            })
+            
+            console.log(`Subscription stats - Total: ${total}, T1: ${tier1}, T2: ${tier2}, T3: ${tier3}, Gifts: ${gifts}`)
+          } catch (error) {
+            console.log('Error fetching subscription stats:', error)
           }
-        })
+          
+          return NextResponse.json({ 
+            stats: {
+              newSubs: 0, // Would need EventSub for recent activity
+              reSubs: 0,  // Would need EventSub for recent activity
+              gifts: gifts,
+              tier1: tier1,
+              tier2: tier2,
+              tier3: tier3,
+              total: total
+            }
+          })
+        } catch (error) {
+          console.error('Error in subscriptions case:', error)
+          return NextResponse.json({ 
+            stats: {
+              newSubs: 0,
+              reSubs: 0,
+              gifts: 0,
+              tier1: 0,
+              tier2: 0,
+              tier3: 0,
+              total: 0
+            }
+          })
+        }
 
       case 'growth':
         // Growth analytics would need historical data tracking
@@ -379,69 +473,179 @@ export async function GET(request: NextRequest) {
         }
 
       case 'subscriber_list':
-        const searchQuery = searchParams.get('search') || ''
-        const tierFilter = searchParams.get('tier')
-        const sortBy = searchParams.get('sort') || 'created_at'
-        const sortOrder = searchParams.get('order') || 'desc'
-        
-        let query = supabase
-          .from('subscription_history')
-          .select('*')
-          .eq('broadcaster_id', broadcasterId)
-        
-        if (searchQuery) {
-          query = query.or(`subscriber_name.ilike.%${searchQuery}%,gifter_name.ilike.%${searchQuery}%`)
-        }
-        
-        if (tierFilter) {
-          query = query.eq('tier', parseInt(tierFilter))
-        }
-        
-        query = query.order(sortBy, { ascending: sortOrder === 'asc' })
-        
-        const { data: subscriberResult, error } = await query
-        
-        if (error) {
-          console.error('Error fetching subscriber list:', error)
-          return NextResponse.json({ error: 'Failed to fetch subscriber data' }, { status: 500 })
-        }
-        
-        // Calculate estimated earnings
-        const tier1_count = subscriberResult?.filter(s => s.tier === 1000).length || 0
-        const tier2_count = subscriberResult?.filter(s => s.tier === 2000).length || 0
-        const tier3_count = subscriberResult?.filter(s => s.tier === 3000).length || 0
-        
-        const estimated_earnings = {
-          tier1: tier1_count * 2.5, // Approximate earnings after platform cut
-          tier2: tier2_count * 5.0,
-          tier3: tier3_count * 12.5,
-          total: (tier1_count * 2.5) + (tier2_count * 5.0) + (tier3_count * 12.5)
-        }
-        
-        return NextResponse.json({ 
-          data: {
-            subscribers: subscriberResult?.map(sub => ({
-              id: sub.id,
-              user_id: sub.subscriber_id,
-              username: sub.subscriber_name,
-              display_name: sub.subscriber_name,
-              tier: sub.tier.toString(),
-              subscribed_at: sub.created_at,
-              is_gift: sub.is_gift,
-              gifter_id: sub.gifter_id,
-              gifter_username: sub.gifter_name,
-              gifter_display_name: sub.gifter_name,
-              months_total: sub.cumulative_months,
-              months_streak: sub.streak_months,
-              cumulative_months: sub.cumulative_months
-            })) || [],
-            total: subscriberResult?.length || 0,
-            tier1_count,
-            tier2_count,
-            tier3_count,
-            estimated_earnings
+        try {
+          const searchQuery = searchParams.get('search') || ''
+          const tierFilter = searchParams.get('tier')
+          const sortBy = searchParams.get('sort') || 'subscribed_at'
+          const sortOrder = searchParams.get('order') || 'desc'
+          
+          console.log('Fetching subscriber list from Twitch API...')
+          
+          // Get subscribers from Twitch API
+          let allSubscribers: Array<{
+            id: string;
+            user_id: string;
+            username: string;
+            display_name: string;
+            tier: string;
+            subscribed_at: string;
+            is_gift: boolean;
+            gifter_id: string | null;
+            gifter_username: string | null;
+            gifter_display_name: string | null;
+            months_total: number;
+            months_streak: number;
+            cumulative_months: number;
+          }> = []
+          let tier1_count = 0
+          let tier2_count = 0
+          let tier3_count = 0
+          
+          try {
+            const subscriptions = await apiClient.subscriptions.getSubscriptions(broadcasterId)
+            console.log(`Found ${subscriptions.total} subscribers from API`)
+            
+            // Transform Twitch API data to our format
+            allSubscribers = subscriptions.data.map((sub, index) => {
+              // Count tiers
+              switch (sub.tier) {
+                case '1000':
+                  tier1_count++
+                  break
+                case '2000':
+                  tier2_count++
+                  break
+                case '3000':
+                  tier3_count++
+                  break
+              }
+              
+              return {
+                id: `sub_${index + 1}`,
+                user_id: sub.userId,
+                username: sub.userName,
+                display_name: sub.userDisplayName,
+                tier: sub.tier,
+                subscribed_at: new Date().toISOString(), // API doesn't provide subscription date
+                is_gift: sub.isGift,
+                gifter_id: sub.gifterId || null,
+                gifter_username: sub.gifterName || null,
+                gifter_display_name: sub.gifterDisplayName || null,
+                months_total: sub.monthCount || 1,
+                months_streak: sub.consecutiveMonths || 1,
+                cumulative_months: sub.monthCount || 1
+              }
+            })
+          } catch (error) {
+            console.log('Error fetching subscribers from API:', error)
+            console.log('Error details:', error instanceof Error ? error.message : 'Unknown error')
+            
+            // If API fails, return empty data structure
+            return NextResponse.json({ 
+              data: {
+                subscribers: [],
+                total: 0,
+                tier1_count: 0,
+                tier2_count: 0,
+                tier3_count: 0,
+                estimated_earnings: {
+                  tier1: 0,
+                  tier2: 0,
+                  tier3: 0,
+                  total: 0
+                }
+              }
+            })
           }
-        })
+          
+          // Apply search filter if provided
+          if (searchQuery) {
+            const searchLower = searchQuery.toLowerCase()
+            allSubscribers = allSubscribers.filter(sub => 
+              sub.username.toLowerCase().includes(searchLower) ||
+              sub.display_name.toLowerCase().includes(searchLower) ||
+              (sub.gifter_username && sub.gifter_username.toLowerCase().includes(searchLower)) ||
+              (sub.gifter_display_name && sub.gifter_display_name.toLowerCase().includes(searchLower))
+            )
+          }
+          
+          // Apply tier filter if provided
+          if (tierFilter) {
+            allSubscribers = allSubscribers.filter(sub => sub.tier === tierFilter)
+          }
+          
+          // Apply sorting
+          allSubscribers.sort((a, b) => {
+            let aValue, bValue
+            
+            switch (sortBy) {
+              case 'username':
+                aValue = a.username.toLowerCase()
+                bValue = b.username.toLowerCase()
+                break
+              case 'subscribed_at':
+                aValue = new Date(a.subscribed_at).getTime()
+                bValue = new Date(b.subscribed_at).getTime()
+                break
+              case 'tier':
+                aValue = parseInt(a.tier)
+                bValue = parseInt(b.tier)
+                break
+              case 'months_total':
+                aValue = a.months_total
+                bValue = b.months_total
+                break
+              default:
+                aValue = new Date(a.subscribed_at).getTime()
+                bValue = new Date(b.subscribed_at).getTime()
+            }
+            
+            if (sortOrder === 'asc') {
+              return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+            } else {
+              return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+            }
+          })
+          
+          // Calculate estimated earnings
+          const estimated_earnings = {
+            tier1: tier1_count * 2.5, // Approximate earnings after platform cut
+            tier2: tier2_count * 5.0,
+            tier3: tier3_count * 12.5,
+            total: (tier1_count * 2.5) + (tier2_count * 5.0) + (tier3_count * 12.5)
+          }
+          
+          console.log(`Returning ${allSubscribers.length} subscribers after filtering/sorting`)
+          console.log(`Tier counts: T1=${tier1_count}, T2=${tier2_count}, T3=${tier3_count}`)
+          
+          return NextResponse.json({ 
+            data: {
+              subscribers: allSubscribers,
+              total: allSubscribers.length,
+              tier1_count,
+              tier2_count,
+              tier3_count,
+              estimated_earnings
+            }
+          })
+        } catch (error) {
+          console.error('Error in subscriber_list case:', error)
+          return NextResponse.json({ 
+            data: {
+              subscribers: [],
+              total: 0,
+              tier1_count: 0,
+              tier2_count: 0,
+              tier3_count: 0,
+              estimated_earnings: {
+                tier1: 0,
+                tier2: 0,
+                tier3: 0,
+                total: 0
+              }
+            }
+          })
+        }
 
       default:
         return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 })

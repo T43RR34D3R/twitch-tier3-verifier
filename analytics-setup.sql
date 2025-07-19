@@ -12,6 +12,18 @@ CREATE TABLE IF NOT EXISTS analytics_access (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
+-- User Tokens for Background Data Collection
+CREATE TABLE IF NOT EXISTS user_tokens (
+  id BIGSERIAL PRIMARY KEY,
+  user_id TEXT NOT NULL UNIQUE,
+  username TEXT NOT NULL,
+  access_token TEXT NOT NULL,
+  refresh_token TEXT NOT NULL,
+  expires_at BIGINT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
 -- Stream Analytics Data
 CREATE TABLE IF NOT EXISTS stream_analytics (
   id BIGSERIAL PRIMARY KEY,
