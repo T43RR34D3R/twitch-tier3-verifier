@@ -6,8 +6,11 @@ webapp:
   # The URL of your Tier 3 Toolkit instance
   url: "http://localhost:3000"
   
-  # The endpoint for chat messages
+  # The endpoint for sending chat messages TO the web app
   endpoint: "/api/minecraft/chat-stream"
+  
+  # The endpoint for receiving messages FROM the web app
+  receive_endpoint: "/api/minecraft/receive-messages"
   
   # Connection timeout in milliseconds
   timeout: 5000
@@ -17,8 +20,14 @@ webapp:
 
 # Chat Settings
 chat:
-  # Enable/disable the chat relay
+  # Enable/disable the chat relay (sending messages to web app)
   enabled: true
+  
+  # Enable/disable receiving messages from web app
+  receive_enabled: false
+  
+  # How often to poll for new messages from web app (in seconds)
+  poll_interval: 30
   
   # Only relay messages from these worlds (empty = all worlds)
   allowed_worlds: []

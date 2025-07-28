@@ -1,0 +1,38 @@
+name: TwitchNotifier
+version: 1.0.0
+main: com.twitchnotifier.TwitchNotifierPlugin
+api-version: 1.20
+description: Minecraft plugin for Twitch stream notifications and tab prefixes
+author: YourName
+
+depend:
+  - LuckPerms
+
+commands:
+  channel:
+    description: Get the Twitch channel link for a player
+    usage: /channel <username>
+    permission: twitchnotifier.channel
+  twitchauth:
+    description: Authorize your Twitch account
+    usage: /twitchauth
+    permission: twitchnotifier.auth
+  twitchunlink:
+    description: Unlink your Twitch account
+    usage: /twitchunlink
+    permission: twitchnotifier.auth
+  twitchinterval:
+    description: Change stream check interval (admin only)
+    usage: /twitchinterval <seconds>
+    permission: twitchnotifier.admin
+
+permissions:
+  twitchnotifier.channel:
+    description: Allows use of /channel command
+    default: true
+  twitchnotifier.auth:
+    description: Allows use of Twitch authentication commands
+    default: true
+  twitchnotifier.admin:
+    description: Administrative permissions for TwitchNotifier
+    default: op

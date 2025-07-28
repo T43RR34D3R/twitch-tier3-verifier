@@ -13,10 +13,3 @@ permissions:
   tier3chat.reload:
     description: Allows reloading the plugin configuration
     default: op
-
-commands:
-  tier3chat:
-    description: Main command for Tier3 Chat Relay
-    usage: /tier3chat <reload|status|test>
-    permission: tier3chat.admin
-    aliases: [t3c, chatrelay]
