@@ -1,8 +1,5 @@
 import { NextRequest } from 'next/server';
 
-// This will store active WebSocket connections
-const clients = new Set<WebSocket>();
-
 interface ChatMessage {
   id: string;
   playerName: string;

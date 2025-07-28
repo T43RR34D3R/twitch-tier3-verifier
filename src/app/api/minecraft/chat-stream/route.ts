@@ -1,7 +1,16 @@
 import { NextRequest } from 'next/server';
 
+interface ChatMessage {
+  id: string;
+  playerName: string;
+  playerUuid: string;
+  message: string;
+  timestamp: number;
+  playerSkinUrl: string;
+}
+
 // Simple in-memory store for chat messages
-let chatMessages: any[] = [];
+let chatMessages: ChatMessage[] = [];
 let clients: { id: string; controller: ReadableStreamDefaultController }[] = [];
 
 export async function GET(request: NextRequest) {
