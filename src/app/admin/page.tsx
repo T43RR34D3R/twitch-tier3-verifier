@@ -36,7 +36,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [verificationLogs, setVerificationLogs] = useState<VerificationLog[]>([]);
   const [pageTexts, setPageTexts] = useState<PageTexts>({
-    title: "Tier 3 Verification",
+    title: "Tier 3 Toolkit",
     subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
     signInText: "Please sign in with your Twitch account to verify your subscription status.",
     steps: ["Signed In", "Checking Follow", "Checking Tier 3", "Verified"]
@@ -521,18 +521,30 @@ export default function AdminDashboard() {
 
           {/* Navigation */}
           <div className="mt-8 text-center space-y-4">
-            <div className="flex justify-center gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <button
                 onClick={() => router.push("/analytics")}
                 className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
               >
-                View Analytics Dashboard
+                Analytics Dashboard
+              </button>
+              <button
+                onClick={() => window.open('/minecraft-chat', '_blank')}
+                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
+              >
+                Chat Overlay
+              </button>
+              <button
+                onClick={() => router.push("/minecraft-test")}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
+              >
+                Test Chat
               </button>
               <button
                 onClick={() => router.push("/")}
                 className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
               >
-                Back to Main App
+                Main App
               </button>
             </div>
           </div>

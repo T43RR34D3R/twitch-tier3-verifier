@@ -100,7 +100,7 @@ export async function savePageSettings(settings: Omit<PageSettings, 'id' | 'upda
 
 function getDefaultPageSettings(): PageSettings {
   return {
-    title: "Tier 3 Verification",
+    title: "Tier 3 Toolkit",
     subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
     sign_in_text: "Please sign in with your Twitch account to verify your subscription status.",
     steps: ["Signed In", "Verifying Account", "Checking Tier 3", "Verified"]

@@ -42,7 +42,7 @@ export default function Home() {
           } else {
             // Use defaults if no settings found
             setPageTexts({
-              title: "Tier 3 Verification",
+              title: "Tier 3 Toolkit",
               subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
               signInText: "Please sign in with your Twitch account to verify your subscription status.",
               steps: ["Signed In", "Verifying Account", "Checking Tier 3", "Verified"]
@@ -51,7 +51,7 @@ export default function Home() {
         } else {
           // Use defaults if API call fails
           setPageTexts({
-            title: "Tier 3 Verification",
+            title: "Tier 3 Toolkit",
             subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
             signInText: "Please sign in with your Twitch account to verify your subscription status.",
             steps: ["Signed In", "Verifying Account", "Checking Tier 3", "Verified"]
@@ -61,7 +61,7 @@ export default function Home() {
         console.error('Error loading page settings:', error);
         // Use defaults if error occurs
         setPageTexts({
-          title: "Tier 3 Verification",
+          title: "Tier 3 Toolkit",
           subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
           signInText: "Please sign in with your Twitch account to verify your subscription status.",
           steps: ["Signed In", "Verifying Account", "Checking Tier 3", "Verified"]

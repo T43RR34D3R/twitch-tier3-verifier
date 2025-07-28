@@ -70,7 +70,7 @@ export async function getPageSettings(): Promise<PageTexts> {
   } catch {
     // Return default settings if file doesn't exist
     return {
-      title: "Tier 3 Verification",
+      title: "Tier 3 Toolkit",
       subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
       signInText: "Please sign in with your Twitch account to verify your subscription status.",
       steps: ["Signed In", "Checking Follow", "Checking Tier 3", "Verified"]
