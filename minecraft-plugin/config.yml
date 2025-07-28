@@ -1,0 +1,49 @@
+# Tier3 Chat Relay Configuration
+# Configure the connection to your Tier 3 Toolkit web application
+
+# Web Application Settings
+webapp:
+  # The URL of your Tier 3 Toolkit instance
+  url: "http://localhost:3000"
+  
+  # The endpoint for chat messages
+  endpoint: "/api/minecraft/chat-stream"
+  
+  # Connection timeout in milliseconds
+  timeout: 5000
+  
+  # Retry attempts for failed requests
+  retry_attempts: 3
+
+# Chat Settings
+chat:
+  # Enable/disable the chat relay
+  enabled: true
+  
+  # Only relay messages from these worlds (empty = all worlds)
+  allowed_worlds: []
+  
+  # Filter out messages from these players (useful for bots)
+  blocked_players: []
+  
+  # Include server messages (join/leave notifications)
+  include_server_messages: false
+  
+  # Include private messages
+  include_private_messages: false
+
+# Security Settings
+security:
+  # API key for authentication (optional, leave empty if not needed)
+  api_key: ""
+  
+  # Only allow connections from these IPs (empty = allow all)
+  allowed_ips: []
+
+# Debug Settings
+debug:
+  # Enable debug logging
+  enabled: false
+  
+  # Log all HTTP requests
+  log_requests: false

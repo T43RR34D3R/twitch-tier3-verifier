@@ -1,0 +1,22 @@
+name: Tier3ChatRelay
+version: 1.0.0
+main: com.tier3toolkit.chatrelay.Tier3ChatRelay
+api-version: '1.21'
+author: Tier3Toolkit
+description: Relays Minecraft chat messages to Tier 3 Toolkit web overlay
+website: https://github.com/your-repo/tier3-toolkit
+
+permissions:
+  tier3chat.admin:
+    description: Allows administration of Tier3 Chat Relay
+    default: op
+  tier3chat.reload:
+    description: Allows reloading the plugin configuration
+    default: op
+
+commands:
+  tier3chat:
+    description: Main command for Tier3 Chat Relay
+    usage: /tier3chat <reload|status|test>
+    permission: tier3chat.admin
+    aliases: [t3c, chatrelay]
