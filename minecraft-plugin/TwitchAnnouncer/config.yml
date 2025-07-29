@@ -1,0 +1,62 @@
+# TwitchAnnouncer Configuration
+
+# Your Vercel app URL (update this with your actual Vercel app URL)
+vercel-app-url: "https://your-vercel-app.vercel.app"
+
+# Stream status check interval in ticks (20 ticks = 1 second)
+# Default: 2400 ticks = 2 minutes
+stream-check-interval: 2400
+
+# Plugin settings
+plugin:
+  # Whether to show debug messages in console
+  debug: false
+  
+  # Whether to save player data automatically
+  auto-save: true
+
+# Message customization
+messages:
+  # Prefix for all plugin messages
+  prefix: "&8[&6TwitchAnnouncer&8]&r "
+  
+  # Colors for different message types
+  colors:
+    error: "&c"
+    success: "&a"
+    info: "&e"
+    warning: "&6"
+  
+  # Live stream notification customization
+  live-notification:
+    # Main notification message
+    # Placeholders: {player}, {twitch_username}, {title}, {game}, {viewers}
+    message: "&c🔴 &e&l{player} &fis now LIVE on Twitch! &9&l[WATCH]"
+    
+    # Stream title message (shown if stream has a title)
+    # Placeholders: {title}, {game}, {viewers}
+    title-message: "&7📺 {title}"
+    
+    # Game being played (optional, shown if different from title)
+    # Placeholders: {game}, {viewers}
+    game-message: "&7🎮 Playing: {game}"
+    
+    # Viewer count (optional)
+    # Placeholders: {viewers}
+    viewer-message: "&7👥 {viewers} viewers"
+    
+    # Watch button text and styling
+    watch-button:
+      text: "[WATCH]"
+      color: "&9&l"  # Blue and bold
+      hover-text: "&eClick to watch {twitch_username}'s stream"
+    
+    # Tab list prefix for live streamers
+    tab-prefix: "&c🔴 "
+    
+    # Enable/disable different parts of the notification
+    show:
+      title: true
+      game: false  # Only show if different from title
+      viewers: false
+      hover-tooltip: true

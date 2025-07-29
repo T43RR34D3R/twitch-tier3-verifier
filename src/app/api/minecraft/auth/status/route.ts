@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { createServerSupabaseClient } from '../../../../lib/supabase-server';
 
 /**
  * Check the status of a Minecraft authorization
@@ -17,33 +17,29 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if the authorization has been completed
-    const result = await sql`
-      SELECT 
-        mac.minecraft_username,
-        mac.twitch_username,
-        mac.completed_at,
-        map.expires_at,
-        CASE WHEN mac.completed_at IS NOT NULL THEN true ELSE false END as is_completed,
-        CASE WHEN map.expires_at < NOW() THEN true ELSE false END as is_expired
-      FROM minecraft_auth_pending map
-      LEFT JOIN minecraft_auth_completed mac ON mac.auth_code = map.auth_code
-      WHERE map.auth_code = ${authCode}
-    `;
+    // Initialize server Supabase client
+    const supabase = createServerSupabaseClient();
 
-    if (result.rows.length === 0) {
+    // Check if the authorization has been completed
+    const { data: pendingAuth, error: pendingError } = await supabase
+      .from('minecraft_auth_pending')
+      .select('minecraft_username, expires_at')
+      .eq('auth_code', authCode)
+      .single();
+
+    if (pendingError || !pendingAuth) {
       return NextResponse.json(
         { error: 'Invalid or expired auth code' },
         { status: 404 }
       );
     }
 
-    const authData = result.rows[0];
-
     // Check if expired
-    if (authData.is_expired) {
+    const now = new Date();
+    const expiresAt = new Date(pendingAuth.expires_at);
+    if (expiresAt < now) {
       // Clean up expired auth
-      await sql`DELETE FROM minecraft_auth_pending WHERE auth_code = ${authCode}`;
+      await supabase.from('minecraft_auth_pending').delete().eq('auth_code', authCode);
       return NextResponse.json(
         { error: 'Authorization expired' },
         { status: 404 }
@@ -51,15 +47,22 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if completed
-    if (authData.is_completed && authData.twitch_username) {
+    const { data: completedAuth, error: completedError } = await supabase
+      .from('minecraft_auth_completed')
+      .select('minecraft_username, twitch_username, completed_at')
+      .eq('auth_code', authCode)
+      .single();
+
+    if (!completedError && completedAuth) {
       // Clean up completed auth from pending table
-      await sql`DELETE FROM minecraft_auth_pending WHERE auth_code = ${authCode}`;
+      await supabase.from('minecraft_auth_pending').delete().eq('auth_code', authCode);
       
       return NextResponse.json({
-        twitchUsername: authData.twitch_username,
-        completedAt: authData.completed_at
+        twitchUsername: completedAuth.twitch_username,
+        completedAt: completedAuth.completed_at
       });
     }
+
 
     // Still pending
     return NextResponse.json(

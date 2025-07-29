@@ -99,7 +99,7 @@ public class TwitchAuthCommand implements CommandExecutor {
             
             Player player = Bukkit.getPlayer(playerUuid);
             if (player != null && player.isOnline()) {
-                player.sendMessage(Component.text("Authorization timed out. Please try again with /twitchauth", NamedTextColor.RED));
+                player.sendMessage(Component.text("Authorization timed out. Please try again with /twitchconnect", NamedTextColor.RED));
             }
             return;
         }

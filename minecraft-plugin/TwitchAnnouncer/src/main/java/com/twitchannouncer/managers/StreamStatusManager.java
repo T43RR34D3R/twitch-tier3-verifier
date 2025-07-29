@@ -127,7 +127,7 @@ public class StreamStatusManager {
         // Split message at [WATCH] placeholder to insert clickable button
         String[] messageParts = messageFormat.split("\\[WATCH\\]", 2);
         
-        Component.Builder messageBuilder = Component.text();
+        net.kyori.adventure.text.TextComponent.Builder messageBuilder = Component.text();
         
         // Add first part of message
         if (messageParts.length > 0) {

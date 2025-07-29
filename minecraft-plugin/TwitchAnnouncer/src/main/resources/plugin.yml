@@ -13,9 +13,9 @@ commands:
     description: Get the Twitch channel link for a player
     usage: /channel <username>
     permission: twitchannouncer.channel
-  twitchauth:
-    description: Authorize your Twitch account
-    usage: /twitchauth
+  twitchconnect:
+    description: Connect your account with Twitch
+    usage: /twitchconnect
     permission: twitchannouncer.auth
   twitchunlink:
     description: Unlink your Twitch account
@@ -24,6 +24,10 @@ commands:
   twitchinterval:
     description: Change stream check interval (admin only)
     usage: /twitchinterval <seconds>
+    permission: twitchannouncer.admin
+  twitchtest:
+    description: Test command for debugging
+    usage: /twitchtest
     permission: twitchannouncer.admin
 
 permissions:

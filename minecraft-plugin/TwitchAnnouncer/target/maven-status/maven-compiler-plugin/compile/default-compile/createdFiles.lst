@@ -1,0 +1,14 @@
+com\twitchannouncer\commands\TwitchUnlinkCommand.class
+com\twitchannouncer\api\VercelApiClient$AuthResponse.class
+com\twitchannouncer\api\VercelApiClient.class
+com\twitchannouncer\storage\DataStorage.class
+com\twitchannouncer\managers\TabListManager.class
+com\twitchannouncer\storage\DataStorage$1.class
+com\twitchannouncer\TwitchAnnouncerPlugin.class
+com\twitchannouncer\commands\ChannelCommand.class
+com\twitchannouncer\listeners\PlayerListener.class
+com\twitchannouncer\api\VercelApiClient$StreamInfo.class
+com\twitchannouncer\managers\StreamStatusManager.class
+com\twitchannouncer\storage\DataStorage$PlayerData.class
+com\twitchannouncer\commands\TwitchAuthCommand.class
+com\twitchannouncer\commands\TwitchTestCommand.class

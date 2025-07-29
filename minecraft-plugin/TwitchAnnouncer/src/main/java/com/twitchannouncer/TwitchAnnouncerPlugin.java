@@ -3,6 +3,7 @@ package com.twitchannouncer;
 import com.twitchannouncer.commands.ChannelCommand;
 import com.twitchannouncer.commands.TwitchAuthCommand;
 import com.twitchannouncer.commands.TwitchUnlinkCommand;
+import com.twitchannouncer.commands.TwitchTestCommand;
 import com.twitchannouncer.listeners.PlayerListener;
 import com.twitchannouncer.managers.StreamStatusManager;
 import com.twitchannouncer.managers.TabListManager;
@@ -71,7 +72,7 @@ public class TwitchAnnouncerPlugin extends JavaPlugin {
         dataStorage.load();
         
         // Initialize API client
-        String vercelAppUrl = getConfig().getString("vercel-app-url", "https://your-vercel-app.vercel.app");
+        String vercelAppUrl = getConfig().getString("vercel-app-url", "https://tier3-toolkit.vercel.app");
         apiClient = new VercelApiClient(vercelAppUrl);
         
         // Initialize managers
@@ -81,8 +82,9 @@ public class TwitchAnnouncerPlugin extends JavaPlugin {
     
     private void registerCommands() {
         getCommand("channel").setExecutor(new ChannelCommand(dataStorage));
-        getCommand("twitchauth").setExecutor(new TwitchAuthCommand(this, apiClient, dataStorage));
+        getCommand("twitchconnect").setExecutor(new TwitchAuthCommand(this, apiClient, dataStorage));
         getCommand("twitchunlink").setExecutor(new TwitchUnlinkCommand(dataStorage));
+        getCommand("twitchtest").setExecutor(new TwitchTestCommand(this, dataStorage));
     }
     
     private void registerListeners() {

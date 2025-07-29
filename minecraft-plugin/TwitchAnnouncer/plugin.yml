@@ -1,0 +1,38 @@
+name: TwitchAnnouncer
+version: 1.0.0
+main: com.twitchannouncer.TwitchAnnouncerPlugin
+api-version: 1.20
+description: Minecraft plugin for Twitch stream announcements and tab prefixes
+author: YourName
+
+depend:
+  - LuckPerms
+
+commands:
+  channel:
+    description: Get the Twitch channel link for a player
+    usage: /channel <username>
+    permission: twitchannouncer.channel
+  twitchauth:
+    description: Authorize your Twitch account
+    usage: /twitchauth
+    permission: twitchannouncer.auth
+  twitchunlink:
+    description: Unlink your Twitch account
+    usage: /twitchunlink
+    permission: twitchannouncer.auth
+  twitchinterval:
+    description: Change stream check interval (admin only)
+    usage: /twitchinterval <seconds>
+    permission: twitchannouncer.admin
+
+permissions:
+  twitchannouncer.channel:
+    description: Allows use of /channel command
+    default: true
+  twitchannouncer.auth:
+    description: Allows use of Twitch authentication commands
+    default: true
+  twitchannouncer.admin:
+    description: Administrative permissions for TwitchAnnouncer
+    default: op

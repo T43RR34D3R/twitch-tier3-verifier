@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { createServerSupabaseClient } from '../../../../lib/supabase-server';
 import { randomBytes } from 'crypto';
 
 interface StartAuthRequest {
@@ -29,15 +29,23 @@ export async function POST(request: NextRequest) {
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
     const authUrl = `${baseUrl}/minecraft-auth?code=${authCode}&minecraft=${encodeURIComponent(minecraftUsername)}`;
 
-    // Store the pending authorization in database
-    await sql`
-      INSERT INTO minecraft_auth_pending (auth_code, minecraft_username, created_at, expires_at)
-      VALUES (${authCode}, ${minecraftUsername}, NOW(), NOW() + INTERVAL '5 minutes')
-      ON CONFLICT (auth_code) DO UPDATE SET
-        minecraft_username = ${minecraftUsername},
-        created_at = NOW(),
-        expires_at = NOW() + INTERVAL '5 minutes'
-    `;
+    // Initialize server Supabase client
+    const supabase = createServerSupabaseClient();
+
+    // Store the pending authorization in the database
+    const { error } = await supabase
+      .from('minecraft_auth_pending')
+      .upsert({
+        auth_code: authCode,
+        minecraft_username: minecraftUsername,
+        created_at: new Date(),
+        expires_at: new Date(new Date().getTime() + 5 * 60000), // 5 minutes from now
+      });
+
+    if (error) {
+      console.error('Error inserting into database:', error);
+      throw new Error('Database error');
+    }
 
     return NextResponse.json({
       authUrl,
