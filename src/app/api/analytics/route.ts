@@ -48,16 +48,21 @@ export async function GET(request: NextRequest) {
     
     if (requestedChannelId) {
       // Check if target channel has authorized the app and has a stored token
-      const { data: targetAccount } = await supabase
-        .from('accounts')
-        .select('access_token')
-        .eq('userId', requestedChannelId)
-        .eq('provider', 'twitch')
+      const { data: targetToken } = await supabase
+        .from('user_tokens')
+        .select('access_token, expires_at')
+        .eq('user_id', requestedChannelId)
         .single()
       
-      if (targetAccount?.access_token) {
-        console.log(`Using BuckFoozle's stored token for subscriber data`)
-        accessTokenToUse = targetAccount.access_token
+      if (targetToken?.access_token) {
+        // Check if token is still valid (expires in 1 hour buffer)
+        const now = Date.now()
+        if (now < targetToken.expires_at - 60 * 60 * 1000) {
+          console.log(`Using BuckFoozle's stored token for subscriber data`)
+          accessTokenToUse = targetToken.access_token
+        } else {
+          console.log(`BuckFoozle's token has expired - using your token with moderator permissions`)
+        }
       } else {
         console.log(`BuckFoozle hasn't authorized the app - using your token with moderator permissions`)
       }
