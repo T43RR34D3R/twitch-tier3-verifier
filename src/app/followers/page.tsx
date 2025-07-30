@@ -300,17 +300,12 @@ export default function FollowersPage() {
             </div>
           </div>
 
-          {/* Debug Information */}
-          {stats?.debugInfo && stats.debugInfo.length > 0 && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-              <h3 className="text-lg font-semibold text-yellow-800 mb-2">📊 Data Status</h3>
-              <ul className="text-sm text-yellow-700 space-y-1">
-                {stats.debugInfo.map((info, index) => (
-                  <li key={index}>• {info}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <h3 className="text-lg font-semibold text-yellow-800 mb-2">📊 Twitch API Update</h3>
+            <p className="text-sm text-yellow-700">
+              Twitch no longer provides detailed follower lists to third-party applications for privacy reasons. Only the total follower count is available. The detailed analytics below are not available at this time.
+            </p>
+          </div>
 
           {/* Statistics Cards */}
           {stats && (
@@ -319,32 +314,17 @@ export default function FollowersPage() {
                 <div className="text-2xl font-bold text-purple-700">{(stats.totalFollowers ?? 0).toLocaleString()}</div>
                 <div className="text-purple-600">Total Followers</div>
               </div>
-              <div className="bg-green-50 rounded-lg p-6">
-                <div className="text-2xl font-bold text-green-700">{(stats.followersLast7Days ?? 0).toLocaleString()}</div>
-                <div className="text-green-600">New Followers (7d)</div>
-                {stats.followersLast7Days === 0 && stats.totalFollowers > 0 && (
-                  <div className="text-xs text-green-500 mt-1">
-                    No new followers in the last 7 days
-                  </div>
-                )}
+              <div className="bg-gray-200 rounded-lg p-6">
+                <div className="text-2xl font-bold text-gray-500">Not Available</div>
+                <div className="text-gray-400">New Followers (7d)</div>
               </div>
-              <div className="bg-blue-50 rounded-lg p-6">
-                <div className="text-2xl font-bold text-blue-700">{(stats.followersLast30Days ?? 0).toLocaleString()}</div>
-                <div className="text-blue-600">New Followers (30d)</div>
-                {stats.followersLast30Days === 0 && stats.totalFollowers > 0 && (
-                  <div className="text-xs text-blue-500 mt-1">
-                    No new followers in the last 30 days
-                  </div>
-                )}
+              <div className="bg-gray-200 rounded-lg p-6">
+                <div className="text-2xl font-bold text-gray-500">Not Available</div>
+                <div className="text-gray-400">New Followers (30d)</div>
               </div>
-              <div className="bg-orange-50 rounded-lg p-6">
-                <div className="text-2xl font-bold text-orange-700">{(stats.averageFollowersPerDay ?? 0).toFixed(1)}</div>
-                <div className="text-orange-600">Avg per Day</div>
-                {stats.averageFollowersPerDay === 0 && stats.totalFollowers > 0 && (
-                  <div className="text-xs text-orange-500 mt-1">
-                    Based on last 30 days
-                  </div>
-                )}
+              <div className="bg-gray-200 rounded-lg p-6">
+                <div className="text-2xl font-bold text-gray-500">Not Available</div>
+                <div className="text-gray-400">Avg per Day</div>
               </div>
             </div>
           )}

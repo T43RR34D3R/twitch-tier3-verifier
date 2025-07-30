@@ -270,176 +270,40 @@ export async function GET(request: NextRequest) {
 
       case 'follower_stats':
         try {
-          console.log('Fetching real follower statistics...')
-          const allFollowers: Array<{
-            user_id: string;
-            user_login: string;
-            user_name: string;
-            followed_at: string;
-            days_following: number;
-          }> = []
+          console.log('Fetching follower count...')
           let followerCount = 0
-          const debugInfo: string[] = []
           
-          // Try to get actual follower data
+          // Get follower count (this still works)
           try {
-            console.log('Attempting to fetch followers with pagination for stats...')
-            let cursor: string | undefined = undefined
-            let totalFetched = 0
-            const maxFollowersToFetch = 1000 // Limit to prevent excessive API calls
-            
-            // Paginate through all followers to get real data
-            do {
-              console.log(`Making API call with broadcasterId: ${broadcasterId}, cursor: ${cursor || 'undefined'}`)
-              // Try different parameter combinations for the followers API
-              const followersPaginated = await apiClient.channels.getChannelFollowers(
-                broadcasterId, // Channel to get followers from
-                broadcasterId, // User making the request (must be channel owner or moderator)
-                { 
-                  limit: 100 // Maximum allowed by Twitch API
-                  // Removed 'after' parameter for first attempt to see if cursor is the issue
-                  // ...(cursor && { after: cursor })
-                }
-              )
-              
-              console.log(`API response: total=${followersPaginated.total}, data.length=${followersPaginated.data.length}, cursor=${followersPaginated.cursor || 'undefined'}`)
-              
-              const batchFollowers = followersPaginated.data.map(follower => ({
-                user_id: follower.userId,
-                user_login: follower.userName,
-                user_name: follower.userDisplayName,
-                followed_at: follower.followDate.toISOString(),
-                days_following: Math.floor((Date.now() - follower.followDate.getTime()) / (1000 * 60 * 60 * 24))
-              }))
-              
-              allFollowers.push(...batchFollowers)
-              totalFetched += batchFollowers.length
-              cursor = followersPaginated.cursor
-              
-              console.log(`Fetched ${batchFollowers.length} followers for stats (total: ${totalFetched})`)
-              
-              // Add debug info about the API response
-              if (followersPaginated.total !== undefined) {
-                debugInfo.push(`Twitch API reports total followers: ${followersPaginated.total}`)
-              }
-              
-              // Safety check to prevent infinite loops and excessive API calls
-              if (totalFetched >= maxFollowersToFetch) {
-                console.log(`Reached maximum fetch limit of ${maxFollowersToFetch} followers for stats`)
-                debugInfo.push(`Limited to ${maxFollowersToFetch} followers to prevent excessive API calls`)
-                break
-              }
-              
-            } while (cursor) // Continue while there are more pages
-            
-            followerCount = allFollowers.length
-            console.log(`Successfully fetched ${followerCount} followers for statistics calculation`)
-            debugInfo.push(`Successfully fetched ${followerCount} followers from Twitch API`)
-            
+            const followers = await apiClient.channels.getChannelFollowerCount(broadcasterId)
+            followerCount = followers
+            console.log(`Got follower count: ${followerCount}`)
           } catch (error) {
-            console.log('Error fetching followers for stats:', error)
-            debugInfo.push(`Failed to fetch followers: ${error instanceof Error ? error.message : 'Unknown error'}`)
-            debugInfo.push('This requires moderator:read:followers scope')
-            debugInfo.push('Try re-authenticating to get the required scopes')
-            debugInfo.push('Check /account page and click "Check Current Scopes" to verify')
+            console.log('Follower count failed:', error)
             
-            // Try to get at least the follower count
+            // Try alternative method
             try {
-              const followers = await apiClient.channels.getChannelFollowerCount(broadcasterId)
-              followerCount = followers
-              debugInfo.push(`Got follower count: ${followerCount}`)
-            } catch (countError) {
-              console.log('Follower count also failed:', countError)
-              debugInfo.push(`Failed to get follower count: ${countError instanceof Error ? countError.message : 'Unknown error'}`)
+              const followersPaginated = await apiClient.channels.getChannelFollowers(
+                broadcasterId, 
+                broadcasterId,
+                { limit: 1 }
+              )
+              followerCount = followersPaginated.total || 0
+              console.log(`Got follower count via alternative method: ${followerCount}`)
+            } catch (altError) {
+              console.log('Alternative follower count method failed:', altError)
               followerCount = 0
             }
           }
           
-          // Calculate real statistics from actual follower data
-          let followersLast7Days = 0
-          let followersLast30Days = 0
-          let averageFollowersPerDay = 0
-          let longestFollowers: Array<{user_id: string; user_name: string; user_login: string; followed_at: string}> = []
-          let recentFollowers: Array<{user_id: string; user_name: string; user_login: string; followed_at: string}> = []
-          let dailyGrowth: Array<{date: string; followers: number; newFollowers: number}> = []
-          
-          if (allFollowers.length > 0) {
-            // Calculate followers from last 7 days
-            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-            followersLast7Days = allFollowers.filter(f => new Date(f.followed_at) > sevenDaysAgo).length
-            
-            // Calculate followers from last 30 days
-            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-            followersLast30Days = allFollowers.filter(f => new Date(f.followed_at) > thirtyDaysAgo).length
-            
-            // Calculate average per day based on actual data
-            if (followersLast30Days > 0) {
-              averageFollowersPerDay = followersLast30Days / 30
-            }
-            
-            // Get recent followers (last 7 days, up to 10)
-            recentFollowers = allFollowers
-              .filter(f => new Date(f.followed_at) > sevenDaysAgo)
-              .sort((a, b) => new Date(b.followed_at).getTime() - new Date(a.followed_at).getTime())
-              .slice(0, 10)
-              .map(f => ({
-                user_id: f.user_id,
-                user_name: f.user_name,
-                user_login: f.user_login,
-                followed_at: f.followed_at
-              }))
-            
-            // Get longest followers (top 10)
-            longestFollowers = [...allFollowers]
-              .sort((a, b) => b.days_following - a.days_following)
-              .slice(0, 10)
-              .map(f => ({
-                user_id: f.user_id,
-                user_name: f.user_name,
-                user_login: f.user_login,
-                followed_at: f.followed_at
-              }))
-            
-            // Generate daily growth data based on actual follow dates
-            const dailyFollowCounts: {[key: string]: number} = {}
-            allFollowers.forEach(f => {
-              const date = new Date(f.followed_at).toISOString().split('T')[0]
-              dailyFollowCounts[date] = (dailyFollowCounts[date] || 0) + 1
-            })
-            
-            // Create growth chart for last 30 days
-            dailyGrowth = Array.from({ length: 30 }, (_, i) => {
-              const date = new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000)
-              const dateStr = date.toISOString().split('T')[0]
-              const newFollowersOnDate = dailyFollowCounts[dateStr] || 0
-              
-              // Calculate total followers up to this date
-              const followersUpToDate = allFollowers.filter(f => 
-                new Date(f.followed_at) <= date
-              ).length
-              
-              return {
-                date: dateStr,
-                followers: followersUpToDate,
-                newFollowers: newFollowersOnDate
-              }
-            })
-            
-            debugInfo.push(`Calculated real statistics: ${followersLast7Days} new in 7 days, ${followersLast30Days} new in 30 days`)
-          } else {
-            debugInfo.push('No follower data available for detailed statistics')
-            debugInfo.push('Showing basic follower count only')
-          }
-          
           const stats = {
             totalFollowers: followerCount,
-            followersLast7Days: followersLast7Days,
-            followersLast30Days: followersLast30Days,
-            averageFollowersPerDay: averageFollowersPerDay,
-            longestFollowers: longestFollowers,
-            recentFollowers: recentFollowers,
-            dailyGrowth: dailyGrowth,
-            debugInfo: debugInfo // Add debug information
+            followersLast7Days: 0, // Not available due to API restrictions
+            followersLast30Days: 0, // Not available due to API restrictions
+            averageFollowersPerDay: 0, // Not available due to API restrictions
+            longestFollowers: [], // Not available due to API restrictions
+            recentFollowers: [], // Not available due to API restrictions
+            dailyGrowth: [] // Not available due to API restrictions
           }
 
           return NextResponse.json({ stats })
@@ -453,12 +317,7 @@ export async function GET(request: NextRequest) {
               averageFollowersPerDay: 0,
               longestFollowers: [],
               recentFollowers: [],
-              dailyGrowth: [],
-              debugInfo: [
-                `Error fetching follower statistics: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                'This feature requires proper Twitch API scopes',
-                'Make sure you have moderator:read:followers scope enabled'
-              ]
+              dailyGrowth: []
             }
           })
         }
