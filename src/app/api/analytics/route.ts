@@ -291,12 +291,14 @@ export async function GET(request: NextRequest) {
             // Paginate through all followers to get real data
             do {
               console.log(`Making API call with broadcasterId: ${broadcasterId}, cursor: ${cursor || 'undefined'}`)
+              // Try different parameter combinations for the followers API
               const followersPaginated = await apiClient.channels.getChannelFollowers(
-                broadcasterId, 
-                broadcasterId,
+                broadcasterId, // Channel to get followers from
+                broadcasterId, // User making the request (must be channel owner or moderator)
                 { 
-                  limit: 100, // Maximum allowed by Twitch API
-                  after: cursor 
+                  limit: 100 // Maximum allowed by Twitch API
+                  // Removed 'after' parameter for first attempt to see if cursor is the issue
+                  // ...(cursor && { after: cursor })
                 }
               )
               
