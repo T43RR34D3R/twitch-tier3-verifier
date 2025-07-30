@@ -11,4 +11,5 @@ com\twitchannouncer\api\VercelApiClient$StreamInfo.class
 com\twitchannouncer\managers\StreamStatusManager.class
 com\twitchannouncer\storage\DataStorage$PlayerData.class
 com\twitchannouncer\commands\TwitchAuthCommand.class
+com\twitchannouncer\placeholders\TwitchPlaceholders.class
 com\twitchannouncer\commands\TwitchTestCommand.class

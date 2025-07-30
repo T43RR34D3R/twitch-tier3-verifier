@@ -128,7 +128,7 @@ function MinecraftAuthContent() {
   }, [authState.status, authState.authCode, completeAuthorization]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[url('/background/skidlong0215.png')] bg-cover bg-center flex items-center justify-center p-4">
       <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-2xl p-8 max-w-md w-full border border-white/20">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-white mb-2">
@@ -220,7 +220,7 @@ function MinecraftAuthContent() {
 export default function MinecraftAuthPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[url('/background/skidlong0215.png')] bg-cover bg-center flex items-center justify-center p-4">
         <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-2xl p-8 max-w-md w-full border border-white/20">
           <div className="text-center">
             <div className="flex items-center justify-center">

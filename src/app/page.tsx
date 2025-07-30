@@ -10,6 +10,7 @@ interface PageTexts {
   subtitle: string;
   signInText: string;
   steps: string[];
+  redirectUrl?: string;
 }
 
 export default function Home() {
@@ -37,7 +38,8 @@ export default function Home() {
               title: data.settings.title,
               subtitle: data.settings.subtitle,
               signInText: data.settings.sign_in_text,
-              steps: data.settings.steps
+              steps: data.settings.steps,
+              redirectUrl: data.settings.redirect_url
             });
           } else {
             // Use defaults if no settings found
@@ -136,7 +138,9 @@ export default function Home() {
           setCurrentStep(3);
           verificationSuccessful = true;
           setTimeout(() => {
-            window.location.href = process.env.NEXT_PUBLIC_NOTION_FORM_URL || "#";
+            // Get redirect URL from page settings, fallback to env var
+            const redirectUrl = pageTexts?.redirectUrl || process.env.NEXT_PUBLIC_NOTION_FORM_URL || "#";
+            window.location.href = redirectUrl;
           }, 3000);
         } else {
           setMessage(data?.message || "You need to be a Tier 3 subscriber to access this form.");

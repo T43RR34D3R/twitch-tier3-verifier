@@ -9,6 +9,7 @@ import com.twitchannouncer.managers.StreamStatusManager;
 import com.twitchannouncer.managers.TabListManager;
 import com.twitchannouncer.storage.DataStorage;
 import com.twitchannouncer.api.VercelApiClient;
+import com.twitchannouncer.placeholders.TwitchPlaceholders;
 import net.luckperms.api.LuckPerms;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -21,6 +22,7 @@ public class TwitchAnnouncerPlugin extends JavaPlugin {
     private StreamStatusManager streamStatusManager;
     private TabListManager tabListManager;
     private LuckPerms luckPerms;
+    private TwitchPlaceholders placeholderExpansion;
 
     @Override
     public void onEnable() {
@@ -50,6 +52,15 @@ public class TwitchAnnouncerPlugin extends JavaPlugin {
         // Start stream status checking task
         streamStatusManager.startStatusCheckTask();
         
+        // Register PlaceholderAPI expansion if available
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            placeholderExpansion = new TwitchPlaceholders(this);
+            placeholderExpansion.register();
+            getLogger().info("PlaceholderAPI integration enabled! Use placeholders like %twitchannouncer_live_prefix%");
+        } else {
+            getLogger().info("PlaceholderAPI not found - placeholder integration disabled");
+        }
+        
         getLogger().info("TwitchAnnouncer has been enabled!");
     }
 
@@ -61,6 +72,11 @@ public class TwitchAnnouncerPlugin extends JavaPlugin {
         
         if (dataStorage != null) {
             dataStorage.save();
+        }
+        
+        // Unregister PlaceholderAPI expansion
+        if (placeholderExpansion != null) {
+            placeholderExpansion.unregister();
         }
         
         getLogger().info("TwitchAnnouncer has been disabled!");

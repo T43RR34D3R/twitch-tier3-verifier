@@ -8,6 +8,9 @@ author: YourName
 depend:
   - LuckPerms
 
+softdepend:
+  - PlaceholderAPI
+
 commands:
   channel:
     description: Get the Twitch channel link for a player

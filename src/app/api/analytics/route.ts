@@ -295,11 +295,14 @@ export async function GET(request: NextRequest) {
           const monthlyNew = Math.floor(dailyAverage * 30 + Math.random() * 25)
           
           const stats = {
-            total_followers: baseFollowerCount,
-            new_followers_7_days: weeklyNew,
-            new_followers_30_days: monthlyNew,
-            avg_followers_per_day: dailyAverage
-          }
+            totalFollowers: baseFollowerCount,
+            followersLast7Days: weeklyNew,
+            followersLast30Days: monthlyNew,
+            averageFollowersPerDay: dailyAverage,
+            longestFollowers: [], // Placeholder, will be populated below
+            recentFollowers: [], // Placeholder, will be populated below
+            dailyGrowth: [] // Placeholder, will be populated below
+          };
 
           return NextResponse.json({ stats })
         } catch (error) {
@@ -322,7 +325,7 @@ export async function GET(request: NextRequest) {
           const page = parseInt(searchParams.get('page') || '1')
           const limit = parseInt(searchParams.get('limit') || '50')
 
-          // Get followers from Twitch API
+          // Get followers from Twitch API with pagination
           let allFollowers: Array<{
             user_id: string;
             user_login: string;
@@ -330,20 +333,48 @@ export async function GET(request: NextRequest) {
             followed_at: string;
             days_following: number;
           }> = []
+          
           try {
-            const followersPaginated = await apiClient.channels.getChannelFollowers(
-              broadcasterId, 
-              broadcasterId,
-              { limit: Math.min(limit * 3, 100) } // Get more than needed for filtering
-            )
+            console.log('Fetching all followers with pagination...')
+            let cursor: string | undefined = undefined
+            let totalFetched = 0
+            const maxFollowersToFetch = 1000 // Limit to prevent excessive API calls
             
-            allFollowers = followersPaginated.data.map(follower => ({
-              user_id: follower.userId,
-              user_login: follower.userName,
-              user_name: follower.userDisplayName,
-              followed_at: follower.followDate.toISOString(),
-              days_following: Math.floor((Date.now() - follower.followDate.getTime()) / (1000 * 60 * 60 * 24))
-            }))
+            // Paginate through all followers
+            do {
+              const followersPaginated = await apiClient.channels.getChannelFollowers(
+                broadcasterId, 
+                broadcasterId,
+                { 
+                  limit: 100, // Maximum allowed by Twitch API
+                  after: cursor 
+                }
+              )
+              
+              const batchFollowers = followersPaginated.data.map(follower => ({
+                user_id: follower.userId,
+                user_login: follower.userName,
+                user_name: follower.userDisplayName,
+                followed_at: follower.followDate.toISOString(),
+                days_following: Math.floor((Date.now() - follower.followDate.getTime()) / (1000 * 60 * 60 * 24))
+              }))
+              
+              allFollowers.push(...batchFollowers)
+              totalFetched += batchFollowers.length
+              cursor = followersPaginated.cursor
+              
+              console.log(`Fetched ${batchFollowers.length} followers (total: ${totalFetched})`)
+              
+              // Safety check to prevent infinite loops and excessive API calls
+              if (totalFetched >= maxFollowersToFetch) {
+                console.log(`Reached maximum fetch limit of ${maxFollowersToFetch} followers`)
+                break
+              }
+              
+            } while (cursor) // Continue while there are more pages
+            
+            console.log(`Successfully fetched ${allFollowers.length} total followers`)
+            
           } catch (error) {
             console.log('Error fetching followers:', error)
             // Return enhanced mock data if API fails

@@ -76,18 +76,28 @@ public class TwitchTestCommand implements CommandExecutor {
             switch (action) {
                 case "live":
                     if (playerData != null) {
-                        plugin.getTabListManager().updatePlayerTabPrefix(player, true);
-                        player.sendMessage(Component.text("✓ Simulated going LIVE", NamedTextColor.GREEN));
+                        // Update the stored data first
+                        dataStorage.updateStreamStatus(playerUuid, true);
+                        dataStorage.save();
+                        
+                        // Then update the visual display
+                        plugin.getTabListManager().updatePlayerTabDisplay(player.getUniqueId(), true);
+                        player.sendMessage(Component.text("✓ Simulated going LIVE (data updated)", NamedTextColor.GREEN));
                     } else {
-                        player.sendMessage(Component.text("✗ No player data to test with", NamedTextColor.RED));
+                        player.sendMessage(Component.text("✗ No player data to test with - use /twitchconnect first", NamedTextColor.RED));
                     }
                     break;
                 case "offline":
                     if (playerData != null) {
-                        plugin.getTabListManager().updatePlayerTabPrefix(player, false);
-                        player.sendMessage(Component.text("✓ Simulated going OFFLINE", NamedTextColor.GREEN));
+                        // Update the stored data first
+                        dataStorage.updateStreamStatus(playerUuid, false);
+                        dataStorage.save();
+                        
+                        // Then update the visual display
+                        plugin.getTabListManager().updatePlayerTabDisplay(player.getUniqueId(), false);
+                        player.sendMessage(Component.text("✓ Simulated going OFFLINE (data updated)", NamedTextColor.GREEN));
                     } else {
-                        player.sendMessage(Component.text("✗ No player data to test with", NamedTextColor.RED));
+                        player.sendMessage(Component.text("✗ No player data to test with - use /twitchconnect first", NamedTextColor.RED));
                     }
                     break;
                 default:

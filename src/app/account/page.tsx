@@ -1,18 +1,13 @@
 "use client";
 
 import { useSession, signIn, signOut } from "next-auth/react";
-import { useEffect } from "react";
 import Image from "next/image";
 
 export default function AccountPage() {
-  const { data: session, status, update } = useSession();
+  const { data: session, status } = useSession();
 
-  // Force session refresh when component mounts (only once)
-  useEffect(() => {
-    if (session) {
-      update(); // This will refresh the session data
-    }
-  }, [session, update]); // Include dependencies
+  // Session data will be automatically updated by NextAuth
+  // Removed the problematic useEffect that was causing infinite re-renders
 
   if (status === "loading") {
     return (

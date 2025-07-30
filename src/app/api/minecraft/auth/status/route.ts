@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '../../../../lib/supabase-server';
+import { createClient } from '@supabase/supabase-js';
 
 /**
  * Check the status of a Minecraft authorization
@@ -18,7 +18,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Initialize server Supabase client
-    const supabase = createServerSupabaseClient();
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
 
     // Check if the authorization has been completed
     const { data: pendingAuth, error: pendingError } = await supabase

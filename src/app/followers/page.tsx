@@ -87,7 +87,7 @@ export default function FollowersPage() {
       const followersData = await followersResponse.json();
       
       if (statsData) {
-        setStats(statsData);
+        setStats(statsData.stats);
       }
       
       if (followersData) {
