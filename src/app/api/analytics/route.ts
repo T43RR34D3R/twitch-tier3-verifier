@@ -290,6 +290,7 @@ export async function GET(request: NextRequest) {
             
             // Paginate through all followers to get real data
             do {
+              console.log(`Making API call with broadcasterId: ${broadcasterId}, cursor: ${cursor || 'undefined'}`)
               const followersPaginated = await apiClient.channels.getChannelFollowers(
                 broadcasterId, 
                 broadcasterId,
@@ -298,6 +299,8 @@ export async function GET(request: NextRequest) {
                   after: cursor 
                 }
               )
+              
+              console.log(`API response: total=${followersPaginated.total}, data.length=${followersPaginated.data.length}, cursor=${followersPaginated.cursor || 'undefined'}`)
               
               const batchFollowers = followersPaginated.data.map(follower => ({
                 user_id: follower.userId,
@@ -312,6 +315,11 @@ export async function GET(request: NextRequest) {
               cursor = followersPaginated.cursor
               
               console.log(`Fetched ${batchFollowers.length} followers for stats (total: ${totalFetched})`)
+              
+              // Add debug info about the API response
+              if (followersPaginated.total !== undefined) {
+                debugInfo.push(`Twitch API reports total followers: ${followersPaginated.total}`)
+              }
               
               // Safety check to prevent infinite loops and excessive API calls
               if (totalFetched >= maxFollowersToFetch) {
@@ -330,6 +338,8 @@ export async function GET(request: NextRequest) {
             console.log('Error fetching followers for stats:', error)
             debugInfo.push(`Failed to fetch followers: ${error instanceof Error ? error.message : 'Unknown error'}`)
             debugInfo.push('This requires moderator:read:followers scope')
+            debugInfo.push('Try re-authenticating to get the required scopes')
+            debugInfo.push('Check /account page and click "Check Current Scopes" to verify')
             
             // Try to get at least the follower count
             try {
