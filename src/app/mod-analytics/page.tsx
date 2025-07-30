@@ -26,10 +26,27 @@ export default function ModAnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<ChannelSummary | null>(null);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [scopes, setScopes] = useState<string[]>([]);
+  const [scopeError, setScopeError] = useState<string | null>(null);
   
   // Hardcoded for BuckFoozle for now
   const targetChannelId = '269187200';
   const targetChannelName = 'BuckFoozle';
+
+  const checkScopes = useCallback(async () => {
+    try {
+      const response = await fetch('/api/check-scopes');
+      const data = await response.json();
+      if (data.scopes) {
+        setScopes(data.scopes);
+      } else {
+        setScopeError(data.error || 'Failed to fetch scopes');
+      }
+    } catch (error) {
+      setScopeError('Error checking scopes');
+      console.error('Error checking scopes:', error);
+    }
+  }, []);
 
   const loadModAnalytics = useCallback(async () => {
     if (!session) return;
@@ -94,7 +111,47 @@ export default function ModAnalyticsPage() {
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
       <div className="relative z-10 max-w-7xl mx-auto">
         <div className="bg-white rounded-xl shadow-2xl p-8">
-          <h1 className="text-3xl font-bold text-black mb-4">Moderator Analytics for {targetChannelName}</h1>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-black">Moderator Analytics for {targetChannelName}</h1>
+            <button
+              onClick={checkScopes}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+            >
+              Check My Scopes
+            </button>
+          </div>
+          
+          {/* Scope Information */}
+          {scopes.length > 0 && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">🔑 Your Current Scopes:</h3>
+              <div className="flex flex-wrap gap-2">
+                {scopes.map((scope) => (
+                  <span 
+                    key={scope} 
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      scope.includes('subscription') ? 'bg-blue-100 text-blue-800' :
+                      scope.includes('follower') ? 'bg-purple-100 text-purple-800' :
+                      scope.includes('moderator') ? 'bg-green-100 text-green-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    {scope}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-3 text-sm text-gray-600">
+                <p><strong>Note:</strong> To see subscriber data for moderated channels, BuckFoozle would need to grant you access to his subscriber information.</p>
+                <p className="mt-1">The <code>channel:read:subscriptions</code> scope only works for your own channel, not channels you moderate.</p>
+              </div>
+            </div>
+          )}
+          
+          {scopeError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-red-700">Error checking scopes: {scopeError}</p>
+            </div>
+          )}
           
           {summary ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
