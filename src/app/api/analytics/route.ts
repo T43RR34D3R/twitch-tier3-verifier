@@ -31,23 +31,44 @@ export async function GET(request: NextRequest) {
     // const isModeratorAccess = !!requestedChannelId // TODO: Add moderator verification
 
     // Check if user has analytics access
+    // For moderator requests, check the requesting user's access, not the target channel
+    const userToCheck = requestedChannelId ? session.user.id : broadcasterId
     const { data: accessCheck } = await supabase
       .from('analytics_access')
       .select('enabled')
-      .eq('user_id', broadcasterId)
+      .eq('user_id', userToCheck)
       .single()
     
     if (!accessCheck || !accessCheck.enabled) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    // Get user's access token from session
-    if (!session.accessToken) {
+    // Get access token - use target channel's token if they've authorized, otherwise use requesting user's token
+    let accessTokenToUse = session.accessToken
+    
+    if (requestedChannelId) {
+      // Check if target channel has authorized the app and has a stored token
+      const { data: targetAccount } = await supabase
+        .from('accounts')
+        .select('access_token')
+        .eq('userId', requestedChannelId)
+        .eq('provider', 'twitch')
+        .single()
+      
+      if (targetAccount?.access_token) {
+        console.log(`Using BuckFoozle's stored token for subscriber data`)
+        accessTokenToUse = targetAccount.access_token
+      } else {
+        console.log(`BuckFoozle hasn't authorized the app - using your token with moderator permissions`)
+      }
+    }
+    
+    if (!accessTokenToUse) {
       return NextResponse.json({ error: 'No access token available' }, { status: 401 })
     }
 
     const type = searchParams.get('type')
-    const apiClient = getApiClient(session.accessToken)
+    const apiClient = getApiClient(accessTokenToUse)
 
     switch (type) {
       case 'summary':
