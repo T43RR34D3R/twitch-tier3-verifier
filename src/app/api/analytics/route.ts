@@ -22,7 +22,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const broadcasterId = session.user.id
+    const searchParams = request.nextUrl.searchParams
+    const requestedChannelId = searchParams.get('channel_id')
+    
+    // If channel_id is provided, we're accessing a moderated channel
+    // Otherwise, use the user's own channel
+    const broadcasterId = requestedChannelId || session.user.id
+    // const isModeratorAccess = !!requestedChannelId // TODO: Add moderator verification
 
     // Check if user has analytics access
     const { data: accessCheck } = await supabase
@@ -40,7 +46,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No access token available' }, { status: 401 })
     }
 
-    const searchParams = request.nextUrl.searchParams
     const type = searchParams.get('type')
     const apiClient = getApiClient(session.accessToken)
 
