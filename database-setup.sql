@@ -41,3 +41,31 @@ SELECT
   'Please sign in with your Twitch account to verify your subscription status.',
   '["Signed In", "Checking Follow", "Checking Tier 3", "Verified"]'::jsonb
 WHERE NOT EXISTS (SELECT 1 FROM page_settings);
+
+-- Create subscribers table
+CREATE TABLE IF NOT EXISTS subscribers (
+  id BIGSERIAL PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  user_name TEXT NOT NULL,
+  broadcaster_id TEXT NOT NULL,
+  broadcaster_name TEXT NOT NULL,
+  tier TEXT NOT NULL,
+  is_gift BOOLEAN DEFAULT FALSE,
+  gifter_id TEXT,
+  gifter_name TEXT,
+  plan_name TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Create indexes for subscribers table
+CREATE INDEX IF NOT EXISTS idx_subscribers_user_id ON subscribers(user_id);
+CREATE INDEX IF NOT EXISTS idx_subscribers_broadcaster_id ON subscribers(broadcaster_id);
+CREATE INDEX IF NOT EXISTS idx_subscribers_tier ON subscribers(tier);
+CREATE INDEX IF NOT EXISTS idx_subscribers_created_at ON subscribers(created_at DESC);
+
+-- Create unique constraint to prevent duplicates
+ALTER TABLE subscribers ADD CONSTRAINT unique_subscriber UNIQUE (user_id, broadcaster_id);
+
+-- Create trigger to automatically update updated_at for subscribers
+CREATE TRIGGER update_subscribers_updated_at BEFORE UPDATE ON subscribers FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();

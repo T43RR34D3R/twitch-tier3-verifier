@@ -28,6 +28,16 @@ export default function ModAnalyticsPage() {
   const [accessDenied, setAccessDenied] = useState(false);
   const [scopes, setScopes] = useState<string[]>([]);
   const [scopeError, setScopeError] = useState<string | null>(null);
+  const [subscribers, setSubscribers] = useState<{
+    user_id: string;
+    user_name: string;
+    tier: string;
+    is_gift: boolean;
+    gifter_name?: string;
+    created_at: string;
+  }[]>([]);
+  const [subscriberLoading, setSubscriberLoading] = useState(false);
+  const [subscriberMessage, setSubscriberMessage] = useState<string>('');
   
   // Hardcoded for BuckFoozle for now
   const targetChannelId = '269187200';
@@ -47,6 +57,39 @@ export default function ModAnalyticsPage() {
       console.error('Error checking scopes:', error);
     }
   }, []);
+
+  const loadSubscriberData = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/subscribers?type=list&broadcaster_id=${targetChannelId}`);
+      const data = await response.json();
+      if (data.success) {
+        setSubscribers(data.subscribers || []);
+      }
+    } catch (error) {
+      console.error('Error loading subscriber data:', error);
+    }
+  }, [targetChannelId]);
+
+  const fetchAndStoreSubscribers = useCallback(async () => {
+    try {
+      setSubscriberLoading(true);
+      setSubscriberMessage('');
+      const response = await fetch('/api/subscribers', { method: 'GET' });
+      const data = await response.json();
+      if (data.success) {
+        setSubscriberMessage(data.message || 'Subscriber data refreshed successfully!');
+        // Optionally reload the page or fetch updated subscriber data
+        loadSubscriberData();
+      } else {
+        setSubscriberMessage(data.error || 'Failed to refresh subscriber data.');
+      }
+    } catch (error) {
+      setSubscriberMessage('Error fetching subscriber data.');
+      console.error('Error fetching subscriber data:', error);
+    } finally {
+      setSubscriberLoading(false);
+    }
+  }, [loadSubscriberData]);
 
   const loadModAnalytics = useCallback(async () => {
     if (!session) return;
@@ -152,6 +195,55 @@ export default function ModAnalyticsPage() {
               <p className="text-red-700">Error checking scopes: {scopeError}</p>
             </div>
           )}
+          
+          {/* Subscriber Management Section */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">📊 Subscriber Data Management</h3>
+              <button
+                onClick={fetchAndStoreSubscribers}
+                disabled={subscriberLoading}
+                className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+              >
+                {subscriberLoading ? 'Fetching...' : 'Refresh Subscriber Data'}
+              </button>
+            </div>
+            
+            {subscriberMessage && (
+              <div className={`p-3 rounded-lg mb-4 ${
+                subscriberMessage.includes('success') 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-yellow-100 text-yellow-800'
+              }`}>
+                {subscriberMessage}
+              </div>
+            )}
+            
+            {subscribers.length > 0 && (
+              <div>
+                <h4 className="text-md font-semibold text-gray-700 mb-3">Recent Subscribers ({subscribers.length})</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
+                  {subscribers.slice(0, 20).map((sub, index) => (
+                    <div key={index} className="bg-white p-3 rounded-lg border">
+                      <div className="font-medium text-gray-900">{sub.user_name}</div>
+                      <div className="text-sm text-gray-600">Tier {sub.tier}</div>
+                      {sub.is_gift && (
+                        <div className="text-xs text-purple-600">🎁 Gift from {sub.gifter_name}</div>
+                      )}
+                      <div className="text-xs text-gray-500">
+                        {new Date(sub.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {subscribers.length > 20 && (
+                  <div className="text-sm text-gray-600 mt-2">
+                    Showing 20 of {subscribers.length} subscribers
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           
           {summary ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
