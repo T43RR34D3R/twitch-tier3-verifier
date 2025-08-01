@@ -52,9 +52,32 @@ export async function GET(req: NextRequest) {
     console.log(`Found ${subscriptions.length} subscribers`);
 
     if (subscriptions.length === 0) {
+      // Check if this is a permissions issue by trying to get the current user's ID
+      const userResponse = await fetch('https://api.twitch.tv/helix/users', {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+          'Client-Id': process.env.TWITCH_CLIENT_ID!,
+        },
+      });
+      
+      const userData = await userResponse.json();
+      const currentUserId = userData.data?.[0]?.id;
+      
+      if (currentUserId !== targetChannelId) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'The channel:read:subscriptions scope only works for your own channel. To access subscriber data for moderated channels, the channel owner (BuckFoozle) would need to authorize this app.',
+          details: {
+            yourUserId: currentUserId,
+            targetChannelId: targetChannelId,
+            explanation: 'Moderator permissions do not include access to subscriber data of other channels.'
+          }
+        }, { status: 403 });
+      }
+      
       return NextResponse.json({ 
         success: true, 
-        message: 'No subscribers found or insufficient permissions',
+        message: 'No subscribers found for your channel',
         count: 0 
       });
     }
