@@ -37,47 +37,38 @@ export async function GET(req: NextRequest) {
     // Otherwise, fetch fresh data from Twitch
     const session = await getServerSession(authOptions);
     
-    if (!session?.accessToken) {
-      return NextResponse.json({ error: 'No access token available' }, { status: 401 });
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     // Hardcoded for BuckFoozle for now
     const targetChannelId = '269187200';
     const targetChannelName = 'BuckFoozle';
 
+    // Get BuckFoozle's stored token from the database
+    const { data: tokenData, error: tokenError } = await supabase
+      .from('user_tokens')
+      .select('access_token')
+      .eq('user_id', targetChannelId)
+      .single();
+
+    if (tokenError || !tokenData?.access_token) {
+      return NextResponse.json({ 
+        error: 'BuckFoozle has not authorized the app or token has expired',
+        details: 'The channel owner needs to authenticate with the app to allow subscriber data access'
+      }, { status: 403 });
+    }
+
     console.log('Fetching subscriber data for channel:', targetChannelName);
     
-    const subscriptions = await getUserSubscriptions(session.accessToken as string, targetChannelId);
+    const subscriptions = await getUserSubscriptions(tokenData.access_token, targetChannelId);
     
     console.log(`Found ${subscriptions.length} subscribers`);
 
     if (subscriptions.length === 0) {
-      // Check if this is a permissions issue by trying to get the current user's ID
-      const userResponse = await fetch('https://api.twitch.tv/helix/users', {
-        headers: {
-          'Authorization': `Bearer ${session.accessToken}`,
-          'Client-Id': process.env.TWITCH_CLIENT_ID!,
-        },
-      });
-      
-      const userData = await userResponse.json();
-      const currentUserId = userData.data?.[0]?.id;
-      
-      if (currentUserId !== targetChannelId) {
-        return NextResponse.json({ 
-          success: false, 
-          error: 'The channel:read:subscriptions scope only works for your own channel. To access subscriber data for moderated channels, the channel owner (BuckFoozle) would need to authorize this app.',
-          details: {
-            yourUserId: currentUserId,
-            targetChannelId: targetChannelId,
-            explanation: 'Moderator permissions do not include access to subscriber data of other channels.'
-          }
-        }, { status: 403 });
-      }
-      
       return NextResponse.json({ 
         success: true, 
-        message: 'No subscribers found for your channel',
+        message: 'No subscribers found for BuckFoozle\'s channel',
         count: 0 
       });
     }
