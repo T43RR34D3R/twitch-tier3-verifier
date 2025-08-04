@@ -1,9 +1,10 @@
 "use client";
-import '../../lib/chartConfig';
+import '../../../lib/chartConfig';
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { Bar } from 'react-chartjs-2';
 import { barChartOptions } from '@/lib/chartConfig';
+import StatsNavigation from '@/components/StatsNavigation';
 
 const GameStatsPage = () => {
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
@@ -51,7 +52,8 @@ const GameStatsPage = () => {
 
   return (
     <div>
-      <h1>Game Statistics</h1>
+      <StatsNavigation />
+      <h1>TwitchTracker Statistics - Games</h1>
       <div style={{ height: '400px' }}>
         <Bar data={chartData} options={barChartOptions} />
       </div>

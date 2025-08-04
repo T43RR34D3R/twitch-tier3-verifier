@@ -1,9 +1,10 @@
 "use client";
-import '../../lib/chartConfig';
+import '../../../lib/chartConfig';
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { Line } from 'react-chartjs-2';
 import { timeChartOptions } from '@/lib/chartConfig';
+import StatsNavigation from '@/components/StatsNavigation';
 
 const DailyStatsPage = () => {
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
@@ -58,7 +59,8 @@ const DailyStatsPage = () => {
 
   return (
     <div>
-      <h1>Daily Statistics</h1>
+      <StatsNavigation />
+      <h1>TwitchTracker Statistics - Daily</h1>
       <div style={{ height: '400px' }}>
         <Line data={chartData} options={timeChartOptions} />
       </div>

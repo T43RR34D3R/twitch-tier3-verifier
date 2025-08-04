@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { Line } from 'react-chartjs-2';
 import { timeChartOptions } from '@/lib/chartConfig';
+import StatsNavigation from '@/components/StatsNavigation';
 
 const SummaryPage = () => {
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
@@ -65,7 +66,8 @@ const SummaryPage = () => {
 
   return (
     <div>
-      <h1>Summary Statistics</h1>
+      <StatsNavigation />
+      <h1>TwitchTracker Statistics - Summary</h1>
       <div>
         <label>
           <input

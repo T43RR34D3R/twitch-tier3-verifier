@@ -1,9 +1,10 @@
 "use client";
-import '../../lib/chartConfig';
+import '../../../lib/chartConfig';
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { Bar } from 'react-chartjs-2';
 import { barChartOptions } from '@/lib/chartConfig';
+import StatsNavigation from '@/components/StatsNavigation';
 
 const DayOfWeekStatsPage = () => {
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
@@ -48,7 +49,8 @@ const DayOfWeekStatsPage = () => {
 
   return (
     <div>
-      <h1>Day of the Week Statistics</h1>
+      <StatsNavigation />
+      <h1>TwitchTracker Statistics - Day of Week</h1>
       <div style={{ height: '400px' }}>
         <Bar data={chartData} options={barChartOptions} />
       </div>

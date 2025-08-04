@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { Line, Bar } from 'react-chartjs-2';
 import { timeChartOptions, barChartOptions } from '@/lib/chartConfig';
+import StatsNavigation from '@/components/StatsNavigation';
 
 export default function SubscriberStatsPage() {
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
@@ -101,8 +102,9 @@ export default function SubscriberStatsPage() {
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
       <div className="relative z-10 max-w-7xl mx-auto">
         <div className="bg-white rounded-xl shadow-2xl p-8">
+          <StatsNavigation />
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-black">Subscriber Statistics</h1>
+            <h1 className="text-3xl font-bold text-black">TwitchTracker Statistics - Subscribers</h1>
             <div className="flex gap-4">
               <button
                 onClick={() => setViewType('monthly')}
