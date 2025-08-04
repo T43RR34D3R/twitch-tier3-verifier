@@ -1,0 +1,16 @@
+﻿{
+    "channel_BuckFoozle":  {
+                               "rank":  13102,
+                               "minutes_streamed":  7101,
+                               "avg_viewers":  122,
+                               "max_viewers":  401,
+                               "hours_watched":  14411,
+                               "followers":  161,
+                               "followers_total":  10813
+                           },
+    "metadata":  {
+                     "timestamp":  "2025-08-04T22:28:17Z",
+                     "requested_category":  "",
+                     "requested_channel":  "BuckFoozle"
+                 }
+}

@@ -20,6 +20,9 @@ interface ChannelSummary {
   };
 }
 
+import useSWR from 'swr';
+import { TwitchTrackerData } from '@/lib/twitchtracker';
+
 export default function ModAnalyticsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -39,7 +42,14 @@ export default function ModAnalyticsPage() {
   const [subscriberLoading, setSubscriberLoading] = useState(false);
   const [subscriberMessage, setSubscriberMessage] = useState<string>('');
   
-  // Hardcoded for BuckFoozle for now
+  const fetchTwitchTrackerData = async (url: string) => {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Error fetching TwitchTracker data');
+    const data = await response.json();
+    if (!data.success) throw new Error(data.error);
+    return data.data as TwitchTrackerData;
+  };
+  const { data: twitchTrackerData, error: twitchTrackerError } = useSWR('/api/twitchtracker?channel=buckfoozle&static=true', fetchTwitchTrackerData);
   const targetChannelId = '269187200';
   const targetChannelName = 'BuckFoozle';
 
@@ -245,7 +255,29 @@ export default function ModAnalyticsPage() {
             )}
           </div>
           
-          {summary ? (
+          {twitchTrackerData ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="bg-purple-50 rounded-lg p-6">
+                <div className="text-2xl font-bold text-purple-700">{twitchTrackerData.totalFollowers.toLocaleString() || 0}</div>
+                <div className="text-purple-600">Total Followers</div>
+                <div className="text-sm text-gray-600">Rank: #{twitchTrackerData.rank}, Top {twitchTrackerData.topPercentage}</div>
+              </div>
+               <div className="bg-blue-50 rounded-lg p-6">
+                <div className="text-2xl font-bold text-blue-700">{twitchTrackerData.currentActiveSubs.toLocaleString() || 0}</div>
+                <div className="text-blue-600">Total Subscribers (Current)</div>
+              </div>
+               <div className="bg-green-50 rounded-lg p-6">
+                <div className="text-2xl font-bold text-green-700">{twitchTrackerData.avgViewers30Days.toLocaleString() || 0}</div>
+                <div className="text-green-600">Avg Viewers (30d)</div>
+              </div>
+              <div className="bg-yellow-50 rounded-lg p-6">
+                <div className="text-2xl font-bold text-yellow-700">{twitchTrackerData.totalHoursStreamed.toFixed(1)}h</div>
+                <div className="text-yellow-600">Total Hours Streamed</div>
+              </div>
+            </div>
+          ) : twitchTrackerError ? (
+             <p className="text-red-600">Error fetching TwitchTracker data.</p>
+          ) : summary ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <div className="bg-purple-50 rounded-lg p-6">
                 <div className="text-2xl font-bold text-purple-700">{summary.latest?.follower_count?.toLocaleString() || 0}</div>

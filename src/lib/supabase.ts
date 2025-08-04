@@ -102,3 +102,99 @@ export interface AnalyticsAccess {
   granted_at?: string
   created_at?: string
 }
+
+// TwitchTracker database interfaces
+export interface TwitchTrackerChannelData {
+  id?: number;
+  channel_id: string;
+  channel_name: string;
+  display_name?: string;
+  current_active_subs: number;
+  paid_active_subs?: number;
+  gifted_active_subs: number;
+  all_time_high_subs: number;
+  prime_subs?: number;
+  tier1_subs?: number;
+  tier2_subs?: number;
+  tier3_subs?: number;
+  total_followers: number;
+  avg_viewers_30_days: number;
+  twitch_rank?: number;
+  top_percentage?: string;
+  total_hours_streamed: number;
+  highest_viewer_count: number;
+  highest_viewer_date?: string;
+  total_games_streamed: number;
+  active_days_per_week: number;
+  total_games_played: number;
+  usual_stream_start_time?: string;
+  overall_activity_days: number;
+  overall_activity_total: number;
+  last_live_date?: string;
+  language: string;
+  created_date?: string;
+  partner_status: string;
+  description?: string;
+  data_date: string;
+  collected_at?: string;
+}
+
+export interface TwitchTrackerStreamHistory {
+  id?: number;
+  channel_id: string;
+  stream_date: string;
+  title?: string;
+  game_name?: string;
+  duration_minutes: number;
+  max_viewers: number;
+  followers_gained: number;
+  collected_at?: string;
+}
+
+export interface TwitchTrackerGameStats {
+  id?: number;
+  channel_id: string;
+  game_name: string;
+  game_id?: string;
+  avg_viewers: number;
+  total_hours_streamed: number;
+  followers_gained: number;
+  peak_viewers: number;
+  data_date: string;
+  collected_at?: string;
+}
+
+export interface TwitchTrackerSubBreakdown {
+  id?: number;
+  channel_id: string;
+  month_year: string;
+  total_subs: number;
+  tier1_prime_subs: number;
+  tier2_subs: number;
+  tier3_subs: number;
+  undefined_subs: number;
+  gifted_subs: number;
+  collected_at?: string;
+}
+
+export interface TwitchTrackerPerformanceMetrics {
+  id?: number;
+  channel_id: string;
+  period_type: string;
+  period_start: string;
+  period_end: string;
+  avg_viewers: number;
+  max_viewers: number;
+  total_watch_time_hours: number;
+  unique_viewers?: number;
+  followers_start: number;
+  followers_end: number;
+  followers_gained: number;
+  subs_start: number;
+  subs_end: number;
+  subs_gained: number;
+  total_streams: number;
+  total_stream_time_hours: number;
+  avg_stream_duration_minutes: number;
+  collected_at?: string;
+}
