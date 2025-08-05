@@ -23,6 +23,8 @@ export async function POST(request: NextRequest) {
 
     const today = new Date().toISOString().split('T')[0];
 
+    console.log('TwitchTracker data to store:', twitchTrackerData);
+    
     // Store channel data
     const channelDataResult = await supabase
       .from('twitchtracker_channel_data')
@@ -55,7 +57,16 @@ export async function POST(request: NextRequest) {
 
     if (channelDataResult.error) {
       console.error('Error storing channel data:', channelDataResult.error);
+      throw new Error(`Failed to store channel data: ${channelDataResult.error.message}`);
     }
+    
+    console.log('Channel data stored successfully');
+    console.log('Generated historical data points:', {
+      channelData: 30,
+      gameStats: 7,
+      subBreakdown: 12,
+      streamHistory: 'variable'
+    });
 
     // Generate some sample historical data for demonstration
     // In a real implementation, you'd collect this over time

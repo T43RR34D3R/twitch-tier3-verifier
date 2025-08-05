@@ -43,6 +43,8 @@ export default function ModAnalyticsPage() {
   const [subscriberMessage, setSubscriberMessage] = useState<string>('');
   const [collectingData, setCollectingData] = useState(false);
   const [collectionMessage, setCollectionMessage] = useState<string>('');
+  const [testingDatabase, setTestingDatabase] = useState(false);
+  const [testMessage, setTestMessage] = useState<string>('');
   
   const fetchTwitchTrackerData = async (url: string) => {
     const response = await fetch(url);
@@ -121,6 +123,25 @@ export default function ModAnalyticsPage() {
       console.error('Error collecting TwitchTracker data:', error);
     } finally {
       setCollectingData(false);
+    }
+  }, []);
+
+  const testDatabase = useCallback(async () => {
+    try {
+      setTestingDatabase(true);
+      setTestMessage('');
+      const response = await fetch('/api/test-twitchtracker');
+      const data = await response.json();
+      if (data.success) {
+        setTestMessage(`✅ ${data.message}`);
+      } else {
+        setTestMessage(`❌ ${data.message || 'Database test failed'}`);
+      }
+    } catch (error) {
+      setTestMessage('❌ Error testing database connection.');
+      console.error('Error testing database:', error);
+    } finally {
+      setTestingDatabase(false);
     }
   }, []);
 
@@ -235,6 +256,13 @@ export default function ModAnalyticsPage() {
               <h3 className="text-lg font-semibold text-gray-800">📊 Data Management</h3>
               <div className="flex gap-3">
                 <button
+                  onClick={testDatabase}
+                  disabled={testingDatabase}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                >
+                  {testingDatabase ? 'Testing...' : 'Test Database'}
+                </button>
+                <button
                   onClick={collectTwitchTrackerData}
                   disabled={collectingData}
                   className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-bold py-2 px-4 rounded-lg transition-colors"
@@ -250,6 +278,16 @@ export default function ModAnalyticsPage() {
                 </button>
               </div>
             </div>
+            
+            {testMessage && (
+              <div className={`p-3 rounded-lg mb-4 ${
+                testMessage.includes('✅') 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {testMessage}
+              </div>
+            )}
             
             {collectionMessage && (
               <div className={`p-3 rounded-lg mb-4 ${
