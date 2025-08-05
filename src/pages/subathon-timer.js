@@ -119,15 +119,17 @@ export default function SubathonTimer() {
 
                 body {
                     font-family: 'Arial', sans-serif;
-                    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0d0d0d 100%);
+                    background-image: url('/buckfoozle-bg.png');
+                    background-size: cover;
+                    background-position: center;
+                    background-repeat: no-repeat;
                     min-height: 100vh;
                     display: flex;
-                    flex-direction: column;
                     justify-content: center;
                     align-items: center;
                     color: #e0e0e0;
                     position: relative;
-                    overflow: hidden;
+                    padding: 1rem;
                 }
 
                 body::before {
@@ -137,15 +139,24 @@ export default function SubathonTimer() {
                     left: 0;
                     right: 0;
                     bottom: 0;
-                    background-image: 
-                        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.15) 0%, transparent 50%),
-                        radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.15) 0%, transparent 50%);
+                    background: rgba(0, 0, 0, 0.4);
+                    backdrop-filter: blur(2px);
+                    z-index: -1;
+                }
+
+                body::after {
+                    content: "";
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: radial-gradient(circle at center, transparent 0%, transparent 60%, rgba(0,0,0,0.4) 100%);
                     z-index: -1;
                 }
 
                 .container {
-                    background: rgba(10, 10, 15, 0.92);
+                    background: rgba(10, 10, 15, 0.95);
                     backdrop-filter: blur(20px);
                     border-radius: 20px;
                     padding: 50px;
@@ -155,8 +166,10 @@ export default function SubathonTimer() {
                     border: 1px solid rgba(120, 119, 198, 0.2);
                     text-align: center;
                     max-width: 700px;
-                    width: 90%;
+                    width: 100%;
+                    max-width: 90vw;
                     position: relative;
+                    z-index: 10;
                 }
 
                 .container::before {
