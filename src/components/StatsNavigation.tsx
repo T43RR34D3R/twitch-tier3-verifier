@@ -22,33 +22,27 @@ const StatsNavigation = () => {
   };
 
   return (
-    <nav style={{ 
-      marginBottom: '20px', 
-      padding: '10px 0', 
-      borderBottom: '1px solid #eee' 
-    }}>
-      <div style={{ 
-        display: 'flex', 
-        gap: '15px', 
-        flexWrap: 'wrap' 
-      }}>
+    <nav className="mb-6 pb-4 border-b border-gray-200">
+      <div className="flex flex-wrap gap-3">
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            style={{
-              padding: '8px 16px',
-              borderRadius: '4px',
-              textDecoration: 'none',
-              backgroundColor: isActive(item.href, item.exact) ? '#007acc' : '#f5f5f5',
-              color: isActive(item.href, item.exact) ? 'white' : '#333',
-              border: '1px solid #ddd',
-              transition: 'all 0.2s ease'
-            }}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              isActive(item.href, item.exact)
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-gray-900'
+            }`}
           >
             {item.label}
           </Link>
         ))}
+        <Link
+          href="/mod-analytics"
+          className="px-4 py-2 rounded-lg font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
+        >
+          ← Back to Analytics
+        </Link>
       </div>
     </nav>
   );
