@@ -134,6 +134,7 @@ function generateSampleHistoricalData(currentData: {
   rank?: number;
   topPercentage?: string;
   totalHoursStreamed?: number;
+  usualStreamStartTime?: string;
   games?: Array<{name: string; hours: number; avgViewers: number; peakViewers: number; streams: number}>;
   recentStreams?: Array<{date: string; game: string; title: string; duration: number; maxViewers: number; avgViewers: number}>;
   monthlyStats?: Array<{month: string; avgViewers: number; peakViewers: number; hoursStreamed: number; followers: number}>;
@@ -268,7 +269,7 @@ function generateSampleHistoricalData(currentData: {
   
   if (recentStreams.length > 0) {
     // Use real stream data as base for historical data
-    recentStreams.slice(0, 15).forEach((stream, index) => {
+    recentStreams.slice(0, 15).forEach((stream) => {
       streamHistory.push({
         channel_id: channelId,
         stream_date: new Date(stream.date).toISOString(),

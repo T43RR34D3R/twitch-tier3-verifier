@@ -157,7 +157,7 @@ export default function Home() {
           setCurrentStep(0);
         }
       });
-  }, [session, status]);
+  }, [session, status, pageTexts?.redirectUrl]);
 
   const handleSignIn = () => {
     signIn("twitch");
