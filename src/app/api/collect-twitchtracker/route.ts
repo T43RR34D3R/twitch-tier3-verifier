@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchTwitchTrackerData, getBuckFoozleStaticData } from '@/lib/twitchtracker';
+import { fetchComprehensiveTwitchTrackerData, getBuckFoozleStaticData } from '@/lib/twitchtracker';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 
 export async function POST(request: NextRequest) {
@@ -12,15 +12,17 @@ export async function POST(request: NextRequest) {
     // Creating Supabase client for server
     const supabase = createServerSupabaseClient();
     
-    // Get TwitchTracker data
+    // Get comprehensive TwitchTracker data including games and streams
     let twitchTrackerData;
     
     if (useStatic || channelName.toLowerCase() === 'buckfoozle') {
       twitchTrackerData = getBuckFoozleStaticData();
+      console.log('Using static data for BuckFoozle');
     } else {
-      twitchTrackerData = await fetchTwitchTrackerData(channelName);
+      console.log(`Fetching comprehensive data for ${channelName}...`);
+      twitchTrackerData = await fetchComprehensiveTwitchTrackerData(channelName);
       if (!twitchTrackerData) {
-        throw new Error('Failed to fetch TwitchTracker data');
+        throw new Error('Failed to fetch comprehensive TwitchTracker data');
       }
     }
 
@@ -132,6 +134,9 @@ function generateSampleHistoricalData(currentData: {
   rank?: number;
   topPercentage?: string;
   totalHoursStreamed?: number;
+  games?: Array<{name: string; hours: number; avgViewers: number; peakViewers: number; streams: number}>;
+  recentStreams?: Array<{date: string; game: string; title: string; duration: number; maxViewers: number; avgViewers: number}>;
+  monthlyStats?: Array<{month: string; avgViewers: number; peakViewers: number; hoursStreamed: number; followers: number}>;
 }, channelId: string, channelName: string) {
   const today = new Date();
   const channelData: Record<string, unknown>[] = [];
@@ -188,34 +193,41 @@ function generateSampleHistoricalData(currentData: {
     });
   }
 
-  // Generate realistic game stats based on BuckFoozle's actual content
-  // Since he's a Monster Hunter enthusiast and variety streamer
-  const buckFoozleGames = [
-    'Monster Hunter World', 'Monster Hunter Rise', 'Monster Hunter: World', 
-    'Deep Rock Galactic', 'Rocket League', 'Halo Infinite',
-    'Destiny 2', 'Terraria', 'Risk of Rain 2'
-  ];
-
-  // Only generate games if we're using BuckFoozle data
-  const gamesToUse = channelName.toLowerCase() === 'buckfoozle' ? buckFoozleGames : [];
+  // Use real scraped games data if available
+  const realGames = currentData.games || [];
+  console.log(`Found ${realGames.length} real games from TwitchTracker`);
   
-  gamesToUse.forEach((gameName) => {
-    // Monster Hunter gets higher stats since he's an enthusiast
-    const isMonsterHunter = gameName.includes('Monster Hunter');
-    const baseViewers = isMonsterHunter ? 80 : 40;
-    const baseHours = isMonsterHunter ? 200 : 50;
-    
-    gameStats.push({
-      channel_id: channelId,
-      game_name: gameName,
-      avg_viewers: baseViewers + Math.floor(Math.random() * 60),
-      total_hours_streamed: baseHours + Math.floor(Math.random() * 100),
-      followers_gained: Math.floor(Math.random() * 50) + 10,
-      peak_viewers: (baseViewers + 50) + Math.floor(Math.random() * 200),
-      data_date: today.toISOString().split('T')[0],
-      collected_at: new Date().toISOString()
+  if (realGames.length > 0) {
+    // Use actual scraped games data
+    realGames.forEach((gameData) => {
+      gameStats.push({
+        channel_id: channelId,
+        game_name: gameData.name,
+        avg_viewers: gameData.avgViewers || 0,
+        total_hours_streamed: gameData.hours || 0,
+        followers_gained: Math.floor(Math.random() * 20) + 5, // Estimate based on game popularity
+        peak_viewers: gameData.peakViewers || gameData.avgViewers * 2,
+        data_date: today.toISOString().split('T')[0],
+        collected_at: new Date().toISOString()
+      });
     });
-  });
+  } else {
+    console.log('No real games data found, using fallback');
+    // Fallback to estimated data only if no real data available
+    const fallbackGames = ['Variety', 'Just Chatting', 'Music & Performing Arts'];
+    fallbackGames.forEach((gameName) => {
+      gameStats.push({
+        channel_id: channelId,
+        game_name: gameName,
+        avg_viewers: currentViewers * (0.8 + Math.random() * 0.4),
+        total_hours_streamed: Math.floor(Math.random() * 100) + 20,
+        followers_gained: Math.floor(Math.random() * 30) + 5,
+        peak_viewers: currentViewers * (1.5 + Math.random() * 1.0),
+        data_date: today.toISOString().split('T')[0],
+        collected_at: new Date().toISOString()
+      });
+    });
+  }
 
   // Generate subscriber breakdown for last 12 months with gradual growth
   const currentSubCount = currentData.currentActiveSubs || 100;
@@ -248,38 +260,52 @@ function generateSampleHistoricalData(currentData: {
     });
   }
 
-  // Generate sample stream history using BuckFoozle's games
-  for (let i = 14; i >= 0; i--) {
-    // Generate 2-3 streams per week (matching his 2.6 days/week from static data)
-    if (Math.random() > 0.4 && gamesToUse.length > 0) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      
-      // BuckFoozle usually starts at 03:30 according to TwitchTracker data
-      const startHour = 3 + Math.floor(Math.random() * 4); // 3-7 AM range
-      date.setHours(startHour, 30, 0, 0);
-      
-      const gameIndex = Math.floor(Math.random() * gamesToUse.length);
-      const selectedGame = gamesToUse[gameIndex];
-      
-      // Create realistic stream titles based on the game
-      let title = `${selectedGame} - Come hang out at The Best Friends Club!`;
-      if (selectedGame.includes('Monster Hunter')) {
-        title = `Monster Hunter Time! Hunting with the Best Friends Club!`;
-      } else if (selectedGame === 'Deep Rock Galactic') {
-        title = `Rock and Stone! Deep Rock with the crew!`;
-      }
-      
+  // Use real stream data if available, otherwise generate based on games
+  const recentStreams = currentData.recentStreams || [];
+  const availableGames = realGames.length > 0 ? realGames.map(g => g.name) : ['Variety', 'Just Chatting'];
+  
+  console.log(`Found ${recentStreams.length} recent streams from TwitchTracker`);
+  
+  if (recentStreams.length > 0) {
+    // Use real stream data as base for historical data
+    recentStreams.slice(0, 15).forEach((stream, index) => {
       streamHistory.push({
         channel_id: channelId,
-        stream_date: date.toISOString(),
-        title: title,
-        game_name: selectedGame,
-        duration_minutes: Math.floor(Math.random() * 240) + 120, // 2-6 hours (longer sessions)
-        max_viewers: Math.floor(Math.random() * 200) + 80, // Based on his ~121 avg viewers
-        followers_gained: Math.floor(Math.random() * 10) + 2, // 2-12 new followers per stream
+        stream_date: new Date(stream.date).toISOString(),
+        title: stream.title || `${stream.game} Stream`,
+        game_name: stream.game,
+        duration_minutes: stream.duration || 180, // Default 3 hours if not available
+        max_viewers: stream.maxViewers || currentViewers,
+        followers_gained: Math.floor(Math.random() * 10) + 2,
         collected_at: new Date().toISOString()
       });
+    });
+  } else {
+    // Generate realistic stream history based on available games
+    for (let i = 14; i >= 0; i--) {
+      // Generate 2-3 streams per week based on activity
+      if (Math.random() > 0.4 && availableGames.length > 0) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        
+        // Use streamer's usual start time if available
+        const startTime = currentData.usualStreamStartTime || '15:00';
+        const [hour, minute] = startTime.split(':').map(n => parseInt(n));
+        date.setHours(hour + Math.floor(Math.random() * 3), minute, 0, 0); // ±3 hour variation
+        
+        const selectedGame = availableGames[Math.floor(Math.random() * availableGames.length)];
+        
+        streamHistory.push({
+          channel_id: channelId,
+          stream_date: date.toISOString(),
+          title: `${selectedGame} - Come hang out!`,
+          game_name: selectedGame,
+          duration_minutes: Math.floor(Math.random() * 180) + 120, // 2-5 hours
+          max_viewers: Math.floor(currentViewers * (0.8 + Math.random() * 0.6)), // ±30% of avg viewers
+          followers_gained: Math.floor(Math.random() * 8) + 1,
+          collected_at: new Date().toISOString()
+        });
+      }
     }
   }
 

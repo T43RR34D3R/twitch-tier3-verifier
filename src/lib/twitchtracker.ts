@@ -128,6 +128,36 @@ export interface TwitchTrackerData {
   createdDate: string;
   partnerStatus: string;
   description: string;
+  
+  // Games and streams data
+  games?: GameData[];
+  recentStreams?: StreamData[];
+  monthlyStats?: MonthlyData[];
+}
+
+export interface GameData {
+  name: string;
+  hours: number;
+  avgViewers: number;
+  peakViewers: number;
+  streams: number;
+}
+
+export interface StreamData {
+  date: string;
+  game: string;
+  title: string;
+  duration: number;
+  maxViewers: number;
+  avgViewers: number;
+}
+
+export interface MonthlyData {
+  month: string;
+  avgViewers: number;
+  peakViewers: number;
+  hoursStreamed: number;
+  followers: number;
 }
 
 /**
@@ -281,6 +311,247 @@ function parseTwitchTrackerHTML(html: string, channelName: string): TwitchTracke
     console.error('Error parsing TwitchTracker HTML:', error);
     return null;
   }
+}
+
+/**
+ * Fetch comprehensive TwitchTracker data including games and streams
+ */
+export async function fetchComprehensiveTwitchTrackerData(channelName: string): Promise<TwitchTrackerData | null> {
+  try {
+    // Get main page data
+    const baseData = await fetchTwitchTrackerData(channelName);
+    if (!baseData) return null;
+
+    // Fetch games data from games page
+    const games = await fetchChannelGames(channelName);
+    
+    // Fetch recent streams from streams page
+    const recentStreams = await fetchRecentStreams(channelName);
+    
+    // Fetch monthly stats from stats page
+    const monthlyStats = await fetchMonthlyStats(channelName);
+
+    return {
+      ...baseData,
+      games,
+      recentStreams,
+      monthlyStats
+    };
+  } catch (error) {
+    console.error('Error fetching comprehensive TwitchTracker data:', error);
+    return null;
+  }
+}
+
+/**
+ * Fetch games data from TwitchTracker games page
+ */
+export async function fetchChannelGames(channelName: string): Promise<GameData[]> {
+  try {
+    const url = `https://twitchtracker.com/${channelName.toLowerCase()}/games`;
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to fetch games data: ${response.status}`);
+      return [];
+    }
+
+    const html = await response.text();
+    return parseGamesHTML(html);
+  } catch (error) {
+    console.error('Error fetching games data:', error);
+    return [];
+  }
+}
+
+/**
+ * Parse games HTML to extract game statistics
+ */
+function parseGamesHTML(html: string): GameData[] {
+  const games: GameData[] = [];
+  
+  try {
+    // Look for game table rows
+    const gameRows = html.match(/<tr[^>]*>[\s\S]*?<\/tr>/g) || [];
+    
+    for (const row of gameRows) {
+      // Extract game name
+      const nameMatch = row.match(/>([^<]+)<\/a>/);
+      if (!nameMatch) continue;
+      
+      const name = nameMatch[1].trim();
+      if (name === 'Game' || name === '') continue; // Skip header
+      
+      // Extract hours, viewers, etc.
+      const numbersMatch = row.match(/>([\d,]+(?:\.\d+)?)</g) || [];
+      const numbers = numbersMatch.map(m => parseFloat(m.replace(/[>,<]/g, '').replace(',', '')));
+      
+      if (numbers.length >= 4) {
+        games.push({
+          name,
+          hours: numbers[0] || 0,
+          avgViewers: numbers[1] || 0,
+          peakViewers: numbers[2] || 0,
+          streams: numbers[3] || 0
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error parsing games HTML:', error);
+  }
+  
+  return games.slice(0, 20); // Return top 20 games
+}
+
+/**
+ * Fetch recent streams from TwitchTracker streams page
+ */
+export async function fetchRecentStreams(channelName: string): Promise<StreamData[]> {
+  try {
+    const url = `https://twitchtracker.com/${channelName.toLowerCase()}/streams`;
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to fetch streams data: ${response.status}`);
+      return [];
+    }
+
+    const html = await response.text();
+    return parseStreamsHTML(html);
+  } catch (error) {
+    console.error('Error fetching streams data:', error);
+    return [];
+  }
+}
+
+/**
+ * Parse streams HTML to extract stream history
+ */
+function parseStreamsHTML(html: string): StreamData[] {
+  const streams: StreamData[] = [];
+  
+  try {
+    // Look for stream table rows
+    const streamRows = html.match(/<tr[^>]*>[\s\S]*?<\/tr>/g) || [];
+    
+    for (const row of streamRows) {
+      // Extract date
+      const dateMatch = row.match(/(\d{4}-\d{2}-\d{2})/);
+      if (!dateMatch) continue;
+      
+      // Extract game name
+      const gameMatch = row.match(/>([^<]+)<\/a>/);
+      const game = gameMatch ? gameMatch[1].trim() : 'Unknown';
+      
+      // Extract title (if available)
+      const titleMatch = row.match(/title="([^"]+)"/);
+      const title = titleMatch ? titleMatch[1] : `${game} Stream`;
+      
+      // Extract duration and viewer numbers
+      const numbersMatch = row.match(/>([\d:]+|\d+)</g) || [];
+      const durationMatch = numbersMatch.find(m => m.includes(':'));
+      const duration = durationMatch ? parseDuration(durationMatch.replace(/[><]/g, '')) : 0;
+      
+      const viewerNumbers = numbersMatch
+        .map(m => parseInt(m.replace(/[><]/g, '')))
+        .filter(n => !isNaN(n) && n > 0);
+      
+      streams.push({
+        date: dateMatch[1],
+        game,
+        title,
+        duration,
+        maxViewers: Math.max(...viewerNumbers, 0),
+        avgViewers: viewerNumbers.length > 0 ? Math.floor(viewerNumbers.reduce((a, b) => a + b, 0) / viewerNumbers.length) : 0
+      });
+    }
+  } catch (error) {
+    console.error('Error parsing streams HTML:', error);
+  }
+  
+  return streams.slice(0, 30); // Return last 30 streams
+}
+
+/**
+ * Parse duration string (e.g., "3:45:30") to minutes
+ */
+function parseDuration(duration: string): number {
+  const parts = duration.split(':').map(p => parseInt(p));
+  if (parts.length === 3) {
+    return parts[0] * 60 + parts[1]; // hours * 60 + minutes
+  } else if (parts.length === 2) {
+    return parts[0] * 60 + parts[1]; // minutes:seconds, convert to minutes
+  }
+  return 0;
+}
+
+/**
+ * Fetch monthly statistics from TwitchTracker stats page
+ */
+export async function fetchMonthlyStats(channelName: string): Promise<MonthlyData[]> {
+  try {
+    const url = `https://twitchtracker.com/${channelName.toLowerCase()}/statistics`;
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to fetch monthly stats: ${response.status}`);
+      return [];
+    }
+
+    const html = await response.text();
+    return parseMonthlyStatsHTML(html);
+  } catch (error) {
+    console.error('Error fetching monthly stats:', error);
+    return [];
+  }
+}
+
+/**
+ * Parse monthly statistics HTML
+ */
+function parseMonthlyStatsHTML(html: string): MonthlyData[] {
+  const monthlyStats: MonthlyData[] = [];
+  
+  try {
+    // Look for monthly data in tables
+    const monthRows = html.match(/<tr[^>]*>[\s\S]*?<\/tr>/g) || [];
+    
+    for (const row of monthRows) {
+      // Extract month
+      const monthMatch = row.match(/(\d{4}-\d{2})/);
+      if (!monthMatch) continue;
+      
+      // Extract numbers
+      const numbersMatch = row.match(/>([\d,]+(?:\.\d+)?)</g) || [];
+      const numbers = numbersMatch.map(m => parseFloat(m.replace(/[>,<]/g, '').replace(',', '')));
+      
+      if (numbers.length >= 4) {
+        monthlyStats.push({
+          month: monthMatch[1],
+          avgViewers: numbers[0] || 0,
+          peakViewers: numbers[1] || 0,
+          hoursStreamed: numbers[2] || 0,
+          followers: numbers[3] || 0
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error parsing monthly stats HTML:', error);
+  }
+  
+  return monthlyStats.slice(0, 12); // Return last 12 months
 }
 
 /**
