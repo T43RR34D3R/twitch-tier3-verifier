@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchTwitchTrackerData, getBuckFoozleStaticData } from '@/lib/twitchtracker';
-import { supabase } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,6 +9,9 @@ export async function POST(request: NextRequest) {
     const channelId = searchParams.get('channel_id') || '269187200';
     const useStatic = searchParams.get('static') === 'true';
 
+    // Creating Supabase client for server
+    const supabase = createServerSupabaseClient();
+    
     // Get TwitchTracker data
     let twitchTrackerData;
     
