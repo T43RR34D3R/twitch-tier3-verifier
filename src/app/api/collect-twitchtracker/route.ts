@@ -139,26 +139,50 @@ function generateSampleHistoricalData(currentData: {
   const subBreakdown: Record<string, unknown>[] = [];
   const streamHistory: Record<string, unknown>[] = [];
 
-  // Generate 30 days of historical channel data
+  // Current values as baseline
+  const currentSubs = currentData.currentActiveSubs || 100;
+  const currentFollowers = currentData.totalFollowers || 1000;
+  const currentViewers = currentData.avgViewers30Days || 50;
+
+  // Generate 30 days of historical channel data with realistic growth
+  let cumulativeSubGrowth = 0;
+  let cumulativeFollowerGrowth = 0;
+  
   for (let i = 29; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
     const dateStr = date.toISOString().split('T')[0];
 
-    // Simulate gradual growth
-    const growthFactor = 1 - (i / 100); // Slight growth over time
-    const randomVariation = 0.9 + Math.random() * 0.2; // ±10% random variation
+    // Realistic daily growth (small increments only)
+    const dailySubGrowth = Math.random() < 0.7 ? Math.floor(Math.random() * 3) : 0; // 0-2 new subs most days
+    const dailyFollowerGrowth = Math.random() < 0.8 ? Math.floor(Math.random() * 15) + 1 : 0; // 1-15 new followers most days
+    
+    cumulativeSubGrowth += dailySubGrowth;
+    cumulativeFollowerGrowth += dailyFollowerGrowth;
+    
+    // Calculate historical values (current - remaining growth)
+    const remainingDays = i;
+    const avgDailySubGrowth = cumulativeSubGrowth / (30 - remainingDays) || 0;
+    const avgDailyFollowerGrowth = cumulativeFollowerGrowth / (30 - remainingDays) || 0;
+    
+    const historicalSubs = Math.max(currentSubs - (avgDailySubGrowth * remainingDays), currentSubs * 0.9);
+    const historicalFollowers = Math.max(currentFollowers - (avgDailyFollowerGrowth * remainingDays), currentFollowers * 0.95);
+    
+    // Small daily variations (±2% max)
+    const subVariation = 0.98 + Math.random() * 0.04;
+    const followerVariation = 0.99 + Math.random() * 0.02;
+    const viewerVariation = 0.95 + Math.random() * 0.1;
 
     channelData.push({
       channel_id: channelId,
       channel_name: channelName,
       display_name: currentData.displayName || channelName,
-      current_active_subs: Math.round((currentData.currentActiveSubs || 100) * growthFactor * randomVariation),
-      total_followers: Math.round((currentData.totalFollowers || 1000) * growthFactor * randomVariation),
-      avg_viewers_30_days: Math.round((currentData.avgViewers30Days || 50) * growthFactor * randomVariation),
-      twitch_rank: currentData.rank || Math.floor(Math.random() * 10000) + 1000,
+      current_active_subs: Math.round(historicalSubs * subVariation),
+      total_followers: Math.round(historicalFollowers * followerVariation),
+      avg_viewers_30_days: Math.round(currentViewers * viewerVariation),
+      twitch_rank: currentData.rank || Math.floor(Math.random() * 1000) + 5000,
       top_percentage: currentData.topPercentage || '1%',
-      total_hours_streamed: (currentData.totalHoursStreamed || 100) + Math.random() * 2,
+      total_hours_streamed: Math.max((currentData.totalHoursStreamed || 100) - (remainingDays * 0.1), 50),
       data_date: dateStr,
       collected_at: new Date().toISOString()
     });
@@ -183,22 +207,32 @@ function generateSampleHistoricalData(currentData: {
     });
   });
 
-  // Generate subscriber breakdown for last 12 months
+  // Generate subscriber breakdown for last 12 months with gradual growth
+  const currentSubCount = currentData.currentActiveSubs || 100;
+  
   for (let i = 11; i >= 0; i--) {
     const date = new Date(today);
     date.setMonth(date.getMonth() - i);
     const monthYear = date.toISOString().substring(0, 7); // YYYY-MM format
 
-    const totalSubs = Math.round((currentData.currentActiveSubs || 100) * (0.8 + Math.random() * 0.4));
+    // Calculate historical subscriber count with gradual growth
+    // Assume 2-8% monthly growth, working backwards
+    const monthsAgo = i;
+    const growthRate = 0.02 + (Math.random() * 0.06); // 2-8% monthly growth
+    const totalGrowthFactor = Math.pow(1 + growthRate, monthsAgo);
+    const historicalSubs = Math.round(currentSubCount / totalGrowthFactor);
+    
+    // Ensure minimum values and some variation
+    const finalSubCount = Math.max(historicalSubs, Math.round(currentSubCount * 0.7));
     
     subBreakdown.push({
       channel_id: channelId,
       month_year: monthYear,
-      total_subs: totalSubs,
-      tier1_prime_subs: Math.round(totalSubs * 0.8),
-      tier2_subs: Math.round(totalSubs * 0.15),
-      tier3_subs: Math.round(totalSubs * 0.05),
-      gifted_subs: Math.round(totalSubs * 0.3),
+      total_subs: finalSubCount,
+      tier1_prime_subs: Math.round(finalSubCount * 0.8),
+      tier2_subs: Math.round(finalSubCount * 0.15),
+      tier3_subs: Math.round(finalSubCount * 0.05),
+      gifted_subs: Math.round(finalSubCount * 0.3),
       undefined_subs: 0,
       collected_at: new Date().toISOString()
     });
