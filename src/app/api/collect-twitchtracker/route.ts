@@ -188,20 +188,30 @@ function generateSampleHistoricalData(currentData: {
     });
   }
 
-  // Generate sample game stats
-  const sampleGames = [
-    'Grand Theft Auto V', 'World of Warcraft', 'League of Legends', 
-    'Fortnite', 'Minecraft', 'Call of Duty: Warzone', 'Apex Legends'
+  // Generate realistic game stats based on BuckFoozle's actual content
+  // Since he's a Monster Hunter enthusiast and variety streamer
+  const buckFoozleGames = [
+    'Monster Hunter World', 'Monster Hunter Rise', 'Monster Hunter: World', 
+    'Deep Rock Galactic', 'Rocket League', 'Halo Infinite',
+    'Destiny 2', 'Terraria', 'Risk of Rain 2'
   ];
 
-  sampleGames.forEach((gameName) => {
+  // Only generate games if we're using BuckFoozle data
+  const gamesToUse = channelName.toLowerCase() === 'buckfoozle' ? buckFoozleGames : [];
+  
+  gamesToUse.forEach((gameName) => {
+    // Monster Hunter gets higher stats since he's an enthusiast
+    const isMonsterHunter = gameName.includes('Monster Hunter');
+    const baseViewers = isMonsterHunter ? 80 : 40;
+    const baseHours = isMonsterHunter ? 200 : 50;
+    
     gameStats.push({
       channel_id: channelId,
       game_name: gameName,
-      avg_viewers: Math.floor(Math.random() * 200) + 50,
-      total_hours_streamed: Math.floor(Math.random() * 50) + 10,
-      followers_gained: Math.floor(Math.random() * 100) + 10,
-      peak_viewers: Math.floor(Math.random() * 500) + 100,
+      avg_viewers: baseViewers + Math.floor(Math.random() * 60),
+      total_hours_streamed: baseHours + Math.floor(Math.random() * 100),
+      followers_gained: Math.floor(Math.random() * 50) + 10,
+      peak_viewers: (baseViewers + 50) + Math.floor(Math.random() * 200),
       data_date: today.toISOString().split('T')[0],
       collected_at: new Date().toISOString()
     });
@@ -238,24 +248,36 @@ function generateSampleHistoricalData(currentData: {
     });
   }
 
-  // Generate sample stream history
+  // Generate sample stream history using BuckFoozle's games
   for (let i = 14; i >= 0; i--) {
-    // Generate 2-3 streams per week
-    if (Math.random() > 0.4) {
+    // Generate 2-3 streams per week (matching his 2.6 days/week from static data)
+    if (Math.random() > 0.4 && gamesToUse.length > 0) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      date.setHours(Math.floor(Math.random() * 8) + 16); // Stream between 4PM-12AM
       
-      const gameIndex = Math.floor(Math.random() * sampleGames.length);
+      // BuckFoozle usually starts at 03:30 according to TwitchTracker data
+      const startHour = 3 + Math.floor(Math.random() * 4); // 3-7 AM range
+      date.setHours(startHour, 30, 0, 0);
+      
+      const gameIndex = Math.floor(Math.random() * gamesToUse.length);
+      const selectedGame = gamesToUse[gameIndex];
+      
+      // Create realistic stream titles based on the game
+      let title = `${selectedGame} - Come hang out at The Best Friends Club!`;
+      if (selectedGame.includes('Monster Hunter')) {
+        title = `Monster Hunter Time! Hunting with the Best Friends Club!`;
+      } else if (selectedGame === 'Deep Rock Galactic') {
+        title = `Rock and Stone! Deep Rock with the crew!`;
+      }
       
       streamHistory.push({
         channel_id: channelId,
         stream_date: date.toISOString(),
-        title: `Playing ${sampleGames[gameIndex]} - Come hang out!`,
-        game_name: sampleGames[gameIndex],
-        duration_minutes: Math.floor(Math.random() * 180) + 60, // 1-4 hours
-        max_viewers: Math.floor(Math.random() * 300) + 50,
-        followers_gained: Math.floor(Math.random() * 20) + 1,
+        title: title,
+        game_name: selectedGame,
+        duration_minutes: Math.floor(Math.random() * 240) + 120, // 2-6 hours (longer sessions)
+        max_viewers: Math.floor(Math.random() * 200) + 80, // Based on his ~121 avg viewers
+        followers_gained: Math.floor(Math.random() * 10) + 2, // 2-12 new followers per stream
         collected_at: new Date().toISOString()
       });
     }
