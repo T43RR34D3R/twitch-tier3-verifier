@@ -41,6 +41,8 @@ export default function ModAnalyticsPage() {
   }[]>([]);
   const [subscriberLoading, setSubscriberLoading] = useState(false);
   const [subscriberMessage, setSubscriberMessage] = useState<string>('');
+  const [collectingData, setCollectingData] = useState(false);
+  const [collectionMessage, setCollectionMessage] = useState<string>('');
   
   const fetchTwitchTrackerData = async (url: string) => {
     const response = await fetch(url);
@@ -100,6 +102,27 @@ export default function ModAnalyticsPage() {
       setSubscriberLoading(false);
     }
   }, [loadSubscriberData]);
+
+  const collectTwitchTrackerData = useCallback(async () => {
+    try {
+      setCollectingData(true);
+      setCollectionMessage('');
+      const response = await fetch('/api/collect-twitchtracker?channel=buckfoozle&channel_id=269187200&static=true', {
+        method: 'POST'
+      });
+      const data = await response.json();
+      if (data.success) {
+        setCollectionMessage('TwitchTracker data collected successfully! Check the stats pages.');
+      } else {
+        setCollectionMessage(data.error || 'Failed to collect TwitchTracker data.');
+      }
+    } catch (error) {
+      setCollectionMessage('Error collecting TwitchTracker data.');
+      console.error('Error collecting TwitchTracker data:', error);
+    } finally {
+      setCollectingData(false);
+    }
+  }, []);
 
   const loadModAnalytics = useCallback(async () => {
     if (!session) return;
@@ -206,18 +229,37 @@ export default function ModAnalyticsPage() {
             </div>
           )}
           
-          {/* Subscriber Management Section */}
+          {/* Data Management Section */}
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">📊 Subscriber Data Management</h3>
-              <button
-                onClick={fetchAndStoreSubscribers}
-                disabled={subscriberLoading}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-              >
-                {subscriberLoading ? 'Fetching...' : 'Refresh Subscriber Data'}
-              </button>
+              <h3 className="text-lg font-semibold text-gray-800">📊 Data Management</h3>
+              <div className="flex gap-3">
+                <button
+                  onClick={collectTwitchTrackerData}
+                  disabled={collectingData}
+                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                >
+                  {collectingData ? 'Collecting...' : 'Collect TwitchTracker Data'}
+                </button>
+                <button
+                  onClick={fetchAndStoreSubscribers}
+                  disabled={subscriberLoading}
+                  className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                >
+                  {subscriberLoading ? 'Fetching...' : 'Refresh Subscriber Data'}
+                </button>
+              </div>
             </div>
+            
+            {collectionMessage && (
+              <div className={`p-3 rounded-lg mb-4 ${
+                collectionMessage.includes('success') 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-yellow-100 text-yellow-800'
+              }`}>
+                {collectionMessage}
+              </div>
+            )}
             
             {subscriberMessage && (
               <div className={`p-3 rounded-lg mb-4 ${
@@ -299,6 +341,44 @@ export default function ModAnalyticsPage() {
           ) : (
              <p className="text-black">No summary data available.</p>
           )}
+          
+          {/* Navigation to Stats Pages */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">📈 TwitchTracker Historical Analytics</h3>
+            <p className="text-gray-600 mb-4">View detailed historical data and analytics from TwitchTracker.</p>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href="/stats"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+              >
+                📊 Summary Dashboard
+              </a>
+              <a
+                href="/stats/daily"
+                className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+              >
+                📅 Daily Stats
+              </a>
+              <a
+                href="/stats/games"
+                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+              >
+                🎮 Game Stats
+              </a>
+              <a
+                href="/stats/subscribers"
+                className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+              >
+                👥 Subscriber Trends
+              </a>
+              <a
+                href="/stats/day-of-week"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+              >
+                📈 Weekly Performance
+              </a>
+            </div>
+          </div>
 
         </div>
       </div>
