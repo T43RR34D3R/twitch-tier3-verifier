@@ -118,7 +118,13 @@ export default function SubathonTimer() {
                 }
 
                 body {
+                    margin: 0;
+                    padding: 0;
                     font-family: 'Arial', sans-serif;
+                    color: #e0e0e0;
+                }
+
+                .fullscreen-wrapper {
                     background-image: url('/buckfoozle-bg.png');
                     background-size: cover;
                     background-position: center;
@@ -127,48 +133,44 @@ export default function SubathonTimer() {
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    color: #e0e0e0;
                     position: relative;
                     padding: 1rem;
                 }
 
-                body::before {
+                .fullscreen-wrapper::before {
                     content: "";
-                    position: fixed;
+                    position: absolute;
                     top: 0;
                     left: 0;
                     right: 0;
                     bottom: 0;
                     background: rgba(0, 0, 0, 0.4);
                     backdrop-filter: blur(2px);
-                    z-index: -1;
+                    z-index: 1;
                 }
 
-                body::after {
+                .fullscreen-wrapper::after {
                     content: "";
-                    position: fixed;
+                    position: absolute;
                     top: 0;
                     left: 0;
                     right: 0;
                     bottom: 0;
                     background: radial-gradient(circle at center, transparent 0%, transparent 60%, rgba(0,0,0,0.4) 100%);
-                    z-index: -1;
+                    z-index: 2;
                 }
 
                 .container {
                     background: rgba(10, 10, 15, 0.95);
                     backdrop-filter: blur(20px);
                     border-radius: 20px;
-                    padding: 50px;
+                    padding: 40px;
                     box-shadow: 
-                        0 25px 50px -12px rgba(0, 0, 0, 0.8),
-                        0 0 0 1px rgba(255, 255, 255, 0.05);
-                    border: 1px solid rgba(120, 119, 198, 0.2);
+                        0 15px 30px rgba(0, 0, 0, 0.6);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
                     text-align: center;
-                    max-width: 700px;
-                    width: 100%;
-                    max-width: 90vw;
-                    position: relative;
+                    max-width: 500px;
+                    width: 80%;
                     z-index: 10;
                 }
 
@@ -306,7 +308,8 @@ export default function SubathonTimer() {
                     }
                 }
             `}</style>
-            <div className="container">
+            <div className="fullscreen-wrapper">
+                <div className="container">
                 <h1>SUBATHON TIMER</h1>
                 <div id="timer">00:00:00</div>
                 <div className="status" id="status">Timer Stopped</div>
@@ -317,6 +320,7 @@ export default function SubathonTimer() {
                     <button onClick={() => window.addTime()}>➕ Add 5 Min</button>
                     <button onClick={() => window.removeTime()}>➖ Remove 5 Min</button>
                 </div>
+            </div>
             </div>
         </>
     );
