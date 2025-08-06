@@ -1,107 +1,213 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-// Timer state - stores the END TIME when running, not current seconds
-const timerState: {
-  endTime: number;
-  isRunning: boolean;
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+type TimerState = {
+  id: number;
+  end_time: number;
+  is_running: boolean;
   status: string;
-  pendingDuration?: number;
-} = {
-  endTime: 0, // When the timer will finish (timestamp)
-  isRunning: false,
-  status: "Timer Ready - Set time to begin!"
+  pending_duration?: number;
+  updated_at: string;
 };
 
-function getCurrentTimeRemaining() {
-  if (!timerState.isRunning || timerState.endTime <= 0) {
-    // Return pending duration if timer is not running but has time set
-    return timerState.pendingDuration || 0;
+async function getTimerState(): Promise<TimerState> {
+  // First try to get existing timer state
+  const { data, error } = await supabase
+    .from('subathon_timer')
+    .select('*')
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching timer state:', error);
+  }
+
+  if (!data) {
+    // Create initial timer state if none exists
+    const initialState = {
+      end_time: 0,
+      is_running: false,
+      status: 'Timer Ready - Set time to begin!',
+      pending_duration: 0
+    };
+    
+    const { data: newData, error: insertError } = await supabase
+      .from('subathon_timer')
+      .insert([initialState])
+      .select()
+      .single();
+    
+    if (insertError) {
+      console.error('Error creating initial timer state:', insertError);
+      // Return a fallback state with required fields
+      return {
+        id: 1,
+        end_time: 0,
+        is_running: false,
+        status: 'Timer Ready - Set time to begin!',
+        pending_duration: 0,
+        updated_at: new Date().toISOString()
+      };
+    }
+    
+    return newData;
+  }
+
+  return data;
+}
+
+async function updateTimerState(updates: Partial<TimerState>, id?: number): Promise<TimerState> {
+  // Use provided ID or default to 1 (since we only have one timer)
+  const timerId = id || 1;
+  
+  const { data, error } = await supabase
+    .from('subathon_timer')
+    .update(updates)
+    .eq('id', timerId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Failed to update timer state:', error);
+    throw error;
+  }
+
+  return data;
+}
+
+function getCurrentTimeRemaining(state: TimerState): number {
+  if (!state.is_running || state.end_time <= 0) {
+    return state.pending_duration || 0;
   }
   
   const now = Date.now();
-  const remaining = Math.max(0, Math.ceil((timerState.endTime - now) / 1000));
-  
-  // Auto-stop when timer reaches zero
-  if (remaining <= 0 && timerState.isRunning) {
-    timerState.isRunning = false;
-    timerState.endTime = 0;
-    timerState.status = "🎉 Timer Finished!";
-    delete timerState.pendingDuration;
-    return 0;
-  }
+  const remaining = Math.max(0, Math.ceil((state.end_time - now) / 1000));
   
   return remaining;
 }
 
 export async function GET() {
-  const timeInSeconds = getCurrentTimeRemaining();
-  
-  return NextResponse.json({
-    timeInSeconds,
-    isRunning: timerState.isRunning,
-    status: timerState.status
-  });
+  try {
+    const state = await getTimerState();
+    let timeInSeconds = getCurrentTimeRemaining(state);
+    
+    // Auto-stop timer if it has finished
+    if (state.is_running && timeInSeconds <= 0) {
+      await updateTimerState({
+        is_running: false,
+        end_time: 0,
+        status: '🎉 Timer Finished!',
+        pending_duration: 0
+      });
+      timeInSeconds = 0;
+    }
+    
+    return NextResponse.json({
+      timeInSeconds,
+      isRunning: state.is_running,
+      status: state.status
+    });
+  } catch (error) {
+    console.error('GET timer error:', error);
+    return NextResponse.json({
+      timeInSeconds: 0,
+      isRunning: false,
+      status: 'Error loading timer'
+    });
+  }
 }
 
 export async function POST(request: NextRequest) {
-  const { action, time } = await request.json();
-  const now = Date.now();
-  
-  switch (action) {
-    case 'setTime':
-      timerState.endTime = 0; // Reset
-      timerState.isRunning = false;
-      timerState.status = `Timer set to ${Math.floor(time / 3600)}:${Math.floor((time % 3600) / 60).toString().padStart(2, '0')}:${(time % 60).toString().padStart(2, '0')}`;
-      // Store the duration temporarily for starting
-      timerState.pendingDuration = time;
-      break;
-      
-    case 'start':
-      if (!timerState.isRunning) {
-        const duration = timerState.pendingDuration || getCurrentTimeRemaining();
-        if (duration > 0) {
-          timerState.endTime = now + (duration * 1000);
-          timerState.isRunning = true;
-          timerState.status = "⏳ Timer Running...";
-          delete timerState.pendingDuration;
+  try {
+    const { action, time } = await request.json();
+    const now = Date.now();
+    const currentState = await getTimerState();
+    
+    let updates: Partial<TimerState> = {};
+    
+    switch (action) {
+      case 'setTime':
+        updates = {
+          end_time: 0,
+          is_running: false,
+          status: `Timer set to ${Math.floor(time / 3600)}:${Math.floor((time % 3600) / 60).toString().padStart(2, '0')}:${(time % 60).toString().padStart(2, '0')}`,
+          pending_duration: time
+        };
+        break;
+        
+      case 'start':
+        if (!currentState.is_running) {
+          const duration = currentState.pending_duration || 0;
+          if (duration > 0) {
+            updates = {
+              end_time: now + (duration * 1000),
+              is_running: true,
+              status: '⏳ Timer Running...',
+              pending_duration: 0
+            };
+          }
         }
-      }
-      break;
-      
-    case 'pause':
-      if (timerState.isRunning) {
-        const remaining = getCurrentTimeRemaining();
-        timerState.pendingDuration = remaining;
-        timerState.isRunning = false;
-        timerState.endTime = 0;
-        timerState.status = "⏸️ Timer Paused";
-      }
-      break;
-      
-    case 'addTime':
-      if (timerState.isRunning) {
-        timerState.endTime += 300 * 1000; // Add 5 minutes in milliseconds
-      } else if (timerState.pendingDuration) {
-        timerState.pendingDuration += 300;
-      }
-      timerState.status = "➕ Added 5 minutes!";
-      break;
-      
-    case 'removeTime':
-      if (timerState.isRunning) {
-        timerState.endTime = Math.max(now, timerState.endTime - (300 * 1000));
-      } else if (timerState.pendingDuration) {
-        timerState.pendingDuration = Math.max(0, timerState.pendingDuration - 300);
-      }
-      timerState.status = "➖ Removed 5 minutes!";
-      break;
+        break;
+        
+      case 'pause':
+        if (currentState.is_running) {
+          const remaining = getCurrentTimeRemaining(currentState);
+          updates = {
+            pending_duration: remaining,
+            is_running: false,
+            end_time: 0,
+            status: '⏸️ Timer Paused'
+          };
+        }
+        break;
+        
+      case 'addTime':
+        if (currentState.is_running) {
+          updates = {
+            end_time: currentState.end_time + (300 * 1000),
+            status: '➕ Added 5 minutes!'
+          };
+        } else if (currentState.pending_duration) {
+          updates = {
+            pending_duration: currentState.pending_duration + 300,
+            status: '➕ Added 5 minutes!'
+          };
+        }
+        break;
+        
+      case 'removeTime':
+        if (currentState.is_running) {
+          updates = {
+            end_time: Math.max(now, currentState.end_time - (300 * 1000)),
+            status: '➖ Removed 5 minutes!'
+          };
+        } else if (currentState.pending_duration) {
+          updates = {
+            pending_duration: Math.max(0, currentState.pending_duration - 300),
+            status: '➖ Removed 5 minutes!'
+          };
+        }
+        break;
+    }
+    
+    const updatedState = Object.keys(updates).length > 0 
+      ? await updateTimerState(updates) 
+      : currentState;
+    
+    const timeInSeconds = getCurrentTimeRemaining(updatedState);
+    
+    return NextResponse.json({
+      timeInSeconds,
+      isRunning: updatedState.is_running,
+      status: updatedState.status
+    });
+  } catch (error) {
+    console.error('POST timer error:', error);
+    return NextResponse.json({ error: 'Failed to update timer' }, { status: 500 });
   }
-  
-  const timeInSeconds = getCurrentTimeRemaining();
-  
-  return NextResponse.json({
-    timeInSeconds,
-    isRunning: timerState.isRunning,
-    status: timerState.status
-  });
 }
