@@ -12,7 +12,7 @@ const pool = new Pool({
 export default pool;
 
 // Helper function for queries
-export async function query(text: string, params?: any[]) {
+export async function query(text: string, params?: unknown[]) {
   const client = await pool.connect();
   try {
     const result = await client.query(text, params);
@@ -23,13 +23,13 @@ export async function query(text: string, params?: any[]) {
 }
 
 // Helper function for single row queries
-export async function queryRow(text: string, params?: any[]) {
+export async function queryRow(text: string, params?: unknown[]) {
   const result = await query(text, params);
   return result.rows[0] || null;
 }
 
 // Helper function for multiple row queries
-export async function queryRows(text: string, params?: any[]) {
+export async function queryRows(text: string, params?: unknown[]) {
   const result = await query(text, params);
   return result.rows;
 }

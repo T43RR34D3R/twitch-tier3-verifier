@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query, queryRow } from '@/lib/railway-db';
+import { queryRow } from '@/lib/railway-db';
 
 type TimerState = {
   id: number;
@@ -61,7 +61,7 @@ async function updateTimerState(updates: Partial<TimerState>, id?: number): Prom
     
     // Build dynamic update query
     const updateFields: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let paramIndex = 1;
     
     for (const [key, value] of Object.entries(updates)) {
