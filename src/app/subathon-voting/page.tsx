@@ -109,7 +109,9 @@ export default function SubathonVoting() {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/auth/signin');
+      // Preserve the current page as callback URL for after signin
+      const callbackUrl = encodeURIComponent('/subathon-voting');
+      router.push(`/auth/signin?callbackUrl=${callbackUrl}`);
       return;
     }
     if (session) {

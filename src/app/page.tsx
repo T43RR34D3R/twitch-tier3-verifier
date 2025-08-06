@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 
 interface HomeSection {
@@ -139,7 +140,19 @@ const defaultSettings: CustomizationSettings = {
   footerLinkUrl: "https://twitch.tv/buckfoozle",
 };
 
+// Check if user is admin
+const isUserAdmin = (session: { user?: { name?: string | null; id?: string } } | null) => {
+  if (!session?.user) return false;
+  const adminUsers = ["TearReader", "BuckFoozle"];
+  const adminIds = ["1239758967", "269187200"];
+  
+  return adminUsers.some(admin => 
+    admin.toLowerCase() === (session.user?.name || "").toLowerCase()
+  ) || adminIds.includes(session.user?.id || "");
+};
+
 export default function Home() {
+  const { data: session } = useSession();
   const [mounted, setMounted] = useState(false);
   const [text, setText] = useState("");
   const [homeSections, setHomeSections] = useState<HomeSection[]>([]);
@@ -341,13 +354,15 @@ export default function Home() {
               <p className="text-gray-300">Link your Minecraft account with Twitch</p>
             </div>
           </Link>
-          <Link href="/admin" className="group">
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-red-400 transition-all duration-300 hover:scale-105 hover:bg-white/20">
-              <div className="text-4xl mb-4">⚙️</div>
-              <h3 className="text-xl font-bold text-white mb-2">Admin Panel</h3>
-              <p className="text-gray-300">Manage settings and configurations</p>
-            </div>
-          </Link>
+          {isUserAdmin(session) && (
+            <Link href="/admin" className="group">
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-red-400 transition-all duration-300 hover:scale-105 hover:bg-white/20">
+                <div className="text-4xl mb-4">⚙️</div>
+                <h3 className="text-xl font-bold text-white mb-2">Admin Panel</h3>
+                <p className="text-gray-300">Manage settings and configurations</p>
+              </div>
+            </Link>
+          )}
         </div>
       )}
     </section>
