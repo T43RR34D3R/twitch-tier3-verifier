@@ -57,7 +57,7 @@ export default function AdminDashboard() {
     if (status === "loading") return;
     
     if (!session) {
-      router.push("/auth/signin");
+      router.push("/t3verify");
       return;
     }
 
@@ -285,10 +285,12 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center" style={{backgroundImage: 'url(/buckfoozle-bg.png)'}}>
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-        <div className="bg-white rounded-xl shadow-2xl p-8 relative z-10">
-          <div className="text-xl text-black">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
+        <div className="bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-700 p-8 relative z-10">
+          <div className="text-xl text-white flex items-center space-x-3">
+            <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+            <span>Loading...</span>
+          </div>
         </div>
       </div>
     );
@@ -296,41 +298,37 @@ export default function AdminDashboard() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center" style={{backgroundImage: 'url(/buckfoozle-bg.png)'}}>
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-        <div className="bg-white rounded-xl shadow-2xl p-8 relative z-10">
-          <div className="text-xl text-red-600">Access Denied</div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
+        <div className="bg-red-900/20 backdrop-blur-xl rounded-2xl shadow-2xl border border-red-700 p-8 relative z-10">
+          <div className="text-xl text-red-400 flex items-center space-x-3">
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <span>Access Denied</span>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-cover bg-center bg-no-repeat p-4" style={{backgroundImage: 'url(/buckfoozle-bg.png)'}}>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-      <div 
-        className="absolute inset-0" 
-        style={{
-          background: 'radial-gradient(circle at center, transparent 0%, transparent 60%, rgba(0,0,0,0.4) 100%)'
-        }}
-      ></div>
-      
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4">
       <div className="max-w-6xl mx-auto relative z-10">
-        <div className="bg-white rounded-xl shadow-2xl drop-shadow-2xl p-8">
+        <div className="bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-700 p-8">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-black mb-2">Admin Dashboard</h1>
-            <p className="text-black">Welcome, {session?.user?.name}! Manage your Tier 3 verifier.</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
+            <p className="text-gray-300">Welcome, {session?.user?.name}! Manage your Tier 3 verifier.</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Verification Logs */}
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-black">Recent Verifications</h2>
+              <h2 className="text-2xl font-bold text-white">Recent Verifications</h2>
               
-              <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
+              <div className="bg-gray-700 rounded-lg p-4 max-h-96 overflow-y-auto">
                 {verificationLogs.length === 0 ? (
-                  <p className="text-black">No verification attempts yet.</p>
+                  <p className="text-gray-300">No verification attempts yet.</p>
                 ) : (
                   <div className="space-y-3">
                     {verificationLogs.map((log) => (
@@ -339,13 +337,13 @@ export default function AdminDashboard() {
                       }`}>
                         <div className="flex justify-between items-start">
                           <div>
-                            <div className="font-medium text-black">{log.user_name}</div>
-                            <div className="text-sm text-black">ID: {log.user_id}</div>
+                            <div className="font-medium text-white">{log.user_name}</div>
+                            <div className="text-sm text-gray-300">ID: {log.user_id}</div>
                             <div className={`text-sm ${log.success ? 'text-green-700' : 'text-red-700'}`}>
                               {log.message}
                             </div>
                           </div>
-                          <div className="text-xs text-black">
+                          <div className="text-xs text-gray-400">
                             {new Date(log.created_at).toLocaleString()}
                           </div>
                         </div>
@@ -358,11 +356,11 @@ export default function AdminDashboard() {
 
             {/* Text Customization */}
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-black">Customize Page Text</h2>
+              <h2 className="text-2xl font-bold text-white">Customize Page Text</h2>
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-black mb-1">Main Title</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Main Title</label>
                   <input
                     type="text"
                     value={editingTexts.title}
