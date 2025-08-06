@@ -136,7 +136,7 @@ export async function GET() {
       timeInSeconds: 0,
       isRunning: false,
       status: 'Error loading timer'
-    });
+    }, { status: 500 });
   }
 }
 
