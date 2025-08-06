@@ -5,7 +5,7 @@ import Link from "next/link";
 
 interface HomeSection {
   id: string;
-  type: 'hero' | 'about' | 'tools' | 'twitch-embed' | 'custom';
+  type: 'hero' | 'about' | 'tools' | 'twitch-embed' | 'social' | 'custom';
   title: string;
   isEnabled: boolean;
   orderIndex: number;
@@ -22,6 +22,9 @@ interface HomeSection {
     showToolCards?: boolean;
     twitchChannel?: string;
     embedType?: 'player' | 'chat' | 'both';
+    socialTitle?: string;
+    showSocialCards?: boolean;
+    socialLinks?: Array<{ platform: string; url: string; icon: string; color: string }>;
     customHtml?: string;
     customCss?: string;
   };
@@ -47,67 +50,76 @@ interface CustomizationSettings {
   hamburgerPosition: 'left' | 'right';
   showAuthButtons: boolean;
   taglineAlignment: 'left' | 'center' | 'right';
+  footerText?: string;
+  footerLinkText?: string;
+  footerLinkUrl?: string;
 }
 
 const defaultHomeSections: HomeSection[] = [
-  {
-    id: "hero",
-    type: "hero",
-    title: "Hero Section",
-    isEnabled: true,
-    orderIndex: 1,
-    content: {
-      heroTitle: "Welcome to BuckFoozle Toolkit",
-      heroSubtitle: "Professional streaming tools for content creators",
-      heroImage: "",
-      heroButtons: [
-        { label: "Get Started", url: "/t3verify", style: "primary" },
-        { label: "Learn More", url: "#about", style: "secondary" }
-      ]
-    }
-  },
-  {
-    id: "about",
-    type: "about",
-    title: "About Buck",
-    isEnabled: true,
-    orderIndex: 2,
-    content: {
-      aboutTitle: "Meet BuckFoozle",
-      aboutText: "Professional streamer and content creator bringing you the best streaming tools and entertainment.",
-      aboutImage: "/buckfoozle-profile.jpg",
-      aboutImagePosition: "left"
-    }
-  },
-  {
-    id: "twitch",
-    type: "twitch-embed",
-    title: "Twitch Stream",
-    isEnabled: true,
-    orderIndex: 3,
-    content: {
-      twitchChannel: "buckfoozle",
-      embedType: "both"
-    }
-  },
-  {
-    id: "tools",
-    type: "tools",
-    title: "Available Tools",
-    isEnabled: true,
-    orderIndex: 4,
-    content: {
-      toolsTitle: "Streaming Tools",
-      showToolCards: true
-    }
-  }
+          {
+            id: "hero",
+            type: "hero",
+            title: "Hero Section",
+            isEnabled: true,
+            orderIndex: 1,
+            content: {
+              heroTitle: "Welcome to BuckFoozle's World",
+              heroSubtitle: "Join me for variety gaming, laughs, and an awesome community!",
+              heroImage: "",
+              heroButtons: [
+                { label: "Watch Live", url: "https://twitch.tv/buckfoozle", style: "primary" },
+                { label: "Learn More", url: "#about", style: "secondary" }
+              ]
+            }
+          },
+          {
+            id: "about",
+            type: "about",
+            title: "About Buck",
+            isEnabled: true,
+            orderIndex: 2,
+            content: {
+              aboutTitle: "Meet BuckFoozle",
+              aboutText: "Hey there! I'm Buck, a variety streamer who loves gaming, building community, and having a great time with viewers. From indie gems to AAA titles, horror games to cozy adventures - there's always something fun happening on stream. Come hang out and be part of the BuckFoozle family!",
+              aboutImage: "/buckfoozle-profile.jpg",
+              aboutImagePosition: "left"
+            }
+          },
+          {
+            id: "twitch",
+            type: "twitch-embed",
+            title: "Watch Live",
+            isEnabled: true,
+            orderIndex: 3,
+            content: {
+              twitchChannel: "buckfoozle",
+              embedType: "player"
+            }
+          },
+          {
+            id: "social",
+            type: "social",
+            title: "Connect With Me",
+            isEnabled: true,
+            orderIndex: 4,
+            content: {
+              socialTitle: "Follow Me Everywhere",
+              showSocialCards: true,
+              socialLinks: [
+                { platform: "Twitch", url: "https://twitch.tv/buckfoozle", icon: "📺", color: "#9146ff" },
+                { platform: "Discord", url: "https://discord.gg/buckfoozle", icon: "💬", color: "#5865f2" },
+                { platform: "Twitter", url: "https://twitter.com/buckfoozle", icon: "🐦", color: "#1da1f2" },
+                { platform: "YouTube", url: "https://youtube.com/@buckfoozle", icon: "📹", color: "#ff0000" }
+              ]
+            }
+          }
 ];
 
 const defaultSettings: CustomizationSettings = {
-  siteTitle: "BuckFoozle Toolkit",
-  siteLogo: "🎮",
+  siteTitle: "BuckFoozle",
+  siteLogo: "👑",
   logoType: "emoji",
-  tagline: "Professional Streaming Tools",
+  tagline: "Variety Streamer & Content Creator",
   primaryColor: "#6366f1",
   secondaryColor: "#8b5cf6", 
   accentColor: "#f59e0b",
@@ -122,6 +134,9 @@ const defaultSettings: CustomizationSettings = {
   hamburgerPosition: "left",
   showAuthButtons: true,
   taglineAlignment: "left",
+  footerText: "Made with 💜 for the Best Friends Club",
+  footerLinkText: "twitch.tv/buckfoozle",
+  footerLinkUrl: "https://twitch.tv/buckfoozle",
 };
 
 export default function Home() {
@@ -296,7 +311,7 @@ export default function Home() {
             <div className="text-4xl mb-4">🗳️</div>
             <h3 className="text-xl font-bold text-white mb-2">Game Voting</h3>
             <p className="text-gray-300">Vote for games to play during the subathon</p>
-            <span className="inline-block bg-purple-600 text-white text-xs px-2 py-1 rounded-full mt-2">Comming Soon</span>
+            <span className="inline-block bg-purple-600 text-white text-xs px-2 py-1 rounded-full mt-2">Coming Soon</span>
           </div>
           <Link href="/analytics" className="group">
             <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-green-400 transition-all duration-300 hover:scale-105 hover:bg-white/20">
@@ -324,6 +339,44 @@ export default function Home() {
     </section>
   );
 
+  const renderSocialSection = (section: HomeSection) => (
+    <section key={section.id} className="mb-16">
+      <h2 className="text-3xl md:text-4xl font-bold text-white mb-8 text-center">
+        {section.content.socialTitle || section.title}
+      </h2>
+      {section.content.showSocialCards && section.content.socialLinks && (
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {section.content.socialLinks.map((social, index) => (
+            <a
+              key={index}
+              href={social.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group"
+            >
+              <div 
+                className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-opacity-50 transition-all duration-300 hover:scale-105 hover:bg-white/20 text-center"
+                style={{
+                  '--hover-color': social.color,
+                } as React.CSSProperties}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = social.color;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                }}
+              >
+                <div className="text-4xl mb-4">{social.icon}</div>
+                <h3 className="text-xl font-bold text-white mb-2">{social.platform}</h3>
+                <p className="text-gray-300 text-sm">Follow me on {social.platform}</p>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+
   const renderSection = (section: HomeSection) => {
     if (!section.isEnabled) return null;
 
@@ -336,6 +389,8 @@ export default function Home() {
         return renderTwitchEmbed(section);
       case 'tools':
         return renderToolsSection(section);
+      case 'social':
+        return renderSocialSection(section);
       default:
         return null;
     }
@@ -380,15 +435,15 @@ export default function Home() {
 
         {/* Footer */}
         <div className="text-gray-400 text-sm text-center mt-16">
-          <p>Made with 💜 for the BuckFoozle community</p>
+          <p>{settings.footerText || "Made with 💜 for the Best Friends Club"}</p>
           <p className="mt-2">
             <a 
-              href="https://twitch.tv/buckfoozle" 
+              href={settings.footerLinkUrl || "https://twitch.tv/buckfoozle"} 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-purple-400 hover:text-purple-300 transition-colors"
             >
-              twitch.tv/buckfoozle
+              {settings.footerLinkText || "twitch.tv/buckfoozle"}
             </a>
           </p>
         </div>
