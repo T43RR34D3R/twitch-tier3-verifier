@@ -40,8 +40,9 @@ export async function getVerificationLogs(): Promise<VerificationLog[]> {
 
 export async function addVerificationLog(log: Omit<VerificationLog, 'id' | 'created_at'>): Promise<VerificationLog | null> {
   try {
+    // Use DEFAULT for id to let the database auto-increment
     const result = await queryRow(
-      'INSERT INTO verification_logs (user_name, user_id, success, message) VALUES ($1, $2, $3, $4) RETURNING *',
+      'INSERT INTO verification_logs (user_name, user_id, success, message, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING *',
       [log.user_name, log.user_id, log.success, log.message]
     );
     return result;

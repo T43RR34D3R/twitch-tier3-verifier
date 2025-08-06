@@ -47,7 +47,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "User ID not found in token" }, { status: 400 })
     }
 
-
     // Override for Buck - always passes
     if (token.name === "BuckFoozle" || token.name === "buckfoozle") {
       console.log("Buck override: granting Tier 3 access");
