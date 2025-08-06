@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { query } from "@/lib/railway-db";
 
-// Check if user is admin using environment variable
+// Check if user is admin using environment variable with hardcoded fallback
 const isUserAdmin = (userId?: string) => {
-  return userId === process.env.ADMIN_USER_ID || userId === process.env.ADMIN_USER_ID_2;
+  const hardcodedAdminIds = ['441862265', '269187200'];
+  const envAdmin = userId === process.env.ADMIN_USER_ID || userId === process.env.ADMIN_USER_ID_2;
+  const hardcodedAdmin = hardcodedAdminIds.includes(userId || '');
+  return envAdmin || hardcodedAdmin;
 };
 
 export async function GET() {

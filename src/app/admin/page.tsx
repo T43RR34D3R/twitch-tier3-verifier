@@ -4,7 +4,6 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import SiteCustomizationPanel from "../../components/SiteCustomizationPanel";
-import LoginLogsPanel from "../../components/LoginLogsPanel";
 
 interface VerificationLog {
   id: string;
@@ -55,9 +54,6 @@ export default function AdminDashboard() {
   const [streamInterval, setStreamInterval] = useState<number>(120);
   const [twitchLoading, setTwitchLoading] = useState(false);
   
-  // Database setup states
-  const [setupLoading, setSetupLoading] = useState(false);
-  const [setupMessage, setSetupMessage] = useState<string>("");
 
   useEffect(() => {
     if (status === "loading") return;
@@ -297,32 +293,6 @@ export default function AdminDashboard() {
     }
   };
   
-  const setupDatabase = async () => {
-    setSetupLoading(true);
-    setSetupMessage("");
-    
-    try {
-      const response = await fetch('/api/setup/database', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      const data = await response.json();
-      
-      if (response.ok && data.success) {
-        setSetupMessage(`✅ ${data.message}\n\nTables created: ${data.tables.join(', ')}`);
-      } else {
-        setSetupMessage(`❌ Setup failed: ${data.error}`);
-      }
-    } catch (error) {
-      console.error('Error setting up database:', error);
-      setSetupMessage('❌ Error setting up database: ' + error);
-    } finally {
-      setSetupLoading(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -367,37 +337,7 @@ export default function AdminDashboard() {
             <SiteCustomizationPanel />
           </div>
 
-          {/* Login Logs Panel */}
-          <div className="mb-8">
-            <LoginLogsPanel />
-          </div>
           
-          {/* Database Setup Panel */}
-          <div className="mb-8">
-            <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-white">Database Setup</h2>
-                <button
-                  onClick={setupDatabase}
-                  disabled={setupLoading}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-xl transition-colors"
-                >
-                  {setupLoading ? 'Setting up...' : 'Setup Database Tables'}
-                </button>
-              </div>
-              {setupMessage && (
-                <div className={`p-4 rounded-lg text-sm whitespace-pre-line ${
-                  setupMessage.includes('✅') ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
-                }`}>
-                  {setupMessage}
-                </div>
-              )}
-              <p className="text-white/70 text-sm">
-                This will create all necessary database tables for the application. 
-                Run this once after deployment or when you need to reset the database structure.
-              </p>
-            </div>
-          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Verification Logs */}
@@ -415,7 +355,7 @@ export default function AdminDashboard() {
                       }`}>
                         <div className="flex justify-between items-start">
                           <div>
-                            <div className="font-medium text-white">{log.user_name}</div>
+                            <div className="font-medium text-black">{log.user_name}</div>
                             <div className="text-sm text-gray-300">ID: {log.user_id}</div>
                             <div className={`text-sm ${log.success ? 'text-green-700' : 'text-red-700'}`}>
                               {log.message}
@@ -636,7 +576,7 @@ export default function AdminDashboard() {
             <h2 className="text-2xl font-bold text-black mb-6">TwitchNotifier Settings</h2>
               
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-black mb-1">Stream Check Interval (seconds)</label>
                   <input
@@ -656,17 +596,6 @@ export default function AdminDashboard() {
                   >
                     {twitchLoading ? 'Updating...' : 'Update Interval'}
                   </button>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-black mb-1">Redirect URL</label>
-                  <input
-                    type="text"
-                    value={editingTexts.redirectUrl || ''}
-                    onChange={(e) => setEditingTexts({...editingTexts, redirectUrl: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-black"
-                    placeholder="e.g., https://example.com"
-                  />
                 </div>
               </div>
 
