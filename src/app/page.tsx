@@ -423,21 +423,6 @@ export default function Home() {
       className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" 
       style={backgroundStyle}
     >
-      {/* Animated background particles */}
-      <div className="absolute inset-0 overflow-hidden">
-        {[...Array(50)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-2 h-2 bg-white rounded-full opacity-20 animate-pulse"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 2}s`,
-              animationDuration: `${2 + Math.random() * 3}s`
-            }}
-          />
-        ))}
-      </div>
 
       {/* Main content */}
       <div className="max-w-6xl w-full relative z-10">

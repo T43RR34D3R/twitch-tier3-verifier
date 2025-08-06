@@ -61,93 +61,108 @@ export async function GET(request: NextRequest) {
 
 // Get games overview with vote counts and submission details
 async function getGamesOverview(limit: number, offset: number) {
-  const result = await query(`
-    SELECT 
-      g.id,
-      g.name,
-      g.description,
-      g.steam_id,
-      g.steam_url,
-      g.image_url,
-      g.genre,
-      g.developer,
-      g.publisher,
-      g.release_date,
-      g.vote_count,
-      g.added_by_user_id,
-      g.added_by_username,
-      g.is_approved,
-      g.is_featured,
-      g.created_at,
-      COUNT(gv.id) as actual_vote_count,
-      ARRAY_AGG(
-        DISTINCT jsonb_build_object(
-          'user_id', gv.user_id,
-          'username', gv.username,
-          'voted_at', gv.voted_at
-        ) ORDER BY gv.voted_at DESC
-      ) FILTER (WHERE gv.id IS NOT NULL) as recent_votes
-    FROM games g
-    LEFT JOIN game_votes gv ON g.id = gv.game_id
-    GROUP BY g.id
-    ORDER BY COUNT(gv.id) DESC, g.created_at DESC
-    LIMIT $1 OFFSET $2
-  `, [limit, offset]);
-
-  // Get total count
-  const countResult = await query('SELECT COUNT(*) as total FROM games');
-  const total = parseInt(countResult.rows[0].total);
-
-  return NextResponse.json({
-    games: result.rows.map(row => ({
-      ...row,
-      recent_votes: row.recent_votes?.[0] ? row.recent_votes.slice(0, 10) : []
-    })),
-    pagination: {
-      total,
-      limit,
-      offset,
-      hasMore: offset + limit < total
+  try {
+    const result = await query(`
+      SELECT 
+        g.id,
+        g.name,
+        COALESCE(g.description, '') as description,
+        COALESCE(g.steam_id, '') as steam_id,
+        COALESCE(g.steam_url, '') as steam_url,
+        COALESCE(g.image_url, '') as image_url,
+        COALESCE(g.genre, '') as genre,
+        COALESCE(g.developer, '') as developer,
+        COALESCE(g.publisher, '') as publisher,
+        g.release_date,
+        COALESCE(g.vote_count, 0) as vote_count,
+        g.added_by_user_id,
+        g.added_by_username,
+        COALESCE(g.is_approved, false) as is_approved,
+        COALESCE(g.is_featured, false) as is_featured,
+        g.created_at,
+        COUNT(gv.id) as actual_vote_count
+      FROM games g
+      LEFT JOIN game_votes gv ON g.id = gv.game_id
+      GROUP BY g.id, g.name, g.description, g.steam_id, g.steam_url, g.image_url, 
+               g.genre, g.developer, g.publisher, g.release_date, g.vote_count,
+               g.added_by_user_id, g.added_by_username, g.is_approved, g.is_featured, g.created_at
+      ORDER BY COUNT(gv.id) DESC, g.created_at DESC
+      LIMIT $1 OFFSET $2
+    `, [limit, offset]);
+    
+    // Get recent votes for each game separately to avoid complex aggregation
+    const games = result.rows;
+    for (const game of games) {
+      const votesResult = await query(`
+        SELECT user_id, username, voted_at 
+        FROM game_votes 
+        WHERE game_id = $1 
+        ORDER BY voted_at DESC 
+        LIMIT 10
+      `, [game.id]);
+      game.recent_votes = votesResult.rows;
     }
-  });
+
+    // Get total count
+    const countResult = await query('SELECT COUNT(*) as total FROM games');
+    const total = parseInt(countResult.rows[0].total);
+
+    return NextResponse.json({
+      games: games.map(row => ({
+        ...row,
+        recent_votes: row.recent_votes || []
+      })),
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total
+      }
+    });
+  } catch (error) {
+    console.error('Error in getGamesOverview:', error);
+    throw error;
+  }
 }
 
 // Get detailed vote information
 async function getVotesDetails(limit: number, offset: number) {
-  const result = await query(`
-    SELECT 
-      gv.id,
-      gv.game_id,
-      gv.user_id,
-      gv.username,
-      gv.voted_at,
-      g.name as game_name,
-      g.image_url as game_image,
-      COALESCE(vu.total_votes, 
-        (SELECT COUNT(*) FROM game_votes WHERE user_id = gv.user_id)
-      ) as user_total_votes,
-      COALESCE(vu.first_login_at, u.first_login_at) as user_first_seen
-    FROM game_votes gv
-    JOIN games g ON gv.game_id = g.id
-    LEFT JOIN voting_users vu ON gv.user_id = vu.twitch_user_id
-    LEFT JOIN users u ON gv.user_id = u.twitch_user_id
-    ORDER BY gv.voted_at DESC
-    LIMIT $1 OFFSET $2
-  `, [limit, offset]);
+  try {
+    const result = await query(`
+      SELECT 
+        gv.id,
+        gv.game_id,
+        gv.user_id,
+        gv.username,
+        gv.voted_at,
+        COALESCE(g.name, 'Unknown Game') as game_name,
+        COALESCE(g.image_url, '') as game_image,
+        (SELECT COUNT(*) FROM game_votes WHERE user_id = gv.user_id) as user_total_votes,
+        COALESCE(u.first_login_at, gv.voted_at) as user_first_seen
+      FROM game_votes gv
+      LEFT JOIN games g ON gv.game_id = g.id
+      LEFT JOIN users u ON gv.user_id = u.twitch_user_id
+      ORDER BY gv.voted_at DESC
+      LIMIT $1 OFFSET $2
+    `, [limit, offset]);
 
-  // Get total count
-  const countResult = await query('SELECT COUNT(*) as total FROM game_votes');
-  const total = parseInt(countResult.rows[0].total);
+    // Get total count
+    const countResult = await query('SELECT COUNT(*) as total FROM game_votes');
+    const total = parseInt(countResult.rows[0].total);
 
-  return NextResponse.json({
-    votes: result.rows,
-    pagination: {
-      total,
-      limit,
-      offset,
-      hasMore: offset + limit < total
-    }
-  });
+    return NextResponse.json({
+      votes: result.rows,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total
+      }
+    });
+  } catch (error) {
+    console.error('Error in getVotesDetails:', error);
+    throw error;
+  }
 }
 
 // Get users overview with their voting activity
