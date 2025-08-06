@@ -1,107 +1,74 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 export default function SubathonTimer() {
+    const [timeInSeconds, setTimeInSeconds] = useState(0);
+    const [isRunning, setIsRunning] = useState(false); // eslint-disable-line @typescript-eslint/no-unused-vars
+    const [status, setStatus] = useState("Timer Ready");
+
+    // Fetch timer state from API
+    const fetchTimerState = async () => {
+        try {
+            const response = await fetch('/api/subathon-timer');
+            const data = await response.json();
+            setTimeInSeconds(data.timeInSeconds);
+            setIsRunning(data.isRunning);
+            setStatus(data.status);
+        } catch (error) {
+            console.error('Error fetching timer state:', error);
+        }
+    };
+
+    // Send action to API
+    const sendAction = async (action, time = null) => {
+        try {
+            const response = await fetch('/api/subathon-timer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ action, time }),
+            });
+            const data = await response.json();
+            setTimeInSeconds(data.timeInSeconds);
+            setIsRunning(data.isRunning);
+            setStatus(data.status);
+        } catch (error) {
+            console.error('Error sending action:', error);
+        }
+    };
+
     useEffect(() => {
-        // Initialize timer on component mount
-        let timerInterval;
-        let timeInSeconds = 0;
-        let isRunning = false;
+        // Initial fetch
+        fetchTimerState();
 
-        function displayTime() {
-            const hours = String(Math.floor(timeInSeconds / 3600)).padStart(2, '0');
-            const minutes = String(Math.floor((timeInSeconds % 3600) / 60)).padStart(2, '0');
-            const seconds = String(timeInSeconds % 60).padStart(2, '0');
-            const timerElement = document.getElementById('timer');
-            if (timerElement) {
-                timerElement.innerText = hours + ':' + minutes + ':' + seconds;
-                
-                if (isRunning) {
-                    timerElement.classList.add('running');
-                } else {
-                    timerElement.classList.remove('running');
-                }
-            }
-        }
+        // Poll for updates every second
+        const interval = setInterval(fetchTimerState, 1000);
 
-        function updateStatus(message) {
-            const statusElement = document.getElementById('status');
-            if (statusElement) {
-                statusElement.innerText = message;
-            }
-        }
-
-        window.setTime = function() {
-            const time = prompt("Enter time in HH:MM:SS (e.g., 01:30:00 for 1 hour 30 minutes)");
-            if (time && time.match(/^\d{1,2}:\d{2}:\d{2}$/)) {
-                const parts = time.split(':');
-                timeInSeconds = (+parts[0] * 3600) + (+parts[1] * 60) + (+parts[2]);
-                displayTime();
-                updateStatus('Timer set to ' + time);
-            } else if (time) {
-                alert("Please enter time in HH:MM:SS format (e.g., 01:30:00)");
-            }
-        };
-
-        window.startTimer = function() {
-            if (!isRunning && timeInSeconds > 0) {
-                isRunning = true;
-                updateStatus("⏳ Timer Running...");
-                timerInterval = setInterval(() => {
-                    timeInSeconds--;
-                    if (timeInSeconds <= 0) {
-                        timeInSeconds = 0;
-                        window.pauseTimer();
-                        updateStatus("🎉 Timer Finished!");
-                        const timerElement = document.getElementById('timer');
-                        if (timerElement) {
-                            timerElement.style.animation = 'pulse 0.5s ease-in-out 3';
-                            setTimeout(() => {
-                                timerElement.style.animation = '';
-                            }, 1500);
-                        }
-                    }
-                    displayTime();
-                }, 1000);
-            } else if (timeInSeconds === 0) {
-                updateStatus("Please set a time first!");
-            }
-        };
-
-        window.pauseTimer = function() {
-            if (isRunning) {
-                isRunning = false;
-                clearInterval(timerInterval);
-                updateStatus("⏸️ Timer Paused");
-                displayTime();
-            }
-        };
-
-        window.addTime = function() {
-            timeInSeconds += 300;
-            displayTime();
-            updateStatus("➕ Added 5 minutes!");
-        };
-
-        window.removeTime = function() {
-            const oldTime = timeInSeconds;
-            timeInSeconds = Math.max(0, timeInSeconds - 300);
-            displayTime();
-            if (oldTime > 0) {
-                updateStatus("➖ Removed 5 minutes!");
-            } else {
-                updateStatus("Cannot remove time - timer at 00:00:00");
-            }
-        };
-
-        displayTime();
-        updateStatus("Timer Ready - Set time to begin!");
-
-        return () => {
-            if (timerInterval) {
-                clearInterval(timerInterval);
-            }
-        };
+        return () => clearInterval(interval);
     }, []);
+
+    const formatTime = (seconds) => {
+        const hours = String(Math.floor(seconds / 3600)).padStart(2, '0');
+        const minutes = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+        const secs = String(seconds % 60).padStart(2, '0');
+        return `${hours}:${minutes}:${secs}`;
+    };
+
+    const setTime = () => {
+        const time = prompt("Enter time in HH:MM:SS (e.g., 01:30:00 for 1 hour 30 minutes)");
+        if (time && time.match(/^\d{1,2}:\d{2}:\d{2}$/)) {
+            const parts = time.split(':');
+            const totalSeconds = (+parts[0] * 3600) + (+parts[1] * 60) + (+parts[2]);
+            sendAction('setTime', totalSeconds);
+        } else if (time) {
+            alert("Please enter time in HH:MM:SS format (e.g., 01:30:00)");
+        }
+    };
+
+    const startTimer = () => sendAction('start');
+    const pauseTimer = () => sendAction('pause');
+    const addTime = () => sendAction('addTime');
+    const removeTime = () => sendAction('removeTime');
 
     return (
         <>
@@ -311,14 +278,14 @@ export default function SubathonTimer() {
             <div className="fullscreen-wrapper">
                 <div className="container">
                 <h1>SUBATHON TIMER</h1>
-                <div id="timer">00:00:00</div>
-                <div className="status" id="status">Timer Stopped</div>
+                <div id="timer">{formatTime(timeInSeconds)}</div>
+                <div className="status" id="status">{status}</div>
                 <div className="controls">
-                    <button onClick={() => window.setTime()}>⏰ Set Time</button>
-                    <button onClick={() => window.pauseTimer()}>⏸️ Pause</button>
-                    <button onClick={() => window.startTimer()}>▶️ Start</button>
-                    <button onClick={() => window.addTime()}>➕ Add 5 Min</button>
-                    <button onClick={() => window.removeTime()}>➖ Remove 5 Min</button>
+                    <button onClick={setTime}>⏰ Set Time</button>
+                    <button onClick={pauseTimer}>⏸️ Pause</button>
+                    <button onClick={startTimer}>▶️ Start</button>
+                    <button onClick={addTime}>➕ Add 5 Min</button>
+                    <button onClick={removeTime}>➖ Remove 5 Min</button>
                 </div>
             </div>
             </div>
