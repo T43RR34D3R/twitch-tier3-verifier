@@ -39,7 +39,7 @@ export default function Home() {
               subtitle: data.settings.subtitle,
               signInText: data.settings.sign_in_text,
               steps: data.settings.steps,
-              redirectUrl: data.settings.redirect_url
+              redirectUrl: data.settings.redirect_url_1 || data.settings.redirect_url
             });
           } else {
             // Use defaults if no settings found
@@ -139,7 +139,7 @@ export default function Home() {
           verificationSuccessful = true;
           setTimeout(() => {
             // Get redirect URL from page settings, fallback to env var
-            const redirectUrl = pageTexts?.redirectUrl || process.env.NEXT_PUBLIC_NOTION_FORM_URL || "#";
+            const redirectUrl = pageTexts?.redirectUrl || process.env.NEXT_PUBLIC_NOTION_FORM_URL || "https://expensive-battery-1ef.notion.site/22baab23c4af80a593a8de32f464a191?pvs=105";
             window.location.href = redirectUrl;
           }, 3000);
         } else {
