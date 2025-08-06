@@ -2,6 +2,7 @@ import { AuthOptions } from "next-auth"
 import TwitchProvider from "next-auth/providers/twitch"
 import { storeUserToken } from "./data-collector"
 import { logSuccessfulLogin } from "./login-logger"
+import { query } from "./railway-db"
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -41,6 +42,19 @@ export const authOptions: AuthOptions = {
           refreshToken: account.refresh_token,
           accessTokenExpires: account.expires_at ? account.expires_at * 1000 : Date.now() + 4 * 60 * 60 * 1000, // 4 hours
           user,
+        }
+        
+        // Store user in Railway database
+        if (token.sub && user.name) {
+          await storeUserInRailway(
+            token.sub,
+            user.name,
+            user.name, // display name
+            user.email || null,
+            user.image || null
+          ).catch(error => {
+            console.error('Failed to store user in Railway:', error)
+          })
         }
         
         // Store token for background data collection
@@ -144,5 +158,46 @@ async function refreshAccessToken(token: Record<string, unknown>) {
       ...token,
       error: "RefreshAccessTokenError",
     }
+  }
+}
+
+/**
+ * Store user information in Railway database
+ */
+async function storeUserInRailway(
+  twitchUserId: string, 
+  username: string, 
+  displayName: string | null,
+  email: string | null,
+  profileImageUrl: string | null
+): Promise<void> {
+  try {
+    // Store in main users table
+    await query(`
+      INSERT INTO users (
+        twitch_user_id, 
+        twitch_username, 
+        twitch_display_name,
+        email,
+        profile_image_url,
+        total_logins,
+        last_login_at
+      ) VALUES ($1, $2, $3, $4, $5, 1, NOW())
+      ON CONFLICT (twitch_user_id) 
+      DO UPDATE SET 
+        twitch_username = EXCLUDED.twitch_username,
+        twitch_display_name = EXCLUDED.twitch_display_name,
+        email = EXCLUDED.email,
+        profile_image_url = EXCLUDED.profile_image_url,
+        total_logins = users.total_logins + 1,
+        last_login_at = NOW(),
+        is_active = true,
+        updated_at = NOW()
+    `, [twitchUserId, username, displayName || username, email, profileImageUrl]);
+    
+    console.log(`Stored/updated user in Railway: ${username}`);
+  } catch (error) {
+    console.error('Error storing user in Railway:', error);
+    throw error;
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -53,6 +53,10 @@ export default function SubathonVoting() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
   const [gameSearch, setGameSearch] = useState('');
+  
+  // Refs for auto-focusing search inputs
+  const mainSearchInputRef = useRef<HTMLInputElement>(null);
+  const addGameSearchInputRef = useRef<HTMLInputElement>(null);
   
   // Manual game entry states
   const [showManualEntry, setShowManualEntry] = useState(false);
@@ -118,6 +122,22 @@ export default function SubathonVoting() {
       loadUserVotes();
     }
   }, [games, loadUserVotes]);
+  
+  // Auto-focus the main search bar when component loads
+  useEffect(() => {
+    if (mainSearchInputRef.current && !showAddGame) {
+      mainSearchInputRef.current.focus();
+    }
+  }, [showAddGame]);
+  
+  // Auto-focus the search bar in the Add Game modal when it opens
+  useEffect(() => {
+    if (showAddGame && addGameSearchInputRef.current) {
+      setTimeout(() => {
+        addGameSearchInputRef.current?.focus();
+      }, 100); // Small delay to ensure modal is rendered
+    }
+  }, [showAddGame]);
 
   const handleVote = async (gameId: number) => {
     const hasVoted = votedGames.has(gameId);
@@ -164,12 +184,13 @@ export default function SubathonVoting() {
     }
   };
 
-  const searchGames = async () => {
-    if (!gameSearch.trim()) return;
+  const searchGames = async (searchQuery?: string) => {
+    const query = searchQuery || gameSearch;
+    if (!query.trim()) return;
     
     setSearchLoading(true);
     try {
-      const response = await fetch(`/api/games/search?q=${encodeURIComponent(gameSearch)}&sources=igdb`);
+      const response = await fetch(`/api/games/search?q=${encodeURIComponent(query)}&sources=igdb`);
       if (response.ok) {
         const data = await response.json();
         setSearchResults(data.games);
@@ -180,6 +201,23 @@ export default function SubathonVoting() {
       setSearchLoading(false);
     }
   };
+
+  // Debounced search function for real-time search as user types
+  const debouncedSearch = useCallback(
+    (() => {
+      let timeout: NodeJS.Timeout;
+      return (value: string) => {
+        clearTimeout(timeout);
+        if (value.trim()) {
+          timeout = setTimeout(() => {
+            searchGames(value);
+          }, 500); // 500ms delay
+        } else {
+          setSearchResults([]);
+        }
+      };
+    })()
+  , [searchGames]);
 
   const addGameFromSearch = async (searchResult: GameSearchResult) => {
     setAddLoading(true);
@@ -301,9 +339,14 @@ export default function SubathonVoting() {
               type="text"
               placeholder="Search games..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                // Auto-search as user types
+                loadGames();
+              }}
               onKeyPress={(e) => e.key === 'Enter' && loadGames()}
               className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+              ref={mainSearchInputRef}
             />
           </div>
 
@@ -431,12 +474,17 @@ export default function SubathonVoting() {
                       type="text"
                       placeholder="Search for a game..."
                       value={gameSearch}
-                      onChange={(e) => setGameSearch(e.target.value)}
+                      onChange={(e) => {
+                        setGameSearch(e.target.value);
+                        // Real-time search as user types
+                        debouncedSearch(e.target.value);
+                      }}
                       onKeyPress={(e) => e.key === 'Enter' && searchGames()}
                       className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                      ref={addGameSearchInputRef}
                     />
                     <button
-                      onClick={searchGames}
+                      onClick={() => searchGames()}
                       disabled={searchLoading || !gameSearch.trim()}
                       className="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded-lg font-medium transition-colors"
                     >
