@@ -14,36 +14,39 @@ export async function GET(request: NextRequest) {
     })
     
     if (!token || !token.accessToken) {
+      // Log the failed authentication attempt
+      try {
+        await addVerificationLog({
+          user_name: token?.name || "Anonymous",
+          user_id: token?.sub || "unknown",
+          success: false,
+          message: "Authentication failed - no valid token or access token"
+        });
+      } catch (logError) {
+        console.error('Failed to log authentication failure:', logError);
+      }
+      
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
     
     if (!token.sub) {
       console.error("No user ID (sub) found in token");
+      
+      // Log the failed verification attempt
+      try {
+        await addVerificationLog({
+          user_name: token.name || "Unknown",
+          user_id: "missing",
+          success: false,
+          message: "User ID not found in token"
+        });
+      } catch (logError) {
+        console.error('Failed to log missing user ID:', logError);
+      }
+      
       return NextResponse.json({ error: "User ID not found in token" }, { status: 400 })
     }
 
-    // Override for testing - TearReader always passes
-    if (token.name === "TearReader") {
-      console.log("TearReader override: granting Tier 3 access");
-      
-      // Log the verification attempt
-      try {
-        const logResult = await addVerificationLog({
-          user_name: token.name || "Unknown",
-          user_id: token.sub,
-          success: true,
-          message: "Tier 3 subscription verified! (Override for TearReader)"
-        });
-        console.log('TearReader verification logged:', !!logResult);
-      } catch (logError) {
-        console.error('Failed to log TearReader verification:', logError);
-      }
-      
-      return NextResponse.json({ 
-        isTier3: true, 
-        message: "Tier 3 subscription verified! (Override for TearReader)" 
-      });
-    }
 
     // Override for Buck - always passes
     if (token.name === "BuckFoozle" || token.name === "buckfoozle") {
@@ -72,6 +75,18 @@ export async function GET(request: NextRequest) {
     const broadcasterId = process.env.TWITCH_CHANNEL_ID!
     
     if (!broadcasterId) {
+      // Log the configuration error
+      try {
+        await addVerificationLog({
+          user_name: token.name || "Unknown",
+          user_id: token.sub,
+          success: false,
+          message: "Server configuration error - Channel ID not configured"
+        });
+      } catch (logError) {
+        console.error('Failed to log configuration error:', logError);
+      }
+      
       return NextResponse.json({ error: "Channel ID not configured" }, { status: 500 })
     }
 
@@ -119,6 +134,18 @@ export async function GET(request: NextRequest) {
         
         // If token is invalid, return a special error to force re-authentication
         if (response.status === 401) {
+          // Log the token expiry
+          try {
+            await addVerificationLog({
+              user_name: token.name || "Unknown",
+              user_id: token.sub,
+              success: false,
+              message: "Token expired - session has expired"
+            });
+          } catch (logError) {
+            console.error('Failed to log token expiry:', logError);
+          }
+          
           return NextResponse.json({ 
             error: "Invalid token", 
             forceReauth: true,
@@ -197,6 +224,22 @@ export async function GET(request: NextRequest) {
     
   } catch (error) {
     console.error("Error checking tier 3 status:", error)
+    
+    // Try to log the internal server error if we have token info
+    try {
+      const token = await getToken({ req: request })
+      if (token) {
+        await addVerificationLog({
+          user_name: token.name || "Unknown",
+          user_id: token.sub || "unknown",
+          success: false,
+          message: `Internal server error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        });
+      }
+    } catch (logError) {
+      console.error('Failed to log internal server error:', logError);
+    }
+    
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
