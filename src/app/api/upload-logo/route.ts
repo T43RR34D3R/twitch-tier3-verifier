@@ -3,22 +3,19 @@ import { getToken } from "next-auth/jwt";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 
-// Check if user is admin
-const isUserAdmin = (userName?: string | null, userId?: string) => {
-  if (!userName && !userId) return false;
-  const adminUsers = ["TearReader", "BuckFoozle"];
-  const adminIds = ["1239758967", "269187200"];
-  
-  return adminUsers.some(admin => 
-    admin.toLowerCase() === (userName || "").toLowerCase()
-  ) || adminIds.includes(userId || "");
+// Check if user is admin using environment variable with hardcoded fallback
+const isUserAdmin = (userId?: string) => {
+  const hardcodedAdminIds = ['441862265', '269187200'];
+  const envAdmin = userId === process.env.ADMIN_USER_ID || userId === process.env.ADMIN_USER_ID_2;
+  const hardcodedAdmin = hardcodedAdminIds.includes(userId || '');
+  return envAdmin || hardcodedAdmin;
 };
 
 export async function POST(request: NextRequest) {
   try {
     const token = await getToken({ req: request });
     
-    if (!token || !isUserAdmin(token.name, token.sub)) {
+    if (!token || !isUserAdmin(token.sub)) {
       return NextResponse.json({ error: "Unauthorized - Admin access required" }, { status: 401 });
     }
 
