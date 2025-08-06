@@ -151,35 +151,44 @@ export async function POST(request: NextRequest) {
 
     console.log('Saving customization settings to database');
 
-    // Save to database using upsert pattern
-    const upsertSql = `
-      DO $$
-      BEGIN
-        -- Check if any settings exist
-        IF EXISTS (SELECT 1 FROM customization_settings) THEN
-          -- Update existing
-          UPDATE customization_settings SET
-            settings = $1,
-            menu_items = $2,
-            home_sections = $3,
-            updated_by = $4,
-            version = version + 1,
-            updated_at = NOW()
-          WHERE id = (SELECT id FROM customization_settings ORDER BY updated_at DESC LIMIT 1);
-        ELSE
-          -- Insert new
-          INSERT INTO customization_settings (settings, menu_items, home_sections, updated_by)
-          VALUES ($1, $2, $3, $4);
-        END IF;
-      END $$;
-    `;
-
-    await query(upsertSql, [
-      JSON.stringify(settings),
-      JSON.stringify(menuItems), 
-      JSON.stringify(homeSections),
-      token.sub
-    ]);
+    // Check if settings exist first
+    const checkSql = 'SELECT id FROM customization_settings ORDER BY updated_at DESC LIMIT 1';
+    const existingResult = await query(checkSql);
+    
+    if (existingResult.rows.length > 0) {
+      // Update existing record
+      const updateSql = `
+        UPDATE customization_settings SET
+          settings = $1,
+          menu_items = $2,
+          home_sections = $3,
+          updated_by = $4,
+          version = version + 1,
+          updated_at = NOW()
+        WHERE id = $5
+      `;
+      
+      await query(updateSql, [
+        JSON.stringify(settings),
+        JSON.stringify(menuItems), 
+        JSON.stringify(homeSections),
+        token.sub,
+        existingResult.rows[0].id
+      ]);
+    } else {
+      // Insert new record
+      const insertSql = `
+        INSERT INTO customization_settings (settings, menu_items, home_sections, updated_by)
+        VALUES ($1, $2, $3, $4)
+      `;
+      
+      await query(insertSql, [
+        JSON.stringify(settings),
+        JSON.stringify(menuItems), 
+        JSON.stringify(homeSections),
+        token.sub
+      ]);
+    }
 
     return NextResponse.json({ 
       success: true, 

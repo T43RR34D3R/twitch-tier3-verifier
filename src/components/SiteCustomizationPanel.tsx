@@ -25,6 +25,9 @@ interface CustomizationSettings {
   hamburgerPosition: 'left' | 'right';
   showAuthButtons: boolean;
   taglineAlignment: 'left' | 'center' | 'right';
+  footerText?: string;
+  footerLinkText?: string;
+  footerLinkUrl?: string;
 }
 
 interface MenuItem {
@@ -43,7 +46,7 @@ interface MenuItem {
 
 interface HomeSection {
   id: string;
-  type: 'hero' | 'about' | 'tools' | 'twitch-embed' | 'custom';
+  type: 'hero' | 'about' | 'tools' | 'twitch-embed' | 'social' | 'custom';
   title: string;
   isEnabled: boolean;
   orderIndex: number;
@@ -68,6 +71,11 @@ interface HomeSection {
     twitchChannel?: string;
     embedType?: 'player' | 'chat' | 'both';
     
+    // Social section
+    socialTitle?: string;
+    showSocialCards?: boolean;
+    socialLinks?: Array<{ platform: string; url: string; icon: string; color: string }>;
+    
     // Custom section
     customHtml?: string;
     customCss?: string;
@@ -75,10 +83,10 @@ interface HomeSection {
 }
 
 const defaultSettings: CustomizationSettings = {
-  siteTitle: "BuckFoozle Toolkit",
-  siteLogo: "🎮",
+  siteTitle: "BuckFoozle",
+  siteLogo: "👑",
   logoType: "emoji",
-  tagline: "Professional Streaming Tools",
+  tagline: "Variety Streamer & Content Creator",
   primaryColor: "#6366f1",
   secondaryColor: "#8b5cf6", 
   accentColor: "#f59e0b",
@@ -93,15 +101,18 @@ const defaultSettings: CustomizationSettings = {
   hamburgerPosition: "left",
   showAuthButtons: true,
   taglineAlignment: "left",
+  footerText: "Made with 💜 for the Best Friends Club",
+  footerLinkText: "twitch.tv/buckfoozle",
+  footerLinkUrl: "https://twitch.tv/buckfoozle",
 };
 
 const defaultMenuItems: MenuItem[] = [
   { id: "1", label: "Home", url: "/", iconType: "emoji", iconValue: "🏠", visibility: "all", isExternal: false, openInNewTab: false, orderIndex: 1, isEnabled: true },
-  { id: "2", label: "T3 Verification", url: "/t3verify", iconType: "emoji", iconValue: "👑", visibility: "all", isExternal: false, openInNewTab: false, orderIndex: 2, isEnabled: true },
-  { id: "3", label: "Subathon Timer", url: "/subathon-timer", iconType: "emoji", iconValue: "⏰", visibility: "all", isExternal: false, openInNewTab: false, orderIndex: 3, isEnabled: true },
-  { id: "4", label: "Analytics", url: "/analytics", iconType: "emoji", iconValue: "📊", visibility: "authenticated", isExternal: false, openInNewTab: false, orderIndex: 4, isEnabled: true },
-  { id: "5", label: "Admin Panel", url: "/admin", iconType: "emoji", iconValue: "⚙️", visibility: "admin", isExternal: false, openInNewTab: false, orderIndex: 5, isEnabled: true },
-  { id: "6", label: "Twitch Channel", url: "https://twitch.tv/buckfoozle", iconType: "emoji", iconValue: "💜", visibility: "all", isExternal: true, openInNewTab: true, orderIndex: 6, isEnabled: true },
+  { id: "2", label: "Watch Live", url: "https://twitch.tv/buckfoozle", iconType: "emoji", iconValue: "📺", visibility: "all", isExternal: true, openInNewTab: true, orderIndex: 2, isEnabled: true },
+  { id: "3", label: "Discord", url: "https://discord.gg/buckfoozle", iconType: "emoji", iconValue: "💬", visibility: "all", isExternal: true, openInNewTab: true, orderIndex: 3, isEnabled: true },
+  { id: "4", label: "Twitter", url: "https://twitter.com/buckfoozle", iconType: "emoji", iconValue: "🐦", visibility: "all", isExternal: true, openInNewTab: true, orderIndex: 4, isEnabled: true },
+  { id: "5", label: "YouTube", url: "https://youtube.com/@buckfoozle", iconType: "emoji", iconValue: "📹", visibility: "all", isExternal: true, openInNewTab: true, orderIndex: 5, isEnabled: true },
+  { id: "6", label: "Admin Panel", url: "/admin", iconType: "emoji", iconValue: "⚙️", visibility: "admin", isExternal: false, openInNewTab: false, orderIndex: 6, isEnabled: true },
 ];
 
 const defaultHomeSections: HomeSection[] = [
@@ -112,11 +123,11 @@ const defaultHomeSections: HomeSection[] = [
     isEnabled: true,
     orderIndex: 1,
     content: {
-      heroTitle: "Welcome to BuckFoozle Toolkit",
-      heroSubtitle: "Professional streaming tools for content creators",
+      heroTitle: "Welcome to BuckFoozle's World",
+      heroSubtitle: "Join me for variety gaming, laughs, and an awesome community!",
       heroImage: "",
       heroButtons: [
-        { label: "Get Started", url: "/t3verify", style: "primary" },
+        { label: "Watch Live", url: "https://twitch.tv/buckfoozle", style: "primary" },
         { label: "Learn More", url: "#about", style: "secondary" }
       ]
     }
@@ -129,7 +140,7 @@ const defaultHomeSections: HomeSection[] = [
     orderIndex: 2,
     content: {
       aboutTitle: "Meet BuckFoozle",
-      aboutText: "Professional streamer and content creator bringing you the best streaming tools and entertainment.",
+      aboutText: "Hey there! I'm Buck, a variety streamer who loves gaming, building community, and having a great time with viewers. From indie gems to AAA titles, horror games to cozy adventures - there's always something fun happening on stream. Come hang out and be part of the BuckFoozle family!",
       aboutImage: "/buckfoozle-profile.jpg",
       aboutImagePosition: "left"
     }
@@ -137,23 +148,29 @@ const defaultHomeSections: HomeSection[] = [
   {
     id: "twitch",
     type: "twitch-embed",
-    title: "Twitch Stream",
+    title: "Watch Live",
     isEnabled: true,
     orderIndex: 3,
     content: {
       twitchChannel: "buckfoozle",
-      embedType: "both"
+      embedType: "player"
     }
   },
   {
-    id: "tools",
-    type: "tools",
-    title: "Available Tools",
+    id: "social",
+    type: "social",
+    title: "Connect With Me",
     isEnabled: true,
     orderIndex: 4,
     content: {
-      toolsTitle: "Streaming Tools",
-      showToolCards: true
+      socialTitle: "Follow Me Everywhere",
+      showSocialCards: true,
+      socialLinks: [
+        { platform: "Twitch", url: "https://twitch.tv/buckfoozle", icon: "📺", color: "#9146ff" },
+        { platform: "Discord", url: "https://discord.gg/buckfoozle", icon: "💬", color: "#5865f2" },
+        { platform: "Twitter", url: "https://twitter.com/buckfoozle", icon: "🐦", color: "#1da1f2" },
+        { platform: "YouTube", url: "https://youtube.com/@buckfoozle", icon: "📹", color: "#ff0000" }
+      ]
     }
   }
 ];
