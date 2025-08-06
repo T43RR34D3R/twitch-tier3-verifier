@@ -169,7 +169,7 @@ export default function SubathonVoting() {
     
     setSearchLoading(true);
     try {
-      const response = await fetch(`/api/games/search?q=${encodeURIComponent(gameSearch)}&sources=steam,rawg`);
+      const response = await fetch(`/api/games/search?q=${encodeURIComponent(gameSearch)}&sources=igdb`);
       if (response.ok) {
         const data = await response.json();
         setSearchResults(data.games);

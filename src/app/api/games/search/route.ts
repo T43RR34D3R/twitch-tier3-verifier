@@ -8,7 +8,7 @@ interface IGDBGame {
   id: number;
   name: string;
   cover?: {
-    url: string;
+    image_id: string;
   };
   summary?: string;
   involved_companies?: Array<{
@@ -20,6 +20,11 @@ interface IGDBGame {
   }>;
   first_release_date?: number;
   genres?: Array<{
+    name: string;
+  }>;
+  rating?: number;
+  rating_count?: number;
+  platforms?: Array<{
     name: string;
   }>;
 }
@@ -49,7 +54,6 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
-    const sources = searchParams.get('sources')?.split(',') || ['steam', 'rawg'];
 
     if (!query || query.trim().length < 2) {
       return NextResponse.json(
@@ -60,34 +64,23 @@ export async function GET(request: NextRequest) {
 
     const results: GameSearchResult[] = [];
 
-    // Search Steam if requested
-    if (sources.includes('steam')) {
-      try {
-        const steamResults = await searchSteam(query);
-        results.push(...steamResults);
-      } catch (error) {
-        console.warn('Steam search failed:', error);
-      }
-    }
-
-    // Search RAWG (free game database) if requested
-    if (sources.includes('rawg')) {
-      try {
-        const rawgResults = await searchRAWG(query);
-        results.push(...rawgResults);
-      } catch (error) {
-        console.warn('RAWG search failed:', error);
-      }
-    }
-
-    // Search IGDB if requested and API key is available
-    if (sources.includes('igdb') && process.env.IGDB_CLIENT_ID) {
+    // Only search IGDB if API key is available
+    if (process.env.IGDB_CLIENT_ID && process.env.IGDB_ACCESS_TOKEN) {
       try {
         const igdbResults = await searchIGDB(query);
         results.push(...igdbResults);
       } catch (error) {
         console.warn('IGDB search failed:', error);
+        return NextResponse.json(
+          { error: 'Game search service temporarily unavailable. Please try adding the game manually.' },
+          { status: 503 }
+        );
       }
+    } else {
+      return NextResponse.json(
+        { error: 'Game search service not configured. Please add the game manually.' },
+        { status: 503 }
+      );
     }
 
     // Remove duplicates based on name similarity
@@ -110,58 +103,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Search Steam using their web API
-async function searchSteam(query: string): Promise<GameSearchResult[]> {
-  const response = await fetch(`https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(query)}&l=english&cc=US`);
-  
-  if (!response.ok) {
-    throw new Error('Steam API request failed');
-  }
-
-  const data = await response.json();
-  
-  return data.items?.slice(0, 10).map((item: Record<string, unknown>) => ({
-    source: 'steam' as const,
-    id: (item.id as string | number).toString(),
-    name: item.name as string,
-    description: item.tiny_image ? undefined : item.name as string, // Steam search doesn't include descriptions
-    image_url: item.tiny_image as string | undefined,
-    source_url: `https://store.steampowered.com/app/${item.id}/`
-  })) || [];
-}
-
-// Search RAWG (free game database)
-async function searchRAWG(query: string): Promise<GameSearchResult[]> {
-  const apiKey = process.env.RAWG_API_KEY;
-  if (!apiKey) {
-    console.warn('RAWG API key not configured');
-    return [];
-  }
-
-  const response = await fetch(
-    `https://api.rawg.io/api/games?key=${apiKey}&search=${encodeURIComponent(query)}&page_size=10&ordering=-rating`
-  );
-  
-  if (!response.ok) {
-    throw new Error('RAWG API request failed');
-  }
-
-  const data = await response.json();
-  
-  return data.results?.map((game: Record<string, unknown>) => ({
-    source: 'rawg' as const,
-    id: (game.id as string | number).toString(),
-    name: game.name as string,
-    description: game.description_raw ? (game.description_raw as string).substring(0, 200) + '...' : undefined,
-    image_url: game.background_image as string | undefined,
-    developer: (game.developers as Record<string, unknown>[] | undefined)?.[0]?.name as string | undefined,
-    publisher: (game.publishers as Record<string, unknown>[] | undefined)?.[0]?.name as string | undefined,
-    release_date: game.released as string | undefined,
-    genre: (game.genres as Record<string, unknown>[] | undefined)?.map((g: Record<string, unknown>) => g.name as string).join(', '),
-    source_url: `https://rawg.io/games/${game.slug as string}`
-  })) || [];
-}
-
 // Search IGDB (requires API key and OAuth)
 async function searchIGDB(query: string): Promise<GameSearchResult[]> {
   const clientId = process.env.IGDB_CLIENT_ID;
@@ -177,12 +118,13 @@ async function searchIGDB(query: string): Promise<GameSearchResult[]> {
     headers: {
       'Client-ID': clientId,
       'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
+      'Content-Type': 'text/plain'
     },
     body: `
-      search "${query}";
-      fields name,summary,cover.url,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,first_release_date,genres.name;
-      limit 10;
+      search "${query.replace(/"/g, '\\"')}";
+      fields name,summary,cover.image_id,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,first_release_date,genres.name,platforms.name,rating,rating_count;
+      where category = 0 & version_parent = null;
+      limit 20;
     `
   });
 
@@ -201,7 +143,7 @@ async function searchIGDB(query: string): Promise<GameSearchResult[]> {
       id: game.id.toString(),
       name: game.name,
       description: game.summary,
-      image_url: game.cover?.url ? `https:${game.cover.url.replace('t_thumb', 't_cover_big')}` : undefined,
+      image_url: game.cover?.image_id ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${game.cover.image_id}.jpg` : undefined,
       developer,
       publisher,
       release_date: game.first_release_date ? new Date(game.first_release_date * 1000).toISOString().split('T')[0] : undefined,

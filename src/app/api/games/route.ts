@@ -139,17 +139,62 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if game already exists
-    const existingGame = await query(
-      'SELECT id, name FROM games WHERE name ILIKE $1 OR (steam_id IS NOT NULL AND steam_id = $2)',
-      [name, steam_id]
+    // Improved duplicate detection
+    const normalizedName = name.trim().toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ');
+    
+    // Check for exact name matches (case insensitive)
+    const exactMatch = await query(
+      'SELECT id, name FROM games WHERE LOWER(REGEXP_REPLACE(TRIM(name), \'[^a-zA-Z0-9\\s]\', \'\', \'g\')) = $1',
+      [normalizedName]
     );
-
-    if (existingGame.rows.length > 0) {
+    
+    if (exactMatch.rows.length > 0) {
       return NextResponse.json(
-        { error: 'Game already exists in the database', existingGame: existingGame.rows[0] },
+        { error: `A game named "${exactMatch.rows[0].name}" already exists in the voting list.` },
         { status: 409 }
       );
+    }
+    
+    // Check for Steam ID duplicates if provided
+    if (steam_id) {
+      const steamMatch = await query(
+        'SELECT id, name FROM games WHERE steam_id = $1',
+        [steam_id]
+      );
+      
+      if (steamMatch.rows.length > 0) {
+        return NextResponse.json(
+          { error: `This game is already in the voting list as "${steamMatch.rows[0].name}".` },
+          { status: 409 }
+        );
+      }
+    }
+    
+    // Check for very similar names to prevent near-duplicates
+    const words = normalizedName.split(' ').filter((word: string) => word.length > 2); // Only check significant words
+    if (words.length > 0) {
+      const wordPattern = words.join('|'); // Create OR pattern for words
+      const similarGames = await query(`
+        SELECT id, name, 
+               LOWER(REGEXP_REPLACE(TRIM(name), '[^a-zA-Z0-9\\s]', '', 'g')) as normalized_name
+        FROM games 
+        WHERE LOWER(REGEXP_REPLACE(TRIM(name), '[^a-zA-Z0-9\\s]', '', 'g')) ~ $1
+        LIMIT 3
+      `, [wordPattern]);
+      
+      // Check if any similar game has high similarity (>= 70% word overlap)
+      for (const similar of similarGames.rows) {
+        const similarWords = (similar.normalized_name as string).split(' ').filter((word: string) => word.length > 2);
+        const commonWords = words.filter((word: string) => similarWords.includes(word));
+        const similarity = (commonWords.length * 2) / (words.length + similarWords.length);
+        
+        if (similarity >= 0.7) {
+          return NextResponse.json(
+            { error: `A very similar game "${similar.name}" already exists. Please check if this is the same game.` },
+            { status: 409 }
+          );
+        }
+      }
     }
 
     // Insert new game
