@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import SiteCustomizationPanel from "../../components/SiteCustomizationPanel";
+import GameVotingAdmin from "../../components/GameVotingAdmin";
 
 interface VerificationLog {
   id: string;
@@ -337,6 +338,11 @@ export default function AdminDashboard() {
             <SiteCustomizationPanel />
           </div>
 
+          {/* Game Voting Admin Panel */}
+          <div className="mb-8">
+            <GameVotingAdmin />
+          </div>
+
           
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -611,12 +617,18 @@ export default function AdminDashboard() {
           
           {/* Navigation */}
           <div className="mt-8 text-center space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <button
                 onClick={() => router.push("/analytics")}
                 className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
               >
                 Analytics Dashboard
+              </button>
+              <button
+                onClick={() => router.push("/subathon-voting")}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
+              >
+                🎮 Subathon Voting
               </button>
               <button
                 onClick={() => window.open('/minecraft-chat', '_blank')}
