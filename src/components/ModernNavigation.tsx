@@ -10,6 +10,7 @@ interface CustomizationSettings {
   siteLogo: string;
   logoType: 'emoji' | 'image' | 'text';
   logoImageUrl?: string;
+  logoCircular?: boolean;
   tagline: string;
   primaryColor: string;
   secondaryColor: string;
@@ -84,9 +85,10 @@ const isUserAdmin = (session: { user?: { name?: string | null; id?: string } } |
 
 export default function ModernNavigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [settings, setSettings] = useState<CustomizationSettings>(defaultSettings);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(defaultMenuItems);
+  const [settings, setSettings] = useState<CustomizationSettings | null>(null);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { data: session } = useSession();
   const pathname = usePathname();
 
@@ -121,21 +123,22 @@ export default function ModernNavigation() {
       if (response.ok) {
         const data = await response.json();
         console.log('Loaded customization data:', data);
-        if (data.settings) {
-          console.log('Applying settings:', data.settings);
-          setSettings({ ...defaultSettings, ...data.settings });
-        }
-        if (data.menuItems) {
-          console.log('Applying menu items:', data.menuItems);
-          setMenuItems(data.menuItems);
-        }
+        setSettings({ ...defaultSettings, ...(data.settings || {}) });
+        setMenuItems(data.menuItems || defaultMenuItems);
       } else {
         console.error('Failed to load customization settings:', response.status);
+        // Use defaults if API fails
+        setSettings(defaultSettings);
+        setMenuItems(defaultMenuItems);
       }
     } catch (error) {
       console.error('Error loading customization settings:', error);
       console.log('Using default settings');
-      // Use defaults - this is fine for now
+      // Use defaults if fetch fails
+      setSettings(defaultSettings);
+      setMenuItems(defaultMenuItems);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -143,6 +146,8 @@ export default function ModernNavigation() {
   const closeMenu = () => setIsMenuOpen(false);
 
   const getBackgroundStyle = () => {
+    if (!settings) return { background: defaultSettings.backgroundValue };
+    
     switch (settings.backgroundType) {
       case 'gradient':
         return { background: settings.backgroundValue };
@@ -161,6 +166,8 @@ export default function ModernNavigation() {
   };
 
   const getHeaderClasses = () => {
+    if (!settings) return "fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-black/10 backdrop-blur-xl border-b border-white/10 shadow-2xl";
+    
     const base = "fixed top-0 left-0 right-0 z-50 transition-all duration-300";
     switch (settings.headerStyle) {
       case 'glass':
@@ -195,6 +202,8 @@ export default function ModernNavigation() {
   };
 
   const renderLogo = () => {
+    if (!settings) return null;
+    
     const logoContent = (() => {
       switch (settings.logoType) {
         case 'image':
@@ -203,7 +212,9 @@ export default function ModernNavigation() {
             <img 
               src={settings.logoImageUrl} 
               alt={settings.siteTitle}
-              className="h-8 w-8 object-contain"
+              className={`h-8 w-8 object-contain ${
+                settings.logoCircular ? 'rounded-full' : ''
+              }`}
             />
           ) : (
             <span className="text-2xl">{settings.siteLogo}</span>
@@ -250,6 +261,8 @@ export default function ModernNavigation() {
   };
 
   const renderMenuItem = (item: MenuItem) => {
+    if (!settings) return null;
+    
     const content = (
       <div className={`
         flex items-center space-x-3 px-4 py-3 rounded-xl
@@ -300,7 +313,14 @@ export default function ModernNavigation() {
     );
   };
 
-  if (!mounted) return null;
+  if (!mounted || loading || !settings) {
+    return (
+      <>
+        {/* Invisible header spacer to prevent layout shift */}
+        <div className="h-16" />
+      </>
+    );
+  }
 
   const visibleMenuItems = getVisibleMenuItems();
 

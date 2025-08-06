@@ -20,6 +20,7 @@ export default function Home() {
   const [currentStep, setCurrentStep] = useState(0);
   const [pageTexts, setPageTexts] = useState<PageTexts | null>(null);
   const [pageTextsLoaded, setPageTextsLoaded] = useState(false);
+  const [hasVerified, setHasVerified] = useState(false);
 
   // Load page texts from database
   useEffect(() => {
@@ -83,6 +84,7 @@ export default function Home() {
       setMessage("");
       setCurrentStep(0);
       setIsChecking(false);
+      setHasVerified(false);  // Reset verification flag
       return;
     }
 
@@ -101,6 +103,14 @@ export default function Home() {
     if (status !== "authenticated") {
       return;
     }
+
+    // Prevent multiple verification attempts for the same session
+    if (hasVerified) {
+      return;
+    }
+
+    // Set a flag to indicate that verification has started
+    setHasVerified(true);
 
     // Check follow status first (for testing)
     setIsChecking(true);

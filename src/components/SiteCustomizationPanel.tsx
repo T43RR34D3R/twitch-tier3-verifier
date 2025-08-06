@@ -10,6 +10,7 @@ interface CustomizationSettings {
   siteLogo: string;
   logoType: 'emoji' | 'image' | 'text';
   logoImageUrl?: string;
+  logoCircular?: boolean;
   tagline: string;
   primaryColor: string;
   secondaryColor: string;
@@ -393,6 +394,20 @@ export default function SiteCustomizationPanel() {
               />
             )}
           </div>
+
+          {settings.logoType === 'image' && (
+            <div>
+              <label className="flex items-center space-x-2 text-white">
+                <input
+                  type="checkbox"
+                  checked={settings.logoCircular || false}
+                  onChange={(e) => updateSetting('logoCircular', e.target.checked)}
+                  className="rounded border-white/20 text-blue-500 focus:ring-blue-500"
+                />
+                <span>Make logo circular</span>
+              </label>
+            </div>
+          )}
         </div>
 
         {/* Colors */}

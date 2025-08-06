@@ -15,8 +15,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tier 3 Toolkit",
-  description: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
+  title: "BuckFoozle",
+  description: "The slargiest streamer on Twitch",
+  openGraph: {
+    title: "BuckFoozle",
+    description: "The slargiest streamer on Twitch",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BuckFoozle",
+    description: "The slargiest streamer on Twitch",
+  },
 };
 
 export default function RootLayout({
