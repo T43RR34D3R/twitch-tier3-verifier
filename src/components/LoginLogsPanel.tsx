@@ -243,8 +243,8 @@ export default function LoginLogsPanel() {
                   {format(new Date(log.login_at), 'MMM dd, HH:mm:ss')}
                 </td>
                 <td className="py-2 px-3">
-                  <div className="text-white font-medium">{log.username}</div>
-                  <div className="text-xs text-white/50">{log.user_id}</div>
+                  <div className="text-white font-semibold text-lg">{log.username}</div>
+                  <div className="text-xs text-white/70 font-medium">ID: {log.user_id}</div>
                 </td>
                 <td className="py-2 px-3">
                   {log.is_successful ? (
