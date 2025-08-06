@@ -330,7 +330,11 @@ export default function GameVotingAdmin() {
                 ))}
 
                 {games.length === 0 && (
-                  <p className="text-center text-gray-500 py-8">No games found.</p>
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 text-lg mb-4">No games found.</p>
+                    <p className="text-gray-400 text-sm">Games will appear here once users start adding them through the voting system.</p>
+                    <p className="text-gray-400 text-sm mt-2">Users can add games at <a href="/subathon-voting" className="text-purple-600 hover:underline">/subathon-voting</a></p>
+                  </div>
                 )}
               </div>
             </div>
@@ -372,7 +376,11 @@ export default function GameVotingAdmin() {
               ))}
 
               {votes.length === 0 && (
-                <p className="text-center text-gray-500 py-8">No votes found.</p>
+                <div className="text-center py-8">
+                  <p className="text-gray-500 text-lg mb-4">No recent votes found.</p>
+                  <p className="text-gray-400 text-sm">Votes will appear here once users start voting on games.</p>
+                  <p className="text-gray-400 text-sm mt-2">Check if users are able to vote at <a href="/subathon-voting" className="text-purple-600 hover:underline">/subathon-voting</a></p>
+                </div>
               )}
             </div>
           )}
@@ -460,7 +468,11 @@ export default function GameVotingAdmin() {
               ))}
 
               {users.length === 0 && (
-                <p className="text-center text-gray-500 py-8">No users found.</p>
+                <div className="text-center py-8">
+                  <p className="text-gray-500 text-lg mb-4">No voting users found.</p>
+                  <p className="text-gray-400 text-sm">Users will appear here once they start interacting with the voting system.</p>
+                  <p className="text-gray-400 text-sm mt-2">Users need to log in and vote or add games at <a href="/subathon-voting" className="text-purple-600 hover:underline">/subathon-voting</a></p>
+                </div>
               )}
             </div>
           )}
