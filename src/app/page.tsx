@@ -1,309 +1,150 @@
 "use client";
 
-import { useSession, signIn, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import ProgressIndicator from "../components/ProgressIndicator";
-
-interface PageTexts {
-  title: string;
-  subtitle: string;
-  signInText: string;
-  steps: string[];
-  redirectUrl?: string;
-}
+import Link from "next/link";
 
 export default function Home() {
-  const { data: session, status } = useSession();
-  const [isChecking, setIsChecking] = useState(false);
-  const [message, setMessage] = useState("");
-  const [currentStep, setCurrentStep] = useState(0);
-  const [pageTexts, setPageTexts] = useState<PageTexts | null>(null);
-  const [pageTextsLoaded, setPageTextsLoaded] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [text, setText] = useState("");
+  const fullText = "Hello, World! Welcome to BuckFoozle's Toolkit! 🎮✨";
 
-  // Load page texts from database
   useEffect(() => {
-    const loadPageTexts = async () => {
-      try {
-        const response = await fetch('/api/page-settings', {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache'
-          }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.settings) {
-            setPageTexts({
-              title: data.settings.title,
-              subtitle: data.settings.subtitle,
-              signInText: data.settings.sign_in_text,
-              steps: data.settings.steps,
-              redirectUrl: data.settings.redirect_url
-            });
-          } else {
-            // Use defaults if no settings found
-            setPageTexts({
-              title: "Tier 3 Toolkit",
-              subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
-              signInText: "Please sign in with your Twitch account to verify your subscription status.",
-              steps: ["Signed In", "Verifying Account", "Checking Tier 3", "Verified"]
-            });
-          }
-        } else {
-          // Use defaults if API call fails
-          setPageTexts({
-            title: "Tier 3 Toolkit",
-            subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
-            signInText: "Please sign in with your Twitch account to verify your subscription status.",
-            steps: ["Signed In", "Verifying Account", "Checking Tier 3", "Verified"]
-          });
-        }
-      } catch (error) {
-        console.error('Error loading page settings:', error);
-        // Use defaults if error occurs
-        setPageTexts({
-          title: "Tier 3 Toolkit",
-          subtitle: "Verify your Tier 3 subscription to submit info for your custom T3 cheer!",
-          signInText: "Please sign in with your Twitch account to verify your subscription status.",
-          steps: ["Signed In", "Verifying Account", "Checking Tier 3", "Verified"]
-        });
-      } finally {
-        setPageTextsLoaded(true);
+    setMounted(true);
+    
+    // Typewriter effect
+    let index = 0;
+    const timer = setInterval(() => {
+      setText(fullText.slice(0, index));
+      index++;
+      if (index > fullText.length) {
+        clearInterval(timer);
       }
-    };
-    loadPageTexts();
+    }, 50);
+
+    return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    if (status === "loading") return;
-
-    if (!session) {
-      // Clear any existing state when user is signed out
-      setMessage("");
-      setCurrentStep(0);
-      setIsChecking(false);
-      return;
-    }
-
-    // Check if there's a token refresh error
-    if (session.error === "RefreshAccessTokenError") {
-      setMessage("Your session has expired. Please sign in again.");
-      setTimeout(() => {
-        signOut({ redirect: false }).then(() => {
-          window.location.reload();
-        });
-      }, 2000);
-      return;
-    }
-
-    // Only proceed with verification if user is actually authenticated
-    if (status !== "authenticated") {
-      return;
-    }
-
-    // Check follow status first (for testing)
-    setIsChecking(true);
-    setCurrentStep(1);
-    let verificationSuccessful = false;
-    
-    fetch("/api/check-follow")
-      .then((res) => res.json())
-      .then((data) => {
-        // Check if we need to force re-authentication
-        if (data.forceReauth) {
-          setMessage("Your session has expired. Signing you out...");
-          setTimeout(() => {
-            signOut({ redirect: false }).then(() => {
-              window.location.reload();
-            });
-          }, 2000);
-          return;
-        }
-        
-        if (data.isFollowing) {
-          setMessage(data.message || "Account verified! Now checking Tier 3 subscription...");
-          setCurrentStep(2);
-          // Move to subscription check
-          return fetch("/api/check-tier3");
-        } else {
-          setMessage(data.message || "Verification failed. Please try again.");
-          throw new Error("Verification failed");
-        }
-      })
-      .then((res) => res?.json())
-      .then((data) => {
-        if (data?.isTier3) {
-          setMessage("Tier 3 subscription verified! Redirecting to form...");
-          setCurrentStep(3);
-          verificationSuccessful = true;
-          setTimeout(() => {
-            // Get redirect URL from page settings, fallback to env var
-            const redirectUrl = pageTexts?.redirectUrl || process.env.NEXT_PUBLIC_NOTION_FORM_URL || "#";
-            window.location.href = redirectUrl;
-          }, 3000);
-        } else {
-          setMessage(data?.message || "You need to be a Tier 3 subscriber to access this form.");
-        }
-      })
-      .catch((error) => {
-        console.error("Error checking subscription:", error);
-        setMessage("Error checking subscription status. Please try again.");
-      })
-      .finally(() => {
-        setIsChecking(false);
-        // Only reset progress bar if verification failed
-        if (!verificationSuccessful) {
-          setCurrentStep(0);
-        }
-      });
-  }, [session, status, pageTexts?.redirectUrl]);
-
-  const handleSignIn = () => {
-    signIn("twitch");
-  };
-
-  // Show loading state until page texts are loaded
-  if (!pageTextsLoaded) {
-    return (
-      <div className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 relative" style={{backgroundImage: 'url(/buckfoozle-bg.png)'}}>
-        {/* Backdrop blur and vignette overlay */}
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-        <div 
-          className="absolute inset-0" 
-          style={{
-            background: 'radial-gradient(circle at center, transparent 0%, transparent 60%, rgba(0,0,0,0.4) 100%)'
-          }}
-        ></div>
-        <div className="max-w-md w-full bg-white rounded-xl shadow-2xl drop-shadow-2xl p-4 sm:p-8 text-center relative z-10 mx-4">
-          <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
-            </svg>
-          </div>
-          <div className="flex items-center justify-center space-x-2">
-            <div className="w-4 h-4 bg-purple-600 rounded-full animate-pulse"></div>
-            <div className="w-4 h-4 bg-purple-600 rounded-full animate-pulse" style={{animationDelay: "0.2s"}}></div>
-            <div className="w-4 h-4 bg-purple-600 rounded-full animate-pulse" style={{animationDelay: "0.4s"}}></div>
-            <span className="text-black ml-2">Loading...</span>
-          </div>
-        </div>
-      </div>
-    );
+  if (!mounted) {
+    return null; // Prevent hydration mismatch
   }
 
   return (
-    <div className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 relative" style={{backgroundImage: 'url(/buckfoozle-bg.png)'}}>
-      {/* Backdrop blur and vignette overlay */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-      <div 
-        className="absolute inset-0" 
-        style={{
-          background: 'radial-gradient(circle at center, transparent 0%, transparent 60%, rgba(0,0,0,0.4) 100%)'
-        }}
-      ></div>
-      
-      {/* Persistent Sign Out Button */}
-      {session && (
-        <button
-          onClick={() => signOut()}
-          className="absolute top-4 right-4 z-20 bg-white/90 hover:bg-white text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors shadow-lg"
-        >
-          Sign Out
-        </button>
-      )}
-      <div className="max-w-md w-full bg-white rounded-xl shadow-2xl drop-shadow-2xl p-4 sm:p-8 text-center relative z-10 mx-4">
-        <div className="mb-8">
-          <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-black mb-2">
-            {pageTexts?.title}
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated background particles */}
+      <div className="absolute inset-0 overflow-hidden">
+        {[...Array(50)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-2 h-2 bg-white rounded-full opacity-20 animate-pulse"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 2}s`,
+              animationDuration: `${2 + Math.random() * 3}s`
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Main content */}
+      <div className="max-w-4xl w-full text-center relative z-10">
+        {/* Header */}
+        <div className="mb-12">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 min-h-[2em] flex items-center justify-center">
+            <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">
+              {text}
+              <span className="animate-blink">|</span>
+            </span>
           </h1>
-          <p className="text-black">
-            {pageTexts?.subtitle}
+          
+          <p className="text-xl md:text-2xl text-gray-300 mb-8">
+            Your one-stop toolkit for subathon streams, T3 verification, voting, and more!
           </p>
         </div>
 
-        {status === "loading" && (
-          <div className="flex items-center justify-center space-x-2">
-            <div className="w-4 h-4 bg-purple-600 rounded-full animate-pulse"></div>
-            <div className="w-4 h-4 bg-purple-600 rounded-full animate-pulse" style={{animationDelay: "0.2s"}}></div>
-            <div className="w-4 h-4 bg-purple-600 rounded-full animate-pulse" style={{animationDelay: "0.4s"}}></div>
-            <span className="text-black ml-2">Loading...</span>
-          </div>
-        )}
-
-        {!session && status !== "loading" && (
-          <div>
-            <p className="text-black mb-6">
-              {pageTexts?.signInText}
-            </p>
-            <button
-              onClick={handleSignIn}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
-              </svg>
-              <span>Sign in with Twitch</span>
-            </button>
-          </div>
-        )}
-
-        {session && (
-          <div>
-            <div className="mb-6">
-              <Image
-                src={session.user?.image || "/default-avatar.png"}
-                alt={session.user?.name || "User"}
-                width={64}
-                height={64}
-                className="rounded-full mx-auto mb-2"
-              />
-              <p className="text-black font-medium">
-                Welcome, {session.user?.name}!
-              </p>
+        {/* Feature cards */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {/* T3 Verification */}
+          <Link href="/t3verify" className="group">
+            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-purple-400 transition-all duration-300 hover:scale-105 hover:bg-white/20">
+              <div className="text-4xl mb-4">👑</div>
+              <h3 className="text-xl font-bold text-white mb-2">T3 Verification</h3>
+              <p className="text-gray-300">Verify your Tier 3 subscription and submit custom cheer info</p>
             </div>
-            
-            {/* Progress Indicator */}
-            <ProgressIndicator
-              currentStep={currentStep}
-              steps={pageTexts?.steps || []}
-            />
+          </Link>
 
-            {isChecking && (
-              <div className="flex items-center justify-center space-x-2 mb-4">
-                <div className="w-4 h-4 bg-purple-600 rounded-full animate-spin"></div>
-                <span className="text-black">Checking subscription status...</span>
-              </div>
-            )}
+          {/* Subathon Timer */}
+          <Link href="/subathon-timer" className="group">
+            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-blue-400 transition-all duration-300 hover:scale-105 hover:bg-white/20">
+              <div className="text-4xl mb-4">⏰</div>
+              <h3 className="text-xl font-bold text-white mb-2">Subathon Timer</h3>
+              <p className="text-gray-300">Control and manage the subathon countdown timer</p>
+            </div>
+          </Link>
 
-            {message && (
-              <div>
-                <div className={`p-4 rounded-lg mb-4 ${
-                  message.includes("verified") || message.includes("confirmed") 
-                    ? "bg-green-100 text-green-800" 
-                    : "bg-red-100 text-red-800"
-                }`}>
-                  {message}
-                </div>
-                {/* Show sign out button when verification fails */}
-                {!message.includes("verified") && !message.includes("confirmed") && !message.includes("checking") && (
-                  <button
-                    onClick={() => signOut()}
-                    className="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors mt-2"
-                  >
-                    Sign Out & Try Different Account
-                  </button>
-                )}
-              </div>
-            )}
+          {/* Game Voting (Coming Soon) */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 opacity-75">
+            <div className="text-4xl mb-4">🗳️</div>
+            <h3 className="text-xl font-bold text-white mb-2">Game Voting</h3>
+            <p className="text-gray-300">Vote for games to play during the subathon</p>
+            <span className="inline-block bg-purple-600 text-white text-xs px-2 py-1 rounded-full mt-2">
+              Coming Soon
+            </span>
           </div>
-        )}
+
+          {/* Analytics */}
+          <Link href="/analytics" className="group">
+            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-green-400 transition-all duration-300 hover:scale-105 hover:bg-white/20">
+              <div className="text-4xl mb-4">📊</div>
+              <h3 className="text-xl font-bold text-white mb-2">Analytics</h3>
+              <p className="text-gray-300">View stream analytics and insights</p>
+            </div>
+          </Link>
+
+          {/* Minecraft Integration */}
+          <Link href="/minecraft-auth" className="group">
+            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-yellow-400 transition-all duration-300 hover:scale-105 hover:bg-white/20">
+              <div className="text-4xl mb-4">⛏️</div>
+              <h3 className="text-xl font-bold text-white mb-2">Minecraft Link</h3>
+              <p className="text-gray-300">Link your Minecraft account with Twitch</p>
+            </div>
+          </Link>
+
+          {/* Admin Panel */}
+          <Link href="/admin" className="group">
+            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-red-400 transition-all duration-300 hover:scale-105 hover:bg-white/20">
+              <div className="text-4xl mb-4">⚙️</div>
+              <h3 className="text-xl font-bold text-white mb-2">Admin Panel</h3>
+              <p className="text-gray-300">Manage settings and configurations</p>
+            </div>
+          </Link>
+        </div>
+
+        {/* Footer */}
+        <div className="text-gray-400 text-sm">
+          <p>Made with 💜 for the BuckFoozle community</p>
+          <p className="mt-2">
+            <a 
+              href="https://twitch.tv/buckfoozle" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              twitch.tv/buckfoozle
+            </a>
+          </p>
+        </div>
       </div>
+
+      <style jsx>{`
+        @keyframes blink {
+          0%, 50% { opacity: 1; }
+          51%, 100% { opacity: 0; }
+        }
+        .animate-blink {
+          animation: blink 1s infinite;
+        }
+      `}</style>
     </div>
   );
 }
