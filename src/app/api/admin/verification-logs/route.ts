@@ -31,10 +31,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    // Check if user is admin (Buckfoozle)
+    // Check if user is admin (Buckfoozle - multiple IDs)
     const userName = token.name;
     const userId = token.sub;
-    const isAdmin = userId === process.env.ADMIN_USER_ID;
+    const isAdmin = userId === process.env.ADMIN_USER_ID || userId === process.env.ADMIN_USER_ID_2;
     
     console.log('Admin verification logs check:', { userName, userId, isAdmin });
     

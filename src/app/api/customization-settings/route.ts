@@ -2,21 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { query } from "@/lib/railway-db";
 
-// Check if user is admin using database
-const isUserAdmin = async (userId?: string) => {
-  if (!userId) return false;
-  
-  try {
-    const adminCheckSql = `
-      SELECT user_id FROM admin_users 
-      WHERE user_id = $1 AND is_active = true
-    `;
-    const result = await query(adminCheckSql, [userId]);
-    return result.rows.length > 0;
-  } catch (error) {
-    console.error('Admin check error:', error);
-    return false;
-  }
+// Check if user is admin using environment variable
+const isUserAdmin = (userId?: string) => {
+  return userId === process.env.ADMIN_USER_ID || userId === process.env.ADMIN_USER_ID_2;
 };
 
 export async function GET() {
@@ -139,7 +127,7 @@ export async function POST(request: NextRequest) {
   try {
     const token = await getToken({ req: request });
     
-    if (!token || !(await isUserAdmin(token.sub))) {
+    if (!token || !isUserAdmin(token.sub)) {
       return NextResponse.json({ error: "Unauthorized - Admin access required" }, { status: 401 });
     }
 

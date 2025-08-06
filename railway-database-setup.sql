@@ -272,6 +272,31 @@ CREATE TABLE IF NOT EXISTS game_submissions (
 );
 
 -- =====================================================
+-- CUSTOMIZATION TABLES
+-- =====================================================
+
+-- Site customization settings
+CREATE TABLE IF NOT EXISTS customization_settings (
+  id BIGSERIAL PRIMARY KEY,
+  settings JSONB NOT NULL DEFAULT '{}',
+  menu_items JSONB NOT NULL DEFAULT '[]',
+  home_sections JSONB NOT NULL DEFAULT '[]',
+  updated_by TEXT,
+  version INTEGER DEFAULT 1,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);
+
+-- Navigation settings 
+CREATE TABLE IF NOT EXISTS navigation_settings (
+  id BIGSERIAL PRIMARY KEY,
+  menu_items JSONB NOT NULL DEFAULT '[]',
+  updated_by TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);
+
+-- =====================================================
 -- ANALYTICS TABLES (existing)
 -- =====================================================
 
@@ -380,6 +405,17 @@ CREATE TRIGGER update_game_submissions_updated_at
   BEFORE UPDATE ON game_submissions 
   FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
+-- Customization system triggers
+DROP TRIGGER IF EXISTS update_customization_settings_updated_at ON customization_settings;
+CREATE TRIGGER update_customization_settings_updated_at 
+  BEFORE UPDATE ON customization_settings 
+  FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_navigation_settings_updated_at ON navigation_settings;
+CREATE TRIGGER update_navigation_settings_updated_at 
+  BEFORE UPDATE ON navigation_settings 
+  FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
 -- =====================================================
 -- CONSTRAINTS
 -- =====================================================
@@ -416,7 +452,11 @@ ON CONFLICT DO NOTHING;
 
 -- Insert admin analytics access
 INSERT INTO analytics_access (user_id, user_name, enabled, granted_by)
-VALUES ('1205951397', 'Buckfoozle', true, 'system')
+VALUES ('441862265', 'Buckfoozle', true, 'system')
+ON CONFLICT (user_id) DO UPDATE SET enabled = true;
+
+INSERT INTO analytics_access (user_id, user_name, enabled, granted_by)
+VALUES ('269187200', 'Buckfoozle', true, 'system')
 ON CONFLICT (user_id) DO UPDATE SET enabled = true;
 
 -- =====================================================
@@ -426,9 +466,9 @@ ON CONFLICT (user_id) DO UPDATE SET enabled = true;
 -- Sample games for testing
 INSERT INTO games (name, description, steam_id, steam_url, image_url, added_by_user_id, added_by_username, vote_count)
 VALUES 
-  ('Minecraft', 'The classic block-building game perfect for long streams', '1086940', 'https://store.steampowered.com/app/1086940/Minecraft/', 'https://cdn.akamai.steamstatic.com/steam/apps/1086940/header.jpg', '1205951397', 'Buckfoozle', 0),
-  ('Terraria', '2D sandbox adventure game with tons of content', '105600', 'https://store.steampowered.com/app/105600/Terraria/', 'https://cdn.akamai.steamstatic.com/steam/apps/105600/header.jpg', '1205951397', 'Buckfoozle', 0),
-  ('Stardew Valley', 'Relaxing farming simulation perfect for chill streams', '413150', 'https://store.steampowered.com/app/413150/Stardew_Valley/', 'https://cdn.akamai.steamstatic.com/steam/apps/413150/header.jpg', '1205951397', 'Buckfoozle', 0)
+  ('Minecraft', 'The classic block-building game perfect for long streams', '1086940', 'https://store.steampowered.com/app/1086940/Minecraft/', 'https://cdn.akamai.steamstatic.com/steam/apps/1086940/header.jpg', '441862265', 'Buckfoozle', 0),
+  ('Terraria', '2D sandbox adventure game with tons content', '105600', 'https://store.steampowered.com/app/105600/Terraria/', 'https://cdn.akamai.steamstatic.com/steam/apps/105600/header.jpg', '441862265', 'Buckfoozle', 0),
+  ('Stardew Valley', 'Relaxing farming simulation perfect for chill streams', '413150', 'https://store.steampowered.com/app/413150/Stardew_Valley/', 'https://cdn.akamai.steamstatic.com/steam/apps/413150/header.jpg', '441862265', 'Buckfoozle', 0)
 ON CONFLICT DO NOTHING;
 
 -- Sample voting session
@@ -439,7 +479,7 @@ VALUES (
   NOW(),
   NOW() + INTERVAL '7 days',
   true,
-  '1205951397'
+  '441862265'
 ) ON CONFLICT DO NOTHING;
 
 -- =====================================================

@@ -16,10 +16,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ isAdmin: false, message: "Invalid user data" }, { status: 400 })
     }
     
-    // Check if user is admin (Buckfoozle)
-    const isAdmin = userId === process.env.ADMIN_USER_ID;
+    // Check if user is admin (Buckfoozle - multiple IDs)
+    const isAdmin = userId === process.env.ADMIN_USER_ID || userId === process.env.ADMIN_USER_ID_2;
     
-    console.log("Admin check:", { userName, userId, isAdmin });
+    console.log("Admin check:", { 
+      userName, 
+      userId, 
+      envAdminUserId: process.env.ADMIN_USER_ID,
+      isAdmin,
+      comparison: `${userId} === ${process.env.ADMIN_USER_ID}` 
+    });
     
     return NextResponse.json({ 
       isAdmin, 
