@@ -365,32 +365,35 @@ export default function AdminDashboard() {
                     type="text"
                     value={editingTexts.title}
                     onChange={(e) => setEditingTexts({...editingTexts, title: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-black"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white bg-gray-700 placeholder-gray-400"
+                    placeholder="Enter site title"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-black mb-1">Subtitle</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Subtitle</label>
                   <textarea
                     value={editingTexts.subtitle}
                     onChange={(e) => setEditingTexts({...editingTexts, subtitle: e.target.value})}
                     rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-black"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white bg-gray-700 placeholder-gray-400"
+                    placeholder="Enter subtitle"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-black mb-1">Sign In Text</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Sign In Text</label>
                   <textarea
                     value={editingTexts.signInText}
                     onChange={(e) => setEditingTexts({...editingTexts, signInText: e.target.value})}
                     rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-black"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white bg-gray-700 placeholder-gray-400"
+                    placeholder="Enter sign in instructions"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-black mb-1">Progress Steps</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Progress Steps</label>
                   {editingTexts.steps.map((step, index) => (
                     <input
                       key={index}
@@ -401,7 +404,7 @@ export default function AdminDashboard() {
                         newSteps[index] = e.target.value;
                         setEditingTexts({...editingTexts, steps: newSteps});
                       }}
-                      className="w-full px-3 py-2 mb-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-black"
+                      className="w-full px-3 py-2 mb-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white bg-gray-700 placeholder-gray-400"
                       placeholder={`Step ${index + 1}`}
                     />
                   ))}
