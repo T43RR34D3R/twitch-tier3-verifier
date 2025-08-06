@@ -47,29 +47,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "User ID not found in token" }, { status: 400 })
     }
 
-    // TEMPORARY DEBUG: Override for TearReader while debugging T3 verification
-    if (token.name === "TearReader") {
-      console.log("TearReader DEBUG override: granting Tier 3 access while debugging");
-      
-      // Log the verification attempt
-      try {
-        const logResult = await addVerificationLog({
-          user_name: token.name || "Unknown",
-          user_id: token.sub,
-          success: true,
-          message: "Tier 3 subscription verified! (DEBUG Override for TearReader - investigating real T3 verification issues)"
-        });
-        console.log('TearReader DEBUG verification logged:', !!logResult);
-      } catch (logError) {
-        console.error('Failed to log TearReader DEBUG verification:', logError);
-      }
-      
-      return NextResponse.json({ 
-        isTier3: true, 
-        message: "Tier 3 subscription verified! (DEBUG Override - please check /api/debug/t3-subscription for real status)" 
-      });
-    }
-
     // Override for Buck - always passes
     if (token.name === "BuckFoozle" || token.name === "buckfoozle") {
       console.log("Buck override: granting Tier 3 access");
