@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
-
-const ADMIN_USERS = ["TearReader", "BuckFoozle"];
-const ADMIN_USER_IDS = ["1239758967", "269187200"]; // TearReader, BuckFoozle
+import { query } from "@/lib/railway-db"
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,20 +13,41 @@ export async function GET(request: NextRequest) {
     const userName = token.name;
     const userId = token.sub;
     
-    // Check both username (case-insensitive) and user ID
-    const isAdminByName = ADMIN_USERS.some(adminUser => 
-      adminUser.toLowerCase() === (userName || "").toLowerCase()
-    );
-    const isAdminById = ADMIN_USER_IDS.includes(userId || "");
-    const isAdmin = isAdminByName || isAdminById;
+    if (!userId) {
+      return NextResponse.json({ isAdmin: false, message: "Invalid user data" }, { status: 400 })
+    }
     
-    console.log("Admin check:", { userName, userId, isAdminByName, isAdminById, isAdmin });
+    // Check if user is admin in database
+    const adminCheckSql = `
+      SELECT user_id, username, display_name, role, is_active
+      FROM admin_users 
+      WHERE (user_id = $1 OR username ILIKE $2) 
+      AND is_active = true
+    `;
+    
+    const result = await query(adminCheckSql, [userId, userName || '']);
+    const isAdmin = result.rows.length > 0;
+    
+    // Update last login time if admin
+    if (isAdmin) {
+      const updateLoginSql = `
+        UPDATE admin_users 
+        SET last_login_at = NOW() 
+        WHERE user_id = $1
+      `;
+      await query(updateLoginSql, [userId]).catch(err => 
+        console.error('Failed to update last login:', err)
+      );
+    }
+    
+    console.log("Admin check:", { userName, userId, isAdmin, adminData: result.rows[0] });
     
     return NextResponse.json({ 
       isAdmin, 
       userName,
       userId,
-      message: isAdmin ? "Admin access granted" : "Access denied"
+      role: result.rows[0]?.role || null,
+      message: isAdmin ? "Admin access granted" : "Access denied - Contact administrator for access"
     })
     
   } catch (error) {

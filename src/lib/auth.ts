@@ -1,6 +1,7 @@
 import { AuthOptions } from "next-auth"
 import TwitchProvider from "next-auth/providers/twitch"
 import { storeUserToken } from "./data-collector"
+import { logSuccessfulLogin } from "./login-logger"
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -54,6 +55,16 @@ export const authOptions: AuthOptions = {
             console.error('Failed to store user token:', error)
           })
         }
+        
+        // Log the successful login
+        await logSuccessfulLogin(
+          user,
+          undefined, // We don't have access to the request here
+          undefined, // Session token will be generated later
+          newToken.accessTokenExpires as number
+        ).catch(error => {
+          console.error('Failed to log login:', error)
+        })
         
         return newToken
       }
