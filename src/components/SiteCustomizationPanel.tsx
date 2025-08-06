@@ -85,22 +85,23 @@ interface HomeSection {
 const defaultSettings: CustomizationSettings = {
   siteTitle: "BuckFoozle",
   siteLogo: "👑",
-  logoType: "emoji",
+  logoType: "image",
+  logoImageUrl: "/buckwhite-logo.png",
   tagline: "Variety Streamer & Content Creator",
   primaryColor: "#6366f1",
   secondaryColor: "#8b5cf6", 
   accentColor: "#f59e0b",
   textColor: "#ffffff",
   surfaceColor: "#1e293b",
-  backgroundType: "gradient",
-  backgroundValue: "linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #334155 50%, #1e293b 75%, #0f172a 100%)",
+  backgroundType: "image",
+  backgroundValue: "/buckfoozle-bg.png",
   headerStyle: "glass",
   showLogo: true,
   logoPosition: "center",
   showHamburger: true,
   hamburgerPosition: "left",
   showAuthButtons: true,
-  taglineAlignment: "left",
+  taglineAlignment: "center",
   footerText: "Made with 💜 for the Best Friends Club",
   footerLinkText: "twitch.tv/buckfoozle",
   footerLinkUrl: "https://twitch.tv/buckfoozle",
@@ -141,7 +142,7 @@ const defaultHomeSections: HomeSection[] = [
     content: {
       aboutTitle: "Meet BuckFoozle",
       aboutText: "Hey there! I'm Buck, a variety streamer who loves gaming, building community, and having a great time with viewers. From indie gems to AAA titles, horror games to cozy adventures - there's always something fun happening on stream. Come hang out and be part of the BuckFoozle family!",
-      aboutImage: "/buckfoozle-profile.jpg",
+      aboutImage: "https://static-cdn.jtvnw.net/jtv_user_pictures/269aa1a9-be77-4d9a-9f6e-abfb1ed1c493-profile_image-300x300.png",
       aboutImagePosition: "left"
     }
   },
@@ -552,6 +553,46 @@ export default function SiteCustomizationPanel() {
           ))}
         </div>
       </div>
+
+      {/* Footer Settings */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-white">Footer Settings</h3>
+        
+        <div>
+          <label className="block text-sm font-medium text-white mb-2">Footer Text</label>
+          <input
+            type="text"
+            value={settings.footerText || ''}
+            onChange={(e) => updateSetting('footerText', e.target.value)}
+            placeholder="Made with 💜 for the community"
+            className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">Footer Link Text</label>
+            <input
+              type="text"
+              value={settings.footerLinkText || ''}
+              onChange={(e) => updateSetting('footerLinkText', e.target.value)}
+              placeholder="Visit my Twitch"
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">Footer Link URL</label>
+            <input
+              type="url"
+              value={settings.footerLinkUrl || ''}
+              onChange={(e) => updateSetting('footerLinkUrl', e.target.value)}
+              placeholder="https://twitch.tv/buckfoozle"
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 
@@ -614,13 +655,14 @@ export default function SiteCustomizationPanel() {
                         </div>
 
                         {selectedMenuItem === item.id && (
-                          <div className="mt-4 pt-4 border-t border-white/10 grid md:grid-cols-2 gap-4">
+                          <div className="mt-4 pt-4 border-t border-white/10 grid md:grid-cols-2 gap-4" onClick={(e) => e.stopPropagation()}>
                             <div>
                               <label className="block text-sm font-medium text-white mb-1">Label</label>
                               <input
                                 type="text"
                                 value={item.label}
                                 onChange={(e) => updateMenuItem(item.id, { label: e.target.value })}
+                                onClick={(e) => e.stopPropagation()}
                                 className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm"
                               />
                             </div>
@@ -631,6 +673,7 @@ export default function SiteCustomizationPanel() {
                                 type="text"
                                 value={item.url}
                                 onChange={(e) => updateMenuItem(item.id, { url: e.target.value })}
+                                onClick={(e) => e.stopPropagation()}
                                 className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm"
                               />
                             </div>
@@ -641,6 +684,7 @@ export default function SiteCustomizationPanel() {
                                 type="text"
                                 value={item.iconValue}
                                 onChange={(e) => updateMenuItem(item.id, { iconValue: e.target.value })}
+                                onClick={(e) => e.stopPropagation()}
                                 className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm"
                               />
                             </div>
@@ -650,6 +694,7 @@ export default function SiteCustomizationPanel() {
                               <select
                                 value={item.visibility}
                                 onChange={(e) => updateMenuItem(item.id, { visibility: e.target.value as MenuItem['visibility'] })}
+                                onClick={(e) => e.stopPropagation()}
                                 className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm"
                               >
                                 <option value="all">Everyone</option>
@@ -665,36 +710,40 @@ export default function SiteCustomizationPanel() {
                                 type="text"
                                 value={item.description || ''}
                                 onChange={(e) => updateMenuItem(item.id, { description: e.target.value })}
+                                onClick={(e) => e.stopPropagation()}
                                 className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm"
                               />
                             </div>
 
                             <div className="flex items-center space-x-4 text-sm">
-                              <label className="flex items-center space-x-2 text-white">
+                              <label className="flex items-center space-x-2 text-white" onClick={(e) => e.stopPropagation()}>
                                 <input
                                   type="checkbox"
                                   checked={item.isEnabled}
                                   onChange={(e) => updateMenuItem(item.id, { isEnabled: e.target.checked })}
+                                  onClick={(e) => e.stopPropagation()}
                                   className="rounded border-white/20 text-blue-500"
                                 />
                                 <span>Enabled</span>
                               </label>
 
-                              <label className="flex items-center space-x-2 text-white">
+                              <label className="flex items-center space-x-2 text-white" onClick={(e) => e.stopPropagation()}>
                                 <input
                                   type="checkbox"
                                   checked={item.isExternal}
                                   onChange={(e) => updateMenuItem(item.id, { isExternal: e.target.checked })}
+                                  onClick={(e) => e.stopPropagation()}
                                   className="rounded border-white/20 text-blue-500"
                                 />
                                 <span>External Link</span>
                               </label>
 
-                              <label className="flex items-center space-x-2 text-white">
+                              <label className="flex items-center space-x-2 text-white" onClick={(e) => e.stopPropagation()}>
                                 <input
                                   type="checkbox"
                                   checked={item.openInNewTab}
                                   onChange={(e) => updateMenuItem(item.id, { openInNewTab: e.target.checked })}
+                                  onClick={(e) => e.stopPropagation()}
                                   className="rounded border-white/20 text-blue-500"
                                 />
                                 <span>New Tab</span>
@@ -768,6 +817,133 @@ export default function SiteCustomizationPanel() {
 
                         {selectedHomeSection === section.id && (
                           <div className="mt-4 pt-4 border-t border-white/10 space-y-4">
+                            {section.type === 'hero' && (
+                              <div className="space-y-4">
+                                <div className="grid md:grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-sm font-medium text-white mb-1">Hero Title</label>
+                                    <input
+                                      type="text"
+                                      value={section.content.heroTitle || ''}
+                                      onChange={(e) => updateHomeSection(section.id, {
+                                        content: { ...section.content, heroTitle: e.target.value }
+                                      })}
+                                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm"
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-sm font-medium text-white mb-1">Hero Image URL</label>
+                                    <input
+                                      type="text"
+                                      value={section.content.heroImage || ''}
+                                      onChange={(e) => updateHomeSection(section.id, {
+                                        content: { ...section.content, heroImage: e.target.value }
+                                      })}
+                                      placeholder="https://example.com/hero-image.jpg"
+                                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-white mb-1">Hero Subtitle</label>
+                                  <textarea
+                                    rows={2}
+                                    value={section.content.heroSubtitle || ''}
+                                    onChange={(e) => updateHomeSection(section.id, {
+                                      content: { ...section.content, heroSubtitle: e.target.value }
+                                    })}
+                                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm"
+                                  />
+                                </div>
+
+                                <div>
+                                  <h4 className="text-sm font-medium text-white mb-2">Hero Buttons</h4>
+                                  {section.content.heroButtons?.map((button, index) => (
+                                    <div key={index} className="grid md:grid-cols-4 gap-2 mb-2 p-3 bg-white/5 rounded-lg">
+                                      <div>
+                                        <label className="block text-xs text-white/70 mb-1">Label</label>
+                                        <input
+                                          type="text"
+                                          value={button.label}
+                                          onChange={(e) => {
+                                            const updatedButtons = [...(section.content.heroButtons || [])];
+                                            updatedButtons[index] = { ...button, label: e.target.value };
+                                            updateHomeSection(section.id, {
+                                              content: { ...section.content, heroButtons: updatedButtons }
+                                            });
+                                          }}
+                                          className="w-full px-2 py-1 bg-white/10 border border-white/20 rounded text-white text-xs"
+                                        />
+                                      </div>
+                                      
+                                      <div>
+                                        <label className="block text-xs text-white/70 mb-1">URL</label>
+                                        <input
+                                          type="text"
+                                          value={button.url}
+                                          onChange={(e) => {
+                                            const updatedButtons = [...(section.content.heroButtons || [])];
+                                            updatedButtons[index] = { ...button, url: e.target.value };
+                                            updateHomeSection(section.id, {
+                                              content: { ...section.content, heroButtons: updatedButtons }
+                                            });
+                                          }}
+                                          className="w-full px-2 py-1 bg-white/10 border border-white/20 rounded text-white text-xs"
+                                        />
+                                      </div>
+                                      
+                                      <div>
+                                        <label className="block text-xs text-white/70 mb-1">Style</label>
+                                        <select
+                                          value={button.style}
+                                          onChange={(e) => {
+                                            const updatedButtons = [...(section.content.heroButtons || [])];
+                                            updatedButtons[index] = { ...button, style: e.target.value as 'primary' | 'secondary' };
+                                            updateHomeSection(section.id, {
+                                              content: { ...section.content, heroButtons: updatedButtons }
+                                            });
+                                          }}
+                                          className="w-full px-2 py-1 bg-white/10 border border-white/20 rounded text-white text-xs"
+                                        >
+                                          <option value="primary">Primary</option>
+                                          <option value="secondary">Secondary</option>
+                                        </select>
+                                      </div>
+                                      
+                                      <div className="flex items-end">
+                                        <button
+                                          onClick={() => {
+                                            const updatedButtons = section.content.heroButtons?.filter((_, i) => i !== index) || [];
+                                            updateHomeSection(section.id, {
+                                              content: { ...section.content, heroButtons: updatedButtons }
+                                            });
+                                          }}
+                                          className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
+                                        >
+                                          Remove
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                  
+                                  <button
+                                    onClick={() => {
+                                      const newButton = { label: 'New Button', url: '#', style: 'primary' as const };
+                                      const updatedButtons = [...(section.content.heroButtons || []), newButton];
+                                      updateHomeSection(section.id, {
+                                        content: { ...section.content, heroButtons: updatedButtons }
+                                      });
+                                    }}
+                                    className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
+                                  >
+                                    Add Button
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
                             {section.type === 'about' && (
                               <div className="grid md:grid-cols-2 gap-4">
                                 <div>

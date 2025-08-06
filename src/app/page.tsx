@@ -81,7 +81,7 @@ const defaultHomeSections: HomeSection[] = [
             content: {
               aboutTitle: "Meet BuckFoozle",
               aboutText: "Hey there! I'm Buck, a variety streamer who loves gaming, building community, and having a great time with viewers. From indie gems to AAA titles, horror games to cozy adventures - there's always something fun happening on stream. Come hang out and be part of the BuckFoozle family!",
-              aboutImage: "/buckfoozle-profile.jpg",
+              aboutImage: "https://static-cdn.jtvnw.net/jtv_user_pictures/269aa1a9-be77-4d9a-9f6e-abfb1ed1c493-profile_image-300x300.png",
               aboutImagePosition: "left"
             }
           },
@@ -142,47 +142,61 @@ const defaultSettings: CustomizationSettings = {
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [text, setText] = useState("");
-  const [homeSections, setHomeSections] = useState<HomeSection[]>(defaultHomeSections);
-  const [settings, setSettings] = useState<CustomizationSettings>(defaultSettings);
+  const [homeSections, setHomeSections] = useState<HomeSection[]>([]);
+  const [settings, setSettings] = useState<CustomizationSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const fullText = "Hello, World! Welcome to BuckFoozle's Toolkit! 🎮✨";
 
   useEffect(() => {
     setMounted(true);
     loadCustomizations();
-    
-    // Typewriter effect
-    let index = 0;
-    const timer = setInterval(() => {
-      setText(fullText.slice(0, index));
-      index++;
-      if (index > fullText.length) {
-        clearInterval(timer);
-      }
-    }, 50);
-
-    return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!loading && settings) {
+      // Start typewriter effect only after content is loaded
+      let index = 0;
+      const timer = setInterval(() => {
+        setText(fullText.slice(0, index));
+        index++;
+        if (index > fullText.length) {
+          clearInterval(timer);
+        }
+      }, 50);
+
+      return () => clearInterval(timer);
+    }
+  }, [loading, settings]);
 
   const loadCustomizations = async () => {
     try {
       const response = await fetch('/api/customization-settings');
       if (response.ok) {
         const data = await response.json();
-        if (data.settings) setSettings({ ...defaultSettings, ...data.settings });
-        if (data.homeSections) setHomeSections(data.homeSections);
+        setSettings({ ...defaultSettings, ...(data.settings || {}) });
+        setHomeSections(data.homeSections || defaultHomeSections);
+      } else {
+        // If API fails, use defaults
+        setSettings(defaultSettings);
+        setHomeSections(defaultHomeSections);
       }
     } catch (error) {
       console.log('Using default settings:', error);
+      // If fetch fails, use defaults
+      setSettings(defaultSettings);
+      setHomeSections(defaultHomeSections);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!mounted || loading) {
+  if (!mounted || loading || !settings) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-4"></div>
+          <div className="text-white text-xl">Loading BuckFoozle&apos;s World...</div>
+        </div>
       </div>
     );
   }
