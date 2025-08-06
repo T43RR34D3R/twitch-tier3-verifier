@@ -48,7 +48,7 @@ export default function GlobalNavigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [settings, setSettings] = useState<NavigationSettings>(defaultSettings);
   const [mounted, setMounted] = useState(false);
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -178,6 +178,7 @@ export default function GlobalNavigation() {
                 <div className="flex items-center space-x-3 ml-6">
                   {session ? (
                     <div className="flex items-center space-x-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={session.user?.image || '/default-avatar.png'}
                         alt={session.user?.name || 'User'}
@@ -264,6 +265,7 @@ export default function GlobalNavigation() {
                 {session ? (
                   <div className="space-y-2">
                     <div className="flex items-center space-x-3 px-4 py-2 text-white">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={session.user?.image || '/default-avatar.png'}
                         alt={session.user?.name || 'User'}

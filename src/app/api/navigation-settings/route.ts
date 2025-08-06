@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
-import { queryRow, queryRows } from "@/lib/railway-db"
+import { queryRow } from "@/lib/railway-db"
 
 const ADMIN_USERS = ["TearReader", "BuckFoozle"];
 const ADMIN_USER_IDS = ["1239758967", "269187200"];
