@@ -62,8 +62,9 @@ async function getTimerState(): Promise<TimerState> {
 }
 
 async function updateTimerState(updates: Partial<TimerState>, id?: number): Promise<TimerState> {
-  // Use provided ID or default to 1 (since we only have one timer)
-  const timerId = id || 1;
+  // Get current state to ensure we have the right ID
+  const currentState = await getTimerStateWithoutRecursion();
+  const timerId = id || currentState.id;
   
   const { data, error } = await supabase
     .from('subathon_timer')
@@ -78,6 +79,24 @@ async function updateTimerState(updates: Partial<TimerState>, id?: number): Prom
   }
 
   return data;
+}
+
+// Helper function to avoid recursion in updateTimerState
+async function getTimerStateWithoutRecursion(): Promise<TimerState> {
+  const { data } = await supabase
+    .from('subathon_timer')
+    .select('*')
+    .limit(1)
+    .maybeSingle();
+
+  return data || {
+    id: 1,
+    end_time: 0,
+    is_running: false,
+    status: 'Timer Ready - Set time to begin!',
+    pending_duration: 0,
+    updated_at: new Date().toISOString()
+  };
 }
 
 function getCurrentTimeRemaining(state: TimerState): number {
@@ -172,9 +191,11 @@ export async function POST(request: NextRequest) {
             end_time: currentState.end_time + (300 * 1000),
             status: '➕ Added 5 minutes!'
           };
-        } else if (currentState.pending_duration) {
+        } else {
+          // Add to pending duration whether it exists or not
+          const currentDuration = currentState.pending_duration || 0;
           updates = {
-            pending_duration: currentState.pending_duration + 300,
+            pending_duration: currentDuration + 300,
             status: '➕ Added 5 minutes!'
           };
         }
@@ -186,10 +207,12 @@ export async function POST(request: NextRequest) {
             end_time: Math.max(now, currentState.end_time - (300 * 1000)),
             status: '➖ Removed 5 minutes!'
           };
-        } else if (currentState.pending_duration) {
+        } else {
+          // Remove from pending duration 
+          const currentDuration = currentState.pending_duration || 0;
           updates = {
-            pending_duration: Math.max(0, currentState.pending_duration - 300),
-            status: '➖ Removed 5 minutes!'
+            pending_duration: Math.max(0, currentDuration - 300),
+            status: currentDuration > 0 ? '➖ Removed 5 minutes!' : 'Cannot remove time - timer at 00:00:00'
           };
         }
         break;
