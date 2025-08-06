@@ -221,12 +221,12 @@ export default function ModernNavigation() {
   const renderMenuItem = (item: MenuItem) => {
     const content = (
       <div className={`
-        flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300
-        hover:bg-white/10 hover:backdrop-blur-sm hover:scale-105
+        flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ease-out
+        hover:bg-white/10 hover:scale-[1.02]
         ${pathname === item.url ? 'bg-white/20 shadow-lg' : ''}
-        group cursor-pointer
+        group cursor-pointer transform will-change-transform
       `}>
-        <span className="text-xl group-hover:scale-110 transition-transform">
+        <span className="text-xl group-hover:scale-105 transition-transform duration-200 ease-out will-change-transform">
           {item.iconValue}
         </span>
         <div className="flex flex-col">
@@ -342,12 +342,14 @@ export default function ModernNavigation() {
               <div className="flex items-center space-x-3">
                 {session ? (
                   <div className="flex items-center space-x-3">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={session.user?.image || '/default-avatar.png'}
-                      alt={session.user?.name || 'User'}
-                      className="w-8 h-8 rounded-full border-2 border-white/20"
-                    />
+                    <Link href="/account" className="group">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={session.user?.image || '/default-avatar.png'}
+                        alt={session.user?.name || 'User'}
+                        className="w-8 h-8 rounded-full border-2 border-white/20 hover:border-white/40 transition-all duration-200 group-hover:scale-110 cursor-pointer"
+                      />
+                    </Link>
                     <button
                       onClick={() => signOut()}
                       className="px-4 py-2 rounded-xl font-medium transition-all duration-300 hover:scale-105"

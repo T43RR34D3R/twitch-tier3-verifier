@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import SiteCustomizationPanel from "../../components/SiteCustomizationPanel";
 
 interface VerificationLog {
   id: string;
@@ -319,6 +320,11 @@ export default function AdminDashboard() {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
             <p className="text-gray-300">Welcome, {session?.user?.name}! Manage your Tier 3 verifier.</p>
+          </div>
+
+          {/* Site Customization Panel */}
+          <div className="mb-8">
+            <SiteCustomizationPanel />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
