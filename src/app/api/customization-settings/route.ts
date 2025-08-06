@@ -22,6 +22,7 @@ let customizationData = {
     showHamburger: true,
     hamburgerPosition: "left",
     showAuthButtons: true,
+    taglineAlignment: "left",
   },
   menuItems: [
     { id: "1", label: "Home", url: "/", iconType: "emoji", iconValue: "🏠", visibility: "all", isExternal: false, openInNewTab: false, orderIndex: 1, isEnabled: true },

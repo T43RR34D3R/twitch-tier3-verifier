@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import LogoUpload from "./LogoUpload";
+import BackgroundUpload from "./BackgroundUpload";
 
 interface CustomizationSettings {
   siteTitle: string;
@@ -22,6 +24,7 @@ interface CustomizationSettings {
   showHamburger: boolean;
   hamburgerPosition: 'left' | 'right';
   showAuthButtons: boolean;
+  taglineAlignment: 'left' | 'center' | 'right';
 }
 
 interface MenuItem {
@@ -89,6 +92,7 @@ const defaultSettings: CustomizationSettings = {
   showHamburger: true,
   hamburgerPosition: "left",
   showAuthButtons: true,
+  taglineAlignment: "left",
 };
 
 const defaultMenuItems: MenuItem[] = [
@@ -307,6 +311,19 @@ export default function SiteCustomizationPanel() {
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-white mb-2">Tagline Alignment</label>
+            <select
+              value={settings.taglineAlignment}
+              onChange={(e) => updateSetting('taglineAlignment', e.target.value)}
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+            </select>
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-white mb-2">Logo Type</label>
             <select
               value={settings.logoType}
@@ -321,16 +338,34 @@ export default function SiteCustomizationPanel() {
 
           <div>
             <label className="block text-sm font-medium text-white mb-2">
-              {settings.logoType === 'image' ? 'Logo Image URL' : 'Logo Content'}
+              {settings.logoType === 'image' ? 'Logo Image' : 'Logo Content'}
             </label>
             {settings.logoType === 'image' ? (
-              <input
-                type="text"
-                value={settings.logoImageUrl || ''}
-                onChange={(e) => updateSetting('logoImageUrl', e.target.value)}
-                placeholder="https://example.com/logo.png"
-                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <div className="space-y-4">
+                <LogoUpload
+                  currentLogoUrl={settings.logoImageUrl}
+                  logoType={settings.logoType}
+                  onUploadSuccess={(url) => {
+                    updateSetting('logoImageUrl', url);
+                    setSaveMessage("✅ Logo uploaded successfully! Don't forget to save your changes.");
+                    setTimeout(() => setSaveMessage(""), 5000);
+                  }}
+                  onUploadError={(error) => {
+                    setSaveMessage(`❌ Upload failed: ${error}`);
+                    setTimeout(() => setSaveMessage(""), 5000);
+                  }}
+                />
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-1">Or paste URL directly:</label>
+                  <input
+                    type="text"
+                    value={settings.logoImageUrl || ''}
+                    onChange={(e) => updateSetting('logoImageUrl', e.target.value)}
+                    placeholder="https://example.com/logo.png"
+                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
             ) : (
               <input
                 type="text"
@@ -394,18 +429,45 @@ export default function SiteCustomizationPanel() {
         <div>
           <label className="block text-sm font-medium text-white mb-2">
             {settings.backgroundType === 'gradient' ? 'CSS Gradient' : 
-             settings.backgroundType === 'image' ? 'Image URL' : 'Color'}
+             settings.backgroundType === 'image' ? 'Background Image' : 'Color'}
           </label>
-          <input
-            type="text"
-            value={settings.backgroundValue}
-            onChange={(e) => updateSetting('backgroundValue', e.target.value)}
-            placeholder={
-              settings.backgroundType === 'gradient' ? 'linear-gradient(135deg, #000000, #333333)' :
-              settings.backgroundType === 'image' ? 'https://example.com/image.jpg' : '#000000'
-            }
-            className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          {settings.backgroundType === 'image' ? (
+            <div className="space-y-4">
+              <BackgroundUpload
+                currentBackgroundUrl={settings.backgroundValue.startsWith('http') || settings.backgroundValue.startsWith('/') ? settings.backgroundValue : undefined}
+                backgroundType={settings.backgroundType}
+                onUploadSuccess={(url) => {
+                  updateSetting('backgroundValue', url);
+                  setSaveMessage("✅ Background uploaded successfully! Don't forget to save your changes.");
+                  setTimeout(() => setSaveMessage(""), 5000);
+                }}
+                onUploadError={(error) => {
+                  setSaveMessage(`❌ Upload failed: ${error}`);
+                  setTimeout(() => setSaveMessage(""), 5000);
+                }}
+              />
+              <div>
+                <label className="block text-sm font-medium text-white/70 mb-1">Or paste URL directly:</label>
+                <input
+                  type="text"
+                  value={settings.backgroundValue}
+                  onChange={(e) => updateSetting('backgroundValue', e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          ) : (
+            <input
+              type="text"
+              value={settings.backgroundValue}
+              onChange={(e) => updateSetting('backgroundValue', e.target.value)}
+              placeholder={
+                settings.backgroundType === 'gradient' ? 'linear-gradient(135deg, #000000, #333333)' : '#000000'
+              }
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          )}
         </div>
       </div>
 

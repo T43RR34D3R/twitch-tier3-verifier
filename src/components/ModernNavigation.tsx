@@ -24,6 +24,7 @@ interface CustomizationSettings {
   showHamburger: boolean;
   hamburgerPosition: 'left' | 'right';
   showAuthButtons: boolean;
+  taglineAlignment: 'left' | 'center' | 'right';
 }
 
 interface MenuItem {
@@ -58,6 +59,7 @@ const defaultSettings: CustomizationSettings = {
   showHamburger: true,
   hamburgerPosition: "left",
   showAuthButtons: true,
+  taglineAlignment: "left",
 };
 
 const defaultMenuItems: MenuItem[] = [
@@ -227,7 +229,7 @@ export default function ModernNavigation() {
         <div className="transition-transform group-hover:scale-110">
           {logoContent}
         </div>
-        <div className="hidden sm:flex flex-col">
+        <div className={`hidden sm:flex flex-col text-${settings.taglineAlignment || 'left'}`}>
           <span 
             className="text-xl font-bold leading-tight"
             style={{ color: settings.textColor }}
@@ -250,10 +252,10 @@ export default function ModernNavigation() {
   const renderMenuItem = (item: MenuItem) => {
     const content = (
       <div className={`
-        flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors duration-150
+        flex items-center space-x-3 px-4 py-3 rounded-xl
         hover:bg-white/10
         ${pathname === item.url ? 'bg-white/20 shadow-lg' : ''}
-        group cursor-pointer
+        cursor-pointer
       `}>
         <span className="text-xl">
           {item.iconValue}
@@ -316,7 +318,10 @@ export default function ModernNavigation() {
       {/* Header */}
       <header 
         className={getHeaderClasses()}
-        style={{ backgroundColor: settings.headerStyle === 'solid' ? settings.surfaceColor : undefined }}
+        style={{ 
+          backgroundColor: settings.headerStyle === 'solid' ? settings.surfaceColor : 
+                          settings.headerStyle === 'glass' ? 'rgba(0, 0, 0, 0.1)' : undefined 
+        }}
       >
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           
@@ -443,22 +448,31 @@ export default function ModernNavigation() {
 
       {/* Full Screen Menu Overlay */}
       <div className={`
-        fixed inset-0 z-40 transition-all duration-500
+        fixed inset-0 z-40
         ${isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}
-      `}>
+      `}
+        onClick={closeMenu}
+      >
         {/* Background */}
         <div 
           className="absolute inset-0 backdrop-blur-2xl"
           style={{ backgroundColor: `${settings.surfaceColor}e6` }}
-          onClick={closeMenu}
         />
         
         {/* Menu Content */}
-        <div className={`
-          relative h-full flex items-center justify-center transition-all duration-500
-          ${isMenuOpen ? 'translate-y-0' : '-translate-y-8'}
-        `}>
-          <div className="max-w-md w-full mx-4">
+        <div 
+          className="relative h-full flex items-center justify-center"
+          onClick={(e) => {
+            // Only close if clicking on this container directly, not child elements
+            if (e.target === e.currentTarget) {
+              closeMenu();
+            }
+          }}
+        >
+          <div 
+            className="max-w-md w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             
             {/* Menu Header */}
             <div className="text-center mb-8">
