@@ -6,21 +6,21 @@ export async function GET() {
     // Get all games in the database
     const result = await query(`
       SELECT 
-        id,
-        name,
-        description,
-        image_url,
-        genre,
-        developer,
-        publisher,
-        added_by_username,
-        is_approved,
-        created_at,
+        g.id,
+        g.name,
+        g.description,
+        g.image_url,
+        g.genre,
+        g.developer,
+        g.publisher,
+        g.added_by_username,
+        g.is_approved,
+        g.created_at,
         COUNT(gv.id) as vote_count
       FROM games g
       LEFT JOIN game_votes gv ON g.id = gv.game_id
-      GROUP BY g.id
-      ORDER BY created_at DESC
+      GROUP BY g.id, g.name, g.description, g.image_url, g.genre, g.developer, g.publisher, g.added_by_username, g.is_approved, g.created_at
+      ORDER BY g.created_at DESC
       LIMIT 20
     `);
 
