@@ -1,10 +1,13 @@
 "use client";
 
 import { getProviders, signIn, signOut, useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function SignIn() {
+function SignInContent() {
   const { data: session, status } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [providers, setProviders] = useState<Record<string, any> | null>(null);
   const [isClearing, setIsClearing] = useState(false);
@@ -16,6 +19,14 @@ export default function SignIn() {
     })();
   }, []);
 
+  // Redirect authenticated users who don't have session errors
+  useEffect(() => {
+    if (status === "authenticated" && session && !session.error && !isClearing) {
+      const callbackUrl = searchParams?.get('callbackUrl') || '/';
+      router.push(callbackUrl);
+    }
+  }, [status, session, isClearing, router, searchParams]);
+
   // Clear any existing session that might have errors
   useEffect(() => {
     if (status === "authenticated" && session?.error === "RefreshAccessTokenError") {
@@ -26,8 +37,18 @@ export default function SignIn() {
     }
   }, [session, status]);
 
-  if (!providers) {
-    return <div className="flex justify-center items-center min-h-screen text-gray-800">Loading...</div>;
+  // Show loading if we don't have providers yet or if we're redirecting authenticated users
+  if (!providers || (status === "authenticated" && session && !session.error && !isClearing)) {
+    return (
+      <div className="flex justify-center items-center min-h-screen text-gray-800">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mb-4"></div>
+          <div className="text-xl">
+            {status === "authenticated" ? "Redirecting..." : "Loading..."}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -47,7 +68,10 @@ export default function SignIn() {
         {Object.values(providers).map((provider: any) => (
           <div key={provider.name} className="space-y-3">
             <button
-              onClick={() => signIn(provider.id)}
+              onClick={() => {
+                const callbackUrl = searchParams?.get('callbackUrl') || '/';
+                signIn(provider.id, { callbackUrl });
+              }}
               disabled={isClearing}
               className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -85,5 +109,20 @@ export default function SignIn() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function SignIn() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center min-h-screen text-gray-800">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mb-4"></div>
+          <div className="text-xl">Loading...</div>
+        </div>
+      </div>
+    }>
+      <SignInContent />
+    </Suspense>
   );
 }
