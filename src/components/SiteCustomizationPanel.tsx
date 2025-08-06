@@ -194,8 +194,15 @@ export default function SiteCustomizationPanel() {
       if (response.ok) {
         setSaveMessage("✅ Settings saved successfully!");
         setTimeout(() => setSaveMessage(""), 3000);
+        
+        // Emit event to refresh navigation
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('customizationUpdated'));
+        }
       } else {
-        setSaveMessage("❌ Failed to save settings");
+        const errorData = await response.json();
+        setSaveMessage(`❌ Failed to save: ${errorData.error || 'Unknown error'}`);
+        console.error('Save failed:', errorData);
       }
     } catch (error) {
       setSaveMessage("❌ Error saving settings: " + error);

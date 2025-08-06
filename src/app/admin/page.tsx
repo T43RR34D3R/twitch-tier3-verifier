@@ -58,14 +58,21 @@ export default function AdminDashboard() {
     if (status === "loading") return;
     
     if (!session) {
-      router.push("/t3verify");
+      router.push("/");
+      setLoading(false);
       return;
     }
 
     // Check admin status
     fetch("/api/admin/check")
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        return res.json();
+      })
       .then(data => {
+        console.log('Admin check response:', data);
         if (data.isAdmin) {
           setIsAdmin(true);
           // Load verification logs and page texts here
@@ -73,6 +80,7 @@ export default function AdminDashboard() {
           loadPageTexts();
           loadAnalyticsAccess();
         } else {
+          console.log('Access denied:', data.message);
           router.push("/");
         }
       })

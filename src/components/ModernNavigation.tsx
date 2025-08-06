@@ -93,17 +93,46 @@ export default function ModernNavigation() {
     loadCustomizationSettings();
   }, []);
 
+  // Listen for customization changes
+  useEffect(() => {
+    const handleCustomizationChange = () => {
+      loadCustomizationSettings();
+    };
+
+    // Listen for a custom event from the admin panel
+    window.addEventListener('customizationUpdated', handleCustomizationChange);
+    
+    return () => {
+      window.removeEventListener('customizationUpdated', handleCustomizationChange);
+    };
+  }, []);
+
   const loadCustomizationSettings = async () => {
     try {
       // Try to load from API, fallback to defaults
-      const response = await fetch('/api/customization-settings');
+      const response = await fetch('/api/customization-settings', {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       if (response.ok) {
         const data = await response.json();
-        if (data.settings) setSettings({ ...defaultSettings, ...data.settings });
-        if (data.menuItems) setMenuItems(data.menuItems);
+        console.log('Loaded customization data:', data);
+        if (data.settings) {
+          console.log('Applying settings:', data.settings);
+          setSettings({ ...defaultSettings, ...data.settings });
+        }
+        if (data.menuItems) {
+          console.log('Applying menu items:', data.menuItems);
+          setMenuItems(data.menuItems);
+        }
+      } else {
+        console.error('Failed to load customization settings:', response.status);
       }
-    } catch {
-      console.log('Using default settings (API not available)');
+    } catch (error) {
+      console.error('Error loading customization settings:', error);
+      console.log('Using default settings');
       // Use defaults - this is fine for now
     }
   };
@@ -221,12 +250,12 @@ export default function ModernNavigation() {
   const renderMenuItem = (item: MenuItem) => {
     const content = (
       <div className={`
-        flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ease-out
-        hover:bg-white/10 hover:scale-[1.02]
+        flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors duration-150
+        hover:bg-white/10
         ${pathname === item.url ? 'bg-white/20 shadow-lg' : ''}
-        group cursor-pointer transform will-change-transform
+        group cursor-pointer
       `}>
-        <span className="text-xl group-hover:scale-105 transition-transform duration-200 ease-out will-change-transform">
+        <span className="text-xl">
           {item.iconValue}
         </span>
         <div className="flex flex-col">

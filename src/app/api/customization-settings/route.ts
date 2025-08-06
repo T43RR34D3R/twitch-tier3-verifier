@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-// import { getServerSession } from "next-auth/next";
-// import { authOptions } from "../auth/[...nextauth]/route";
+import { getToken } from "next-auth/jwt";
 
 // This is a temporary in-memory store - in production you'd use a database
-const customizationData = {
+// eslint-disable-next-line prefer-const
+let customizationData = {
   settings: {
     siteTitle: "BuckFoozle Toolkit",
     siteLogo: "🎮",
@@ -87,14 +87,14 @@ const customizationData = {
 };
 
 // Check if user is admin
-const isUserAdmin = (session: { user?: { name?: string | null; id?: string } } | null) => {
-  if (!session?.user) return false;
+const isUserAdmin = (userName?: string | null, userId?: string) => {
+  if (!userName && !userId) return false;
   const adminUsers = ["TearReader", "BuckFoozle"];
   const adminIds = ["1239758967", "269187200"];
   
   return adminUsers.some(admin => 
-    admin.toLowerCase() === (session.user?.name || "").toLowerCase()
-  ) || adminIds.includes(session.user?.id || "");
+    admin.toLowerCase() === (userName || "").toLowerCase()
+  ) || adminIds.includes(userId || "");
 };
 
 export async function GET() {
@@ -111,24 +111,23 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    // const session = await getServerSession(authOptions);
-    const session = null; // TODO: Fix auth import
+    const token = await getToken({ req: request });
     
-    if (!session || !isUserAdmin(session)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!token || !isUserAdmin(token.name, token.sub)) {
+      return NextResponse.json({ error: "Unauthorized - Admin access required" }, { status: 401 });
     }
 
     const { settings, menuItems, homeSections } = await request.json();
 
-    // Update the in-memory store (disabled until auth is fixed)
+    // Update the in-memory store
     if (settings) {
-      // customizationData.settings = { ...customizationData.settings, ...settings };
+      customizationData.settings = { ...customizationData.settings, ...settings };
     }
     if (menuItems) {
-      // customizationData.menuItems = menuItems;
+      customizationData.menuItems = menuItems;
     }
     if (homeSections) {
-      // customizationData.homeSections = homeSections;
+      customizationData.homeSections = homeSections;
     }
 
     return NextResponse.json({ 
