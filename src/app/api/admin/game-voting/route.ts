@@ -10,6 +10,10 @@ async function isAdmin(userId: string): Promise<boolean> {
 }
 
 export async function GET(request: NextRequest) {
+  let view: string = 'unknown';
+  let limit: number = 0;
+  let offset: number = 0;
+  
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id || !(await isAdmin(session.user.id))) {
@@ -20,9 +24,9 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const view = searchParams.get('view') || 'games';
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = parseInt(searchParams.get('offset') || '0');
+    view = searchParams.get('view') || 'games';
+    limit = parseInt(searchParams.get('limit') || '50');
+    offset = parseInt(searchParams.get('offset') || '0');
 
     switch (view) {
       case 'games':
@@ -42,8 +46,14 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error in admin game voting API:', error);
+    console.error('Error details:', {
+      view: view || 'unknown',
+      limit: limit || 0,
+      offset: offset || 0,
+      error: error instanceof Error ? error.message : error
+    });
     return NextResponse.json(
-      { error: 'Failed to fetch data' },
+      { error: 'Failed to fetch data: ' + (error instanceof Error ? error.message : 'Unknown error') },
       { status: 500 }
     );
   }
@@ -113,11 +123,14 @@ async function getVotesDetails(limit: number, offset: number) {
       gv.voted_at,
       g.name as game_name,
       g.image_url as game_image,
-      vu.total_votes as user_total_votes,
-      vu.first_login_at as user_first_seen
+      COALESCE(vu.total_votes, 
+        (SELECT COUNT(*) FROM game_votes WHERE user_id = gv.user_id)
+      ) as user_total_votes,
+      COALESCE(vu.first_login_at, u.first_login_at) as user_first_seen
     FROM game_votes gv
     JOIN games g ON gv.game_id = g.id
     LEFT JOIN voting_users vu ON gv.user_id = vu.twitch_user_id
+    LEFT JOIN users u ON gv.user_id = u.twitch_user_id
     ORDER BY gv.voted_at DESC
     LIMIT $1 OFFSET $2
   `, [limit, offset]);
@@ -139,24 +152,26 @@ async function getVotesDetails(limit: number, offset: number) {
 
 // Get users overview with their voting activity
 async function getUsersOverview(limit: number, offset: number) {
+  // First, let's get users from the main users table and enrich with voting data
   const result = await query(`
     SELECT 
-      vu.twitch_user_id,
-      vu.twitch_username,
-      vu.twitch_display_name,
-      vu.total_votes,
-      vu.games_submitted,
-      vu.can_vote,
-      vu.can_submit_games,
-      vu.first_login_at,
-      vu.last_login_at,
-      vu.last_vote_at,
-      COUNT(gv.id) as actual_vote_count,
-      COUNT(g.id) as actual_games_submitted,
+      u.twitch_user_id,
+      u.twitch_username,
+      u.twitch_display_name,
+      u.first_login_at,
+      u.last_login_at,
+      u.is_active,
+      COUNT(DISTINCT gv.id) as actual_vote_count,
+      COUNT(DISTINCT g.id) as actual_games_submitted,
+      MAX(gv.voted_at) as last_vote_at,
+      COALESCE(vu.total_votes, 0) as total_votes,
+      COALESCE(vu.first_vote_at, NULL) as first_vote_at,
+      TRUE as can_vote,
+      TRUE as can_submit_games,
       ARRAY_AGG(
         DISTINCT jsonb_build_object(
           'game_id', gv.game_id,
-          'game_name', games.name,
+          'game_name', voted_games.name,
           'voted_at', gv.voted_at
         ) ORDER BY gv.voted_at DESC
       ) FILTER (WHERE gv.id IS NOT NULL) as recent_votes,
@@ -167,17 +182,20 @@ async function getUsersOverview(limit: number, offset: number) {
           'added_at', g.created_at
         ) ORDER BY g.created_at DESC
       ) FILTER (WHERE g.id IS NOT NULL) as submitted_games
-    FROM voting_users vu
-    LEFT JOIN game_votes gv ON vu.twitch_user_id = gv.user_id
-    LEFT JOIN games g ON vu.twitch_user_id = g.added_by_user_id
-    LEFT JOIN games ON gv.game_id = games.id
-    GROUP BY vu.twitch_user_id
-    ORDER BY vu.total_votes DESC, vu.last_login_at DESC
+    FROM users u
+    LEFT JOIN voting_users vu ON u.twitch_user_id = vu.twitch_user_id
+    LEFT JOIN game_votes gv ON u.twitch_user_id = gv.user_id
+    LEFT JOIN games g ON u.twitch_user_id = g.added_by_user_id
+    LEFT JOIN games voted_games ON gv.game_id = voted_games.id
+    WHERE u.is_active = true
+    GROUP BY u.twitch_user_id, u.twitch_username, u.twitch_display_name, 
+             u.first_login_at, u.last_login_at, u.is_active, vu.total_votes, vu.first_vote_at
+    ORDER BY COUNT(DISTINCT gv.id) DESC, u.last_login_at DESC
     LIMIT $1 OFFSET $2
   `, [limit, offset]);
 
-  // Get total count
-  const countResult = await query('SELECT COUNT(*) as total FROM voting_users');
+  // Get total count from users table
+  const countResult = await query('SELECT COUNT(*) as total FROM users WHERE is_active = true');
   const total = parseInt(countResult.rows[0].total);
 
   return NextResponse.json({
