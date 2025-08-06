@@ -34,7 +34,10 @@ export async function GET(request: NextRequest) {
     // Check if user is admin (Buckfoozle - multiple IDs)
     const userName = token.name;
     const userId = token.sub;
-    const isAdmin = userId === process.env.ADMIN_USER_ID || userId === process.env.ADMIN_USER_ID_2;
+    const hardcodedAdminIds = ['441862265', '269187200'];
+    const envAdmin = userId === process.env.ADMIN_USER_ID || userId === process.env.ADMIN_USER_ID_2;
+    const hardcodedAdmin = hardcodedAdminIds.includes(userId || '');
+    const isAdmin = envAdmin || hardcodedAdmin;
     
     console.log('Admin verification logs check:', { userName, userId, isAdmin });
     

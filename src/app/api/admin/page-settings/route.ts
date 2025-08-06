@@ -11,7 +11,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user is admin (Buckfoozle - multiple IDs)
-    if (token.sub !== process.env.ADMIN_USER_ID && token.sub !== process.env.ADMIN_USER_ID_2) {
+    const hardcodedAdminIds = ['441862265', '269187200'];
+    const envAdmin = token.sub === process.env.ADMIN_USER_ID || token.sub === process.env.ADMIN_USER_ID_2;
+    const hardcodedAdmin = hardcodedAdminIds.includes(token.sub || '');
+    if (!envAdmin && !hardcodedAdmin) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 })
     }
 
@@ -33,7 +36,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is admin (Buckfoozle - multiple IDs)
-    if (token.sub !== process.env.ADMIN_USER_ID && token.sub !== process.env.ADMIN_USER_ID_2) {
+    const hardcodedAdminIds = ['441862265', '269187200'];
+    const envAdmin = token.sub === process.env.ADMIN_USER_ID || token.sub === process.env.ADMIN_USER_ID_2;
+    const hardcodedAdmin = hardcodedAdminIds.includes(token.sub || '');
+    if (!envAdmin && !hardcodedAdmin) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 })
     }
 
