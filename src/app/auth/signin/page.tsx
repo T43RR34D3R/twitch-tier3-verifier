@@ -2,11 +2,10 @@
 
 import { getProviders, signIn, signOut, useSession } from "next-auth/react";
 import { useEffect, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 function SignInContent() {
   const { data: session, status } = useSession();
-  const router = useRouter();
   const searchParams = useSearchParams();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [providers, setProviders] = useState<Record<string, any> | null>(null);
@@ -19,13 +18,8 @@ function SignInContent() {
     })();
   }, []);
 
-  // Redirect authenticated users who don't have session errors
-  useEffect(() => {
-    if (status === "authenticated" && session && !session.error && !isClearing) {
-      const callbackUrl = searchParams?.get('callbackUrl') || '/';
-      router.push(callbackUrl);
-    }
-  }, [status, session, isClearing, router, searchParams]);
+  // Note: Let NextAuth handle the redirect naturally
+  // Only show the signin form if the user is not already authenticated
 
   // Clear any existing session that might have errors
   useEffect(() => {

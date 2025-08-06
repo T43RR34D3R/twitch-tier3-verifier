@@ -27,12 +27,17 @@ export async function GET(request: NextRequest) {
       console.log("TearReader override: granting Tier 3 access");
       
       // Log the verification attempt
-      await addVerificationLog({
-        user_name: token.name || "Unknown",
-        user_id: token.sub,
-        success: true,
-        message: "Tier 3 subscription verified! (Override for TearReader)"
-      });
+      try {
+        const logResult = await addVerificationLog({
+          user_name: token.name || "Unknown",
+          user_id: token.sub,
+          success: true,
+          message: "Tier 3 subscription verified! (Override for TearReader)"
+        });
+        console.log('TearReader verification logged:', !!logResult);
+      } catch (logError) {
+        console.error('Failed to log TearReader verification:', logError);
+      }
       
       return NextResponse.json({ 
         isTier3: true, 
@@ -45,12 +50,17 @@ export async function GET(request: NextRequest) {
       console.log("Buck override: granting Tier 3 access");
       
       // Log the verification attempt
-      await addVerificationLog({
-        user_name: token.name || "Unknown",
-        user_id: token.sub,
-        success: true,
-        message: "Tier 3 subscription verified! (Override for Buck)"
-      });
+      try {
+        const logResult = await addVerificationLog({
+          user_name: token.name || "Unknown",
+          user_id: token.sub,
+          success: true,
+          message: "Tier 3 subscription verified! (Override for Buck)"
+        });
+        console.log('Buck verification logged:', !!logResult);
+      } catch (logError) {
+        console.error('Failed to log Buck verification:', logError);
+      }
       
       return NextResponse.json({ 
         isTier3: true, 
@@ -86,12 +96,16 @@ export async function GET(request: NextRequest) {
       
       if (response.status === 404) {
         // Log the failed verification attempt
-        await addVerificationLog({
-          user_name: token.name || "Unknown",
-          user_id: token.sub,
-          success: false,
-          message: "Not subscribed to the channel"
-        });
+        try {
+          await addVerificationLog({
+            user_name: token.name || "Unknown",
+            user_id: token.sub,
+            success: false,
+            message: "Not subscribed to the channel"
+          });
+        } catch (logError) {
+          console.error('Failed to log 404 verification:', logError);
+        }
         
         return NextResponse.json({ 
           isTier3: false, 
@@ -124,12 +138,16 @@ export async function GET(request: NextRequest) {
         const isTier3 = subscription.tier === "3000"
         
         // Log the verification attempt
-        await addVerificationLog({
-          user_name: token.name || "Unknown",
-          user_id: token.sub,
-          success: isTier3,
-          message: isTier3 ? "Tier 3 subscription confirmed!" : `Current tier: ${subscription.tier} (not Tier 3)`
-        });
+        try {
+          await addVerificationLog({
+            user_name: token.name || "Unknown",
+            user_id: token.sub,
+            success: isTier3,
+            message: isTier3 ? "Tier 3 subscription confirmed!" : `Current tier: ${subscription.tier} (not Tier 3)`
+          });
+        } catch (logError) {
+          console.error('Failed to log subscription verification:', logError);
+        }
         
         return NextResponse.json({ 
           isTier3, 
@@ -138,12 +156,16 @@ export async function GET(request: NextRequest) {
         })
       } else {
         // Log the failed verification attempt
-        await addVerificationLog({
-          user_name: token.name || "Unknown",
-          user_id: token.sub,
-          success: false,
-          message: "Not subscribed to the channel"
-        });
+        try {
+          await addVerificationLog({
+            user_name: token.name || "Unknown",
+            user_id: token.sub,
+            success: false,
+            message: "Not subscribed to the channel"
+          });
+        } catch (logError) {
+          console.error('Failed to log no subscription verification:', logError);
+        }
         
         return NextResponse.json({ 
           isTier3: false, 
@@ -156,12 +178,16 @@ export async function GET(request: NextRequest) {
       console.log("Subscription check failed:", subscriptionError);
       
       // Log the failed verification attempt
-      await addVerificationLog({
-        user_name: token.name || "Unknown",
-        user_id: token.sub,
-        success: false,
-        message: "Not subscribed or unable to verify subscription"
-      });
+      try {
+        await addVerificationLog({
+          user_name: token.name || "Unknown",
+          user_id: token.sub,
+          success: false,
+          message: "Not subscribed or unable to verify subscription"
+        });
+      } catch (logError) {
+        console.error('Failed to log subscription error verification:', logError);
+      }
       
       return NextResponse.json({ 
         isTier3: false, 
