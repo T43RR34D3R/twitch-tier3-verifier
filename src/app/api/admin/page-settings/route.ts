@@ -10,8 +10,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    // Check if user is admin (only TearReader for now)
-    if (token.name !== "TearReader") {
+    // Check if user is admin (Buckfoozle)
+    if (token.sub !== process.env.ADMIN_USER_ID) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 })
     }
 
@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    // Check if user is admin (only TearReader for now)
-    if (token.name !== "TearReader") {
+    // Check if user is admin (Buckfoozle)
+    if (token.sub !== process.env.ADMIN_USER_ID) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 })
     }
 

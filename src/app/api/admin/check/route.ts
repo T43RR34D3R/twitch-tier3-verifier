@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
-import { query } from "@/lib/railway-db"
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,36 +16,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ isAdmin: false, message: "Invalid user data" }, { status: 400 })
     }
     
-    // Check if user is admin in database
-    const adminCheckSql = `
-      SELECT user_id, username, display_name, role, is_active
-      FROM admin_users 
-      WHERE (user_id = $1 OR username ILIKE $2) 
-      AND is_active = true
-    `;
+    // Check if user is admin (Buckfoozle)
+    const isAdmin = userId === process.env.ADMIN_USER_ID;
     
-    const result = await query(adminCheckSql, [userId, userName || '']);
-    const isAdmin = result.rows.length > 0;
-    
-    // Update last login time if admin
-    if (isAdmin) {
-      const updateLoginSql = `
-        UPDATE admin_users 
-        SET last_login_at = NOW() 
-        WHERE user_id = $1
-      `;
-      await query(updateLoginSql, [userId]).catch(err => 
-        console.error('Failed to update last login:', err)
-      );
-    }
-    
-    console.log("Admin check:", { userName, userId, isAdmin, adminData: result.rows[0] });
+    console.log("Admin check:", { userName, userId, isAdmin });
     
     return NextResponse.json({ 
       isAdmin, 
       userName,
       userId,
-      role: result.rows[0]?.role || null,
+      role: isAdmin ? "admin" : null,
       message: isAdmin ? "Admin access granted" : "Access denied - Contact administrator for access"
     })
     

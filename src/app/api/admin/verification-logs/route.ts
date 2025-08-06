@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { getVerificationLogs, addVerificationLog } from "@/lib/database"
 
-const ADMIN_USERS = ["TearReader", "BuckFoozle"];
-const ADMIN_USER_IDS = ["1239758967", "269187200"];
+// Admin check using environment variable
 
 // In-memory fallback for verification logs
 let inMemoryLogs: Array<{
@@ -32,16 +31,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    // Check if user is admin
+    // Check if user is admin (Buckfoozle)
     const userName = token.name;
     const userId = token.sub;
-    const isAdminByName = ADMIN_USERS.some(adminUser => 
-      adminUser.toLowerCase() === (userName || "").toLowerCase()
-    );
-    const isAdminById = ADMIN_USER_IDS.includes(userId || "");
-    const isAdmin = isAdminByName || isAdminById;
+    const isAdmin = userId === process.env.ADMIN_USER_ID;
     
-    console.log('Admin verification logs check:', { userName, userId, isAdminByName, isAdminById, isAdmin });
+    console.log('Admin verification logs check:', { userName, userId, isAdmin });
     
     if (!isAdmin) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 })

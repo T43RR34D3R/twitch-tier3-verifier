@@ -329,43 +329,53 @@ CREATE INDEX IF NOT EXISTS idx_game_submissions_submitted_at ON game_submissions
 -- =====================================================
 
 -- Update triggers for timestamp management
+DROP TRIGGER IF EXISTS update_page_settings_updated_at ON page_settings;
 CREATE TRIGGER update_page_settings_updated_at 
   BEFORE UPDATE ON page_settings 
   FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_subscribers_updated_at ON subscribers;
 CREATE TRIGGER update_subscribers_updated_at 
   BEFORE UPDATE ON subscribers 
   FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_subathon_timer_updated_at ON subathon_timer;
 CREATE TRIGGER update_subathon_timer_updated_at
   BEFORE UPDATE ON subathon_timer
   FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_minecraft_twitch_links_updated_at ON minecraft_twitch_links;
 CREATE TRIGGER update_minecraft_twitch_links_updated_at
   BEFORE UPDATE ON minecraft_twitch_links
   FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_user_tokens_updated_at ON user_tokens;
 CREATE TRIGGER update_user_tokens_updated_at 
   BEFORE UPDATE ON user_tokens 
   FOR EACH ROW EXECUTE PROCEDURE update_analytics_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_stream_analytics_updated_at ON stream_analytics;
 CREATE TRIGGER update_stream_analytics_updated_at 
   BEFORE UPDATE ON stream_analytics 
   FOR EACH ROW EXECUTE PROCEDURE update_analytics_updated_at_column();
 
 -- Voting system triggers
+DROP TRIGGER IF EXISTS update_games_updated_at ON games;
 CREATE TRIGGER update_games_updated_at 
   BEFORE UPDATE ON games 
   FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_voting_sessions_updated_at ON voting_sessions;
 CREATE TRIGGER update_voting_sessions_updated_at 
   BEFORE UPDATE ON voting_sessions 
   FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_voting_users_updated_at ON voting_users;
 CREATE TRIGGER update_voting_users_updated_at 
   BEFORE UPDATE ON voting_users 
   FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_game_submissions_updated_at ON game_submissions;
 CREATE TRIGGER update_game_submissions_updated_at 
   BEFORE UPDATE ON game_submissions 
   FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
@@ -375,8 +385,16 @@ CREATE TRIGGER update_game_submissions_updated_at
 -- =====================================================
 
 -- Prevent duplicate subscribers
-ALTER TABLE subscribers ADD CONSTRAINT IF NOT EXISTS unique_subscriber 
-  UNIQUE (user_id, broadcaster_id);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'unique_subscriber' 
+        AND table_name = 'subscribers'
+    ) THEN
+        ALTER TABLE subscribers ADD CONSTRAINT unique_subscriber UNIQUE (user_id, broadcaster_id);
+    END IF;
+END $$;
 
 -- =====================================================
 -- INITIAL DATA
