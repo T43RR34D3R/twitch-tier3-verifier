@@ -19,6 +19,23 @@ export default function Tier3FormPage() {
       return;
     }
 
+    // Check if we recently verified T3 status (within last 5 minutes)
+    const cacheKey = `t3_verified_${session.user?.id || session.user?.name}`;
+    const cachedVerification = sessionStorage.getItem(cacheKey);
+    const now = Date.now();
+    
+    if (cachedVerification) {
+      const { verified, timestamp } = JSON.parse(cachedVerification);
+      const fiveMinutes = 5 * 60 * 1000; // 5 minutes in milliseconds
+      
+      if (verified && (now - timestamp) < fiveMinutes) {
+        // Use cached verification result
+        setIsVerified(true);
+        setIsChecking(false);
+        return;
+      }
+    }
+
     // Verify the user is actually Tier 3 before showing the form
     const verifyTier3 = async () => {
       try {
@@ -27,12 +44,19 @@ export default function Tier3FormPage() {
         
         if (data.isTier3) {
           setIsVerified(true);
+          // Cache the successful verification
+          sessionStorage.setItem(cacheKey, JSON.stringify({
+            verified: true,
+            timestamp: now
+          }));
         } else {
-          // Not Tier 3, redirect back to verification
+          // Clear any cached verification and redirect
+          sessionStorage.removeItem(cacheKey);
           router.push("/t3verify");
         }
       } catch (error) {
         console.error("Error verifying Tier 3 status:", error);
+        sessionStorage.removeItem(cacheKey);
         router.push("/t3verify");
       } finally {
         setIsChecking(false);
