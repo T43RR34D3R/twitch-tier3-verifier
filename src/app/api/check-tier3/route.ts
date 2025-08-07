@@ -2,6 +2,42 @@ import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { addVerificationLog } from "@/lib/database"
 
+// In-memory cache to prevent duplicate logs within a short time window
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const recentVerifications = new Map<string, { result: any, timestamp: number }>();
+const DEDUP_WINDOW_MS = 10000; // 10 seconds
+
+// Helper function to add verification log with deduplication
+async function addUniqueVerificationLog(log: { user_name: string; user_id: string; success: boolean; message: string }) {
+  const cacheKey = `${log.user_id}_${log.success}_${log.message}`;
+  const now = Date.now();
+  
+  // Check if we recently logged the same result for this user
+  const recent = recentVerifications.get(cacheKey);
+  if (recent && (now - recent.timestamp) < DEDUP_WINDOW_MS) {
+    console.log('Skipping duplicate verification log for:', log.user_name);
+    return recent.result;
+  }
+  
+  // Add the log and cache the result
+  try {
+    const result = await addVerificationLog(log);
+    recentVerifications.set(cacheKey, { result, timestamp: now });
+    
+    // Clean up old cache entries (keep cache size manageable)
+    for (const [key, value] of recentVerifications.entries()) {
+      if (now - value.timestamp > DEDUP_WINDOW_MS) {
+        recentVerifications.delete(key);
+      }
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Failed to add verification log:', error);
+    return null;
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const token = await getToken({ req: request })
@@ -163,17 +199,13 @@ export async function GET(request: NextRequest) {
         // Check if it's Tier 3 (tier "3000" in Twitch API)
         const isTier3 = subscription.tier === "3000"
         
-        // Log the verification attempt
-        try {
-          await addVerificationLog({
-            user_name: token.name || "Unknown",
-            user_id: token.sub,
-            success: isTier3,
-            message: isTier3 ? "Tier 3 subscription confirmed!" : `Current tier: ${subscription.tier} (not Tier 3)`
-          });
-        } catch (logError) {
-          console.error('Failed to log subscription verification:', logError);
-        }
+        // Log the verification attempt with deduplication
+        await addUniqueVerificationLog({
+          user_name: token.name || "Unknown",
+          user_id: token.sub,
+          success: isTier3,
+          message: isTier3 ? "Tier 3 subscription confirmed!" : `Current tier: ${subscription.tier} (not Tier 3)`
+        });
         
         return NextResponse.json({ 
           isTier3, 
