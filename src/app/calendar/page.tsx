@@ -42,6 +42,15 @@ export default function CalendarPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EditingEvent | null>(null);
   const [editingDate, setEditingDate] = useState<string | null>(null);
+
+  // Debug: Track editing state changes
+  useEffect(() => {
+    console.log('🎛️ EditingEvent state changed:', editingEvent ? { id: editingEvent.id, title: editingEvent.title } : null);
+  }, [editingEvent]);
+
+  useEffect(() => {
+    console.log('📅 EditingDate state changed:', editingDate);
+  }, [editingDate]);
   const [saving, setSaving] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showEventDetail, setShowEventDetail] = useState(false);
@@ -134,7 +143,17 @@ export default function CalendarPage() {
   };
 
   const startEditingEvent = (event: CalendarEvent) => {
-    if (!isAdmin) return;
+    console.log('🔧 startEditingEvent called:', { event: event.title, isAdmin, eventId: event.id });
+    
+    if (!isAdmin) {
+      console.log('❌ Not admin, returning');
+      return;
+    }
+    
+    console.log('✅ Setting editing state:', {
+      editingDate: event.date,
+      editingEvent: { id: event.id, title: event.title }
+    });
     
     setEditingDate(event.date);
     setEditingEvent({
@@ -149,6 +168,8 @@ export default function CalendarPage() {
       start_time: event.start_time || '09:00',
       end_time: event.end_time || '10:00'
     });
+    
+    console.log('🎯 Edit state set!');
   };
 
   const cancelEditing = () => {
@@ -336,6 +357,20 @@ export default function CalendarPage() {
                 // Find the first event with an image for background
                 const backgroundEvent = dayEvents.find(event => event.image_url && event.image_url.trim() !== '');
                 
+                // Debug: Log background image logic
+                if (dayEvents.length > 0) {
+                  console.log(`🎨 Day ${format(day, 'd')} events:`, 
+                    dayEvents.map(e => ({ 
+                      title: e.title, 
+                      image_url: e.image_url,
+                      hasImage: !!(e.image_url && e.image_url.trim() !== '')
+                    }))
+                  );
+                  console.log(`🖼️ Background event for day ${format(day, 'd')}:`, 
+                    backgroundEvent ? { title: backgroundEvent.title, image_url: backgroundEvent.image_url } : 'None'
+                  );
+                }
+                
                 return (
                   <div
                     key={day.toISOString()}
@@ -385,37 +420,44 @@ export default function CalendarPage() {
                       {/* Events with glass effect */}
                       <div className="space-y-1">
                         {dayEvents.map(event => {
-                          // Debug: log event details
-                          console.log('Event:', event.title, 'Image URL:', event.image_url, 'Length:', event.image_url?.length);
+                          const handleEventClick = (e: React.MouseEvent) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('🔥 EVENT CLICKED:', event.title, 'isAdmin:', isAdmin);
+                            
+                            if (isAdmin) {
+                              console.log('📝 Opening editor for admin');
+                              startEditingEvent(event);
+                            } else {
+                              console.log('👁️ Opening detail modal for user');
+                              setSelectedEvent(event);
+                              setShowEventDetail(true);
+                            }
+                          };
                           
                           return (
-                            <div
+                            <button
                               key={event.id}
-                              className={`text-xs p-2 rounded-md cursor-pointer transition-all duration-200 hover:scale-105 ${
+                              type="button"
+                              className={`w-full text-left text-xs p-2 rounded-md cursor-pointer transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 ${
                                 backgroundEvent?.image_url 
                                   ? 'backdrop-blur-md bg-white/15 border border-white/25 text-white drop-shadow-md hover:bg-white/20'
-                                  : 'hover:opacity-80 hover:shadow-md'
+                                  : 'hover:opacity-80 hover:shadow-md hover:bg-opacity-90'
                               }`}
                               style={{
                                 backgroundColor: backgroundEvent?.image_url ? undefined : event.background_color,
-                                color: backgroundEvent?.image_url ? undefined : event.text_color
+                                color: backgroundEvent?.image_url ? undefined : event.text_color,
+                                zIndex: 10,
+                                position: 'relative'
                               }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                console.log('Event clicked:', event.title, 'isAdmin:', isAdmin);
-                                if (isAdmin) {
-                                  startEditingEvent(event);
-                                } else {
-                                  setSelectedEvent(event);
-                                  setShowEventDetail(true);
-                                }
-                              }}
+                              onClick={handleEventClick}
+                              onMouseDown={(e) => e.stopPropagation()}
                             >
                               <div className="font-medium truncate">{event.title}</div>
                               {!event.is_all_day && event.start_time && (
                                 <div className="opacity-75 text-xs">{event.start_time}</div>
                               )}
-                            </div>
+                            </button>
                           );
                         })}
                       </div>
