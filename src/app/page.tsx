@@ -10,7 +10,7 @@ import CalendarPanel from '@/components/CalendarPanel';
 
 interface HomeSection {
   id: string;
-  type: 'hero' | 'about' | 'tools' | 'twitch-embed' | 'social' | 'custom';
+  type: 'hero' | 'about' | 'tools' | 'twitch-embed' | 'social' | 'calendar' | 'custom';
   title: string;
   isEnabled: boolean;
   orderIndex: number;
@@ -30,6 +30,8 @@ interface HomeSection {
     socialTitle?: string;
     showSocialCards?: boolean;
     socialLinks?: Array<{ platform: string; url: string; icon: string; color: string }>;
+    calendarShowDescription?: boolean;
+    calendarDaysToShow?: number;
     customHtml?: string;
     customCss?: string;
   };
