@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import SiteCustomizationPanel from "../../components/SiteCustomizationPanel";
 import GameVotingAdmin from "../../components/GameVotingAdmin";
+import MerchAdmin from "../../components/MerchAdmin";
 
 interface VerificationLog {
   id: string;
@@ -341,6 +342,11 @@ export default function AdminDashboard() {
           {/* Game Voting Admin Panel */}
           <div className="mb-8">
             <GameVotingAdmin />
+          </div>
+
+          {/* Merch Admin Panel */}
+          <div className="mb-8">
+            <MerchAdmin />
           </div>
 
           
