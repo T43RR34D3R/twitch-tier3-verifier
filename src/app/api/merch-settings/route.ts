@@ -21,6 +21,11 @@ interface MerchSettings {
   layout: 'grid' | 'carousel' | 'list';
   showPrices: boolean;
   items: MerchItem[];
+  // Fourthwall API integration
+  fourthwallStoreId?: string;
+  fourthwallApiKey?: string;
+  autoSync: boolean;
+  lastSyncAt?: string;
 }
 
 const defaultSettings: MerchSettings = {
@@ -30,7 +35,8 @@ const defaultSettings: MerchSettings = {
   maxItemsToShow: 6,
   layout: 'grid',
   showPrices: true,
-  items: []
+  items: [],
+  autoSync: false
 };
 
 // Check if user is admin
@@ -120,7 +126,12 @@ export async function POST(request: NextRequest) {
           isEnabled: typeof typedItem.isEnabled === 'boolean' ? typedItem.isEnabled : true,
           orderIndex: typeof typedItem.orderIndex === 'number' ? typedItem.orderIndex : index
         };
-      }) : []
+      }) : [],
+      // Fourthwall integration properties
+      fourthwallStoreId: typeof settings.fourthwallStoreId === 'string' ? settings.fourthwallStoreId : undefined,
+      fourthwallApiKey: typeof settings.fourthwallApiKey === 'string' ? settings.fourthwallApiKey : undefined,
+      autoSync: typeof settings.autoSync === 'boolean' ? settings.autoSync : defaultSettings.autoSync,
+      lastSyncAt: typeof settings.lastSyncAt === 'string' ? settings.lastSyncAt : undefined
     };
     
     await ensureTable();
