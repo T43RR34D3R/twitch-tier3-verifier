@@ -222,6 +222,7 @@ export default function CalendarPage() {
 
       if (response.ok) {
         await loadEvents();
+        cancelEditing(); // Auto-close the editor after successful deletion
       } else {
         const data = await response.json();
         alert(data.error || 'Failed to delete event');
@@ -780,8 +781,7 @@ export default function CalendarPage() {
                   {/* Description */}
                   {selectedEvent.description && (
                     <div>
-                      <h4 className="text-sm font-semibold text-gray-300 mb-2">Description:</h4>
-                      <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+                      <p className="text-gray-200 text-base leading-relaxed whitespace-pre-wrap">
                         {selectedEvent.description}
                       </p>
                     </div>
