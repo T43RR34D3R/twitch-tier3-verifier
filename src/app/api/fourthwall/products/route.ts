@@ -65,13 +65,50 @@ export async function GET(request: NextRequest) {
     // Use your Fourthwall Storefront API token
     const FOURTHWALL_TOKEN = 'ptkn_a28b6e63-1e1e-4583-aeb0-a33d65302b79';
     
-    // Fetch products from Fourthwall API
-    const response = await fetch(`https://api.fourthwall.com/v1/shops/${storeName}/products`, {
+    // Try different Fourthwall API endpoint formats
+    // Based on official documentation and store URL pattern
+    console.log(`Trying Fourthwall API for store: ${storeName}`);
+    
+    let response = await fetch(`https://api.fourthwall.com/v1/storefront/${storeName}/products`, {
       headers: {
         'Authorization': `Bearer ${FOURTHWALL_TOKEN}`,
         'Content-Type': 'application/json',
       },
     });
+    
+    // If that fails, try the storefronts (plural) endpoint
+    if (!response.ok) {
+      console.log(`First endpoint failed (${response.status}), trying storefronts endpoint...`);
+      response = await fetch(`https://api.fourthwall.com/v1/storefronts/${storeName}/products`, {
+        headers: {
+          'Authorization': `Bearer ${FOURTHWALL_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+    
+    // Try with store ID format (might need full store identifier)
+    if (!response.ok) {
+      console.log(`Second endpoint failed (${response.status}), trying with full store identifier...`);
+      const fullStoreId = storeName.includes('-shop') ? storeName : `${storeName}-shop`;
+      response = await fetch(`https://api.fourthwall.com/v1/storefront/${fullStoreId}/products`, {
+        headers: {
+          'Authorization': `Bearer ${FOURTHWALL_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+    
+    // If that also fails, try general products endpoint
+    if (!response.ok) {
+      console.log(`Third endpoint failed (${response.status}), trying general products endpoint...`);
+      response = await fetch(`https://api.fourthwall.com/v1/products`, {
+        headers: {
+          'Authorization': `Bearer ${FOURTHWALL_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    }
 
     if (!response.ok) {
       console.error('Fourthwall API error:', response.status, response.statusText);

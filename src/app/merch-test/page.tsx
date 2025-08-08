@@ -26,7 +26,7 @@ export default function MerchTestPage() {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const response = await fetch('/api/fourthwall/products?storeName=thefoozles');
+        const response = await fetch('/api/fourthwall/products?storeName=thefoozles-shop');
         if (!response.ok) {
           // If API fails, show mock data instead of error
           console.warn(`Fourthwall API failed (${response.status}), showing mock data instead`);
@@ -159,7 +159,7 @@ export default function MerchTestPage() {
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold text-white mb-4">Fourthwall Products Test</h1>
         <p className="text-gray-300 mb-8">
-          This page directly fetches and displays products from the Fourthwall API for store &quot;thefoozles&quot;
+          This page directly fetches and displays products from the Fourthwall API for store &quot;thefoozles-shop&quot;
         </p>
         
         {error && (
@@ -189,7 +189,7 @@ export default function MerchTestPage() {
               {products.map((product) => (
                 <a
                   key={product.id}
-                  href={getProductUrl('thefoozles', product.slug)}
+                  href={getProductUrl('thefoozles-shop', product.slug)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group bg-white/10 backdrop-blur-lg rounded-lg p-4 border border-white/20 hover:border-purple-400 transition-all duration-300 hover:scale-105 hover:bg-white/20"
@@ -225,7 +225,7 @@ export default function MerchTestPage() {
             <li>Go to <code className="bg-black/20 px-1 rounded">/admin</code> and log in</li>
             <li>Find the &quot;Merch Panel Admin&quot; section</li>
             <li>Enable the merch panel</li>
-            <li>Set store name to &quot;thefoozles&quot;</li>
+            <li>Set store name to &quot;thefoozles-shop&quot;</li>
             <li>Enable auto sync</li>
             <li>Save settings</li>
             <li>Visit the home page to see the merch panel</li>
