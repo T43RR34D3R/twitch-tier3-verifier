@@ -43,6 +43,8 @@ export default function CalendarPage() {
   const [editingEvent, setEditingEvent] = useState<EditingEvent | null>(null);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [showEventDetail, setShowEventDetail] = useState(false);
 
   const checkAdminStatus = useCallback(async () => {
     if (!session?.user) {
@@ -301,8 +303,7 @@ export default function CalendarPage() {
           {isAdmin && (
             <div className="mb-4 p-3 bg-blue-900/20 border border-blue-700/50 rounded-lg">
               <div className="text-blue-300 text-sm">
-                ✏️ <strong>Admin Mode:</strong> Click on any date to add events, or click existing events to edit them.<br />
-                📸 <strong>Pro Tip:</strong> Add an image to an event and it will become a beautiful full-screen background for that day with glass-effect text overlays!
+                ✏️ <strong>Admin Mode:</strong> Click on any date to add events, or click existing events to edit them.
               </div>
             </div>
           )}
@@ -397,7 +398,12 @@ export default function CalendarPage() {
                             }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (isAdmin) startEditingEvent(event);
+                              if (isAdmin) {
+                                startEditingEvent(event);
+                              } else {
+                                setSelectedEvent(event);
+                                setShowEventDetail(true);
+                              }
                             }}
                           >
                             <div className="font-medium truncate">{event.title}</div>
@@ -633,12 +639,100 @@ export default function CalendarPage() {
             <div className="text-gray-400 text-sm">
               {isAdmin 
                 ? "Click on any date to add events, or click existing events to edit them."
-                : "View upcoming events and important dates."
+                : "Click on events to view details."
               }
             </div>
           </div>
         </div>
         </div>
+
+        {/* Event Detail Modal */}
+        {showEventDetail && selectedEvent && (
+          <div 
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={() => setShowEventDetail(false)}
+          >
+            <div 
+              className="bg-gray-800 rounded-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Full screen image if present */}
+              {selectedEvent.image_url && (
+                <div className="relative">
+                  <img
+                    src={selectedEvent.image_url}
+                    alt={selectedEvent.title}
+                    className="w-full h-64 object-cover rounded-t-xl"
+                  />
+                  <div className="absolute inset-0 bg-black/20 rounded-t-xl" />
+                  <button
+                    onClick={() => setShowEventDetail(false)}
+                    className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+              
+              <div className="p-6">
+                {/* Close button when no image */}
+                {!selectedEvent.image_url && (
+                  <div className="flex justify-end mb-4">
+                    <button
+                      onClick={() => setShowEventDetail(false)}
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+                
+                {/* Event Details */}
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-2">{selectedEvent.title}</h3>
+                    <div className="text-purple-300 text-sm">
+                      📅 {format(new Date(selectedEvent.date), 'EEEE, MMMM d, yyyy')}
+                    </div>
+                  </div>
+                  
+                  {/* Time info */}
+                  {!selectedEvent.is_all_day && selectedEvent.start_time && (
+                    <div className="text-gray-300">
+                      <span className="text-blue-300">🕐 Time:</span> {selectedEvent.start_time}
+                      {selectedEvent.end_time && selectedEvent.end_time !== selectedEvent.start_time && (
+                        <> - {selectedEvent.end_time}</>
+                      )}
+                    </div>
+                  )}
+                  
+                  {selectedEvent.is_all_day && (
+                    <div className="text-gray-300">
+                      <span className="text-blue-300">📅 All Day Event</span>
+                    </div>
+                  )}
+                  
+                  {/* Description */}
+                  {selectedEvent.description && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-300 mb-2">Description:</h4>
+                      <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+                        {selectedEvent.description}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Event created info */}
+                  <div className="pt-4 border-t border-gray-700">
+                    <div className="text-xs text-gray-500">
+                      Created by {selectedEvent.created_by} on {format(new Date(selectedEvent.created_at), 'MMM d, yyyy')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </CustomBackground>
   );
