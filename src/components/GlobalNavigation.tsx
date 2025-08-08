@@ -34,10 +34,11 @@ const defaultSettings: NavigationSettings = {
   menu_items: [
     { id: '1', label: 'Home', url: '/', icon: '🏠', show_to: 'all', is_external: false, order: 1 },
     { id: '2', label: 'T3 Verification', url: '/t3verify', icon: '👑', show_to: 'all', is_external: false, order: 2 },
-    { id: '3', label: 'Subathon Timer', url: '/subathon-timer', icon: '⏰', show_to: 'all', is_external: false, order: 3 },
-    { id: '4', label: 'Analytics', url: '/analytics', icon: '📊', show_to: 'all', is_external: false, order: 4 },
-    { id: '5', label: 'Admin Panel', url: '/admin', icon: '⚙️', show_to: 'authenticated', is_external: false, order: 5 },
-    { id: '6', label: 'Twitch', url: 'https://twitch.tv/buckfoozle', icon: '💜', show_to: 'all', is_external: true, order: 6 }
+    { id: '3', label: 'Calendar', url: '/calendar', icon: '📅', show_to: 'all', is_external: false, order: 3 },
+    { id: '4', label: 'Subathon Timer', url: '/subathon-timer', icon: '⏰', show_to: 'all', is_external: false, order: 4 },
+    { id: '5', label: 'Analytics', url: '/analytics', icon: '📊', show_to: 'all', is_external: false, order: 5 },
+    { id: '6', label: 'Admin Panel', url: '/admin', icon: '⚙️', show_to: 'authenticated', is_external: false, order: 6 },
+    { id: '7', label: 'Twitch', url: 'https://twitch.tv/buckfoozle', icon: '💜', show_to: 'all', is_external: true, order: 7 }
   ],
   show_auth_buttons: true,
   header_style: 'glass',
