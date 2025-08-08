@@ -3,24 +3,10 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { format, startOfWeek, addDays, isSameDay, endOfWeek } from "date-fns";
-import MerchPanel from "../components/MerchPanel";
+// date-fns imports removed - no longer needed
+import MerchPanel from '@/components/MerchPanel';
+import CalendarPanel from '@/components/CalendarPanel';
 
-interface CalendarEvent {
-  id: number;
-  date: string;
-  title: string;
-  description?: string;
-  image_url?: string;
-  background_color: string;
-  text_color: string;
-  is_all_day: boolean;
-  start_time?: string;
-  end_time?: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-}
 
 interface HomeSection {
   id: string;
@@ -176,154 +162,18 @@ export default function Home() {
   const [homeSections, setHomeSections] = useState<HomeSection[]>([]);
   const [settings, setSettings] = useState<CustomizationSettings | null>(null);
   const [loading, setLoading] = useState(true);
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  // events state removed - handled by CalendarPanel component
   const fullText = "Hello, World! Welcome to BuckFoozle's Toolkit! 🎮✨";
 
   useEffect(() => {
     setMounted(true);
     loadCustomizations();
-    loadEvents();
+    // loadEvents() removed - handled by CalendarPanel
   }, []);
 
-  const loadEvents = async () => {
-    try {
-      const today = new Date();
-      const weekStart = startOfWeek(today);
-      const weekEnd = endOfWeek(today);
-      
-      const month = today.getMonth() + 1;
-      const year = today.getFullYear();
-      
-      const response = await fetch(`/api/calendar?month=${month}&year=${year}`);
-      const data = await response.json();
-      
-      if (response.ok) {
-        // Filter events to just this week
-        const weekEvents = data.events?.filter((event: CalendarEvent) => {
-          const eventDate = new Date(event.date);
-          return eventDate >= weekStart && eventDate <= weekEnd;
-        }) || [];
-        setEvents(weekEvents);
-      }
-    } catch (error) {
-      console.error('Error loading events:', error);
-    }
-  };
+  // loadEvents removed - events now loaded by CalendarPanel component
 
-  // Weekly Calendar Widget Component
-  const WeeklyCalendarWidget = () => {
-    const today = new Date();
-    const weekStart = startOfWeek(today);
-    const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-
-    const getEventsForDate = (date: Date) => {
-      return events.filter(event => 
-        isSameDay(new Date(event.date), date)
-      );
-    };
-
-    return (
-      <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-purple-400 transition-all duration-300 hover:bg-white/15">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-xl font-bold text-white mb-1">📅 This Week</h3>
-            <p className="text-sm text-gray-300">
-              {format(weekStart, 'MMM d')} - {format(addDays(weekStart, 6), 'MMM d, yyyy')}
-            </p>
-          </div>
-          <Link 
-            href="/calendar" 
-            className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
-          >
-            View Full Calendar →
-          </Link>
-        </div>
-        
-        <div className="grid grid-cols-7 gap-2">
-          {weekDays.map((day) => {
-            const dayEvents = getEventsForDate(day);
-            const isToday = isSameDay(day, today);
-            const backgroundEvent = dayEvents.find(event => event.image_url && event.image_url.trim() !== '');
-            
-            return (
-              <div key={day.toISOString()} className="min-h-[80px] relative">
-                {/* Day header */}
-                <div className={`text-center text-xs font-medium mb-2 ${
-                  isToday ? 'text-purple-300' : 'text-gray-400'
-                }`}>
-                  {format(day, 'EEE')}
-                </div>
-                
-                {/* Day content */}
-                <div className={`min-h-[60px] rounded-lg border overflow-hidden relative transition-all ${
-                  isToday 
-                    ? 'border-purple-400 bg-purple-900/20'
-                    : backgroundEvent?.image_url
-                    ? 'border-white/30'
-                    : 'border-white/10 bg-white/5'
-                }`}>
-                  {/* Background image */}
-                  {backgroundEvent?.image_url && (
-                    <>
-                      <div 
-                        className="absolute inset-0 bg-cover bg-center"
-                        style={{
-                          backgroundImage: `url(${backgroundEvent.image_url})`
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-black/40" />
-                    </>
-                  )}
-                  
-                  {/* Day number and events */}
-                  <div className="relative h-full p-2">
-                    <div className={`text-sm font-bold mb-1 ${
-                      backgroundEvent?.image_url
-                        ? 'text-white drop-shadow-lg'
-                        : isToday
-                        ? 'text-purple-300'
-                        : 'text-gray-300'
-                    }`}>
-                      {format(day, 'd')}
-                    </div>
-                    
-                    {/* Event indicators */}
-                    <div className="space-y-1">
-                      {dayEvents.slice(0, 2).map((event) => (
-                        <div
-                          key={event.id}
-                          className={`text-xs px-1 py-0.5 rounded truncate ${
-                            backgroundEvent?.image_url
-                              ? 'bg-white/20 text-white backdrop-blur-sm'
-                              : 'text-white'
-                          }`}
-                          style={{
-                            backgroundColor: backgroundEvent?.image_url ? undefined : event.background_color + '80',
-                            fontSize: '10px',
-                            lineHeight: '12px'
-                          }}
-                          title={event.title}
-                        >
-                          {event.title}
-                        </div>
-                      ))}
-                      {dayEvents.length > 2 && (
-                        <div className={`text-xs ${
-                          backgroundEvent?.image_url ? 'text-white/80' : 'text-gray-400'
-                        }`}>
-                          +{dayEvents.length - 2} more
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
+  // WeeklyCalendarWidget removed - now using CalendarPanel component instead
 
   useEffect(() => {
     if (!loading && settings) {
@@ -515,7 +365,7 @@ export default function Home() {
             </div>
           </Link>
           <div className="md:col-span-2 lg:col-span-3">
-            <WeeklyCalendarWidget />
+            <CalendarPanel />
           </div>
           
           {isUserAdmin(session) && (
