@@ -98,11 +98,22 @@ export async function GET() {
             }
           },
           {
+            id: "calendar",
+            type: "calendar",
+            title: "Calendar Panel",
+            isEnabled: true,
+            orderIndex: 4,
+            content: {
+              calendarShowDescription: true,
+              calendarDaysToShow: 7
+            }
+          },
+          {
             id: "social",
             type: "social",
             title: "Connect With Me",
             isEnabled: true,
-            orderIndex: 4,
+            orderIndex: 5,
             content: {
               socialTitle: "Follow Me Everywhere",
               showSocialCards: true,
@@ -121,10 +132,26 @@ export async function GET() {
     }
 
     const row = result.rows[0];
+
+    // Ensure the new Calendar section exists even if older data doesn't have it
+    let sections = Array.isArray(row.home_sections) ? [...row.home_sections] : [];
+    const hasCalendar = sections.some((s: any) => s.type === 'calendar');
+    if (!hasCalendar) {
+      const maxOrder = sections.reduce((m: number, s: any) => Math.max(m, s.orderIndex || 0), 0);
+      sections.push({
+        id: 'calendar',
+        type: 'calendar',
+        title: 'Calendar Panel',
+        isEnabled: true,
+        orderIndex: maxOrder + 1,
+        content: { calendarShowDescription: true, calendarDaysToShow: 7 },
+      });
+    }
+
     return NextResponse.json({
       settings: row.settings,
       menuItems: row.menu_items,
-      homeSections: row.home_sections
+      homeSections: sections,
     });
   } catch (error) {
     console.error("Error fetching customization settings:", error);

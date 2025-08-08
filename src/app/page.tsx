@@ -102,11 +102,22 @@ const defaultHomeSections: HomeSection[] = [
             }
           },
           {
+            id: "calendar",
+            type: "calendar",
+            title: "Calendar Panel",
+            isEnabled: true,
+            orderIndex: 4,
+            content: {
+              calendarShowDescription: true,
+              calendarDaysToShow: 7
+            }
+          },
+          {
             id: "social",
             type: "social",
             title: "Connect With Me",
             isEnabled: true,
-            orderIndex: 4,
+            orderIndex: 5,
             content: {
               socialTitle: "Follow Me Everywhere",
               showSocialCards: true,
@@ -432,6 +443,14 @@ export default function Home() {
         return renderTwitchEmbed(section);
       case 'tools':
         return renderToolsSection(section);
+      case 'calendar':
+        return (
+          <section key={section.id} className="mb-16">
+            <div className="md:col-span-2 lg:col-span-3">
+              <CalendarPanel />
+            </div>
+          </section>
+        );
       case 'social':
         return renderSocialSection(section);
       default:

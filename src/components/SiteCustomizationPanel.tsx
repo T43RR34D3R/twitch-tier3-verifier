@@ -47,7 +47,7 @@ interface MenuItem {
 
 interface HomeSection {
   id: string;
-  type: 'hero' | 'about' | 'tools' | 'twitch-embed' | 'social' | 'custom';
+  type: 'hero' | 'about' | 'tools' | 'twitch-embed' | 'social' | 'calendar' | 'custom';
   title: string;
   isEnabled: boolean;
   orderIndex: number;
@@ -76,6 +76,10 @@ interface HomeSection {
     socialTitle?: string;
     showSocialCards?: boolean;
     socialLinks?: Array<{ platform: string; url: string; icon: string; color: string }>;
+    
+    // Calendar panel
+    calendarShowDescription?: boolean;
+    calendarDaysToShow?: number;
     
     // Custom section
     customHtml?: string;
@@ -159,11 +163,22 @@ const defaultHomeSections: HomeSection[] = [
     }
   },
   {
+    id: "calendar",
+    type: "calendar",
+    title: "Calendar Panel",
+    isEnabled: true,
+    orderIndex: 4,
+    content: {
+      calendarShowDescription: true,
+      calendarDaysToShow: 7
+    }
+  },
+  {
     id: "social",
     type: "social",
     title: "Connect With Me",
     isEnabled: true,
-    orderIndex: 4,
+    orderIndex: 5,
     content: {
       socialTitle: "Follow Me Everywhere",
       showSocialCards: true,
@@ -1040,6 +1055,39 @@ export default function SiteCustomizationPanel() {
                                     <option value="player">Player Only</option>
                                     <option value="chat">Chat Only</option>
                                     <option value="both">Player + Chat</option>
+                                  </select>
+                                </div>
+                              </div>
+                            )}
+
+                            {section.type === 'calendar' && (
+                              <div className="grid md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-white mb-1">Show Descriptions</label>
+                                  <label className="flex items-center space-x-2 text-white">
+                                    <input
+                                      type="checkbox"
+                                      checked={section.content.calendarShowDescription ?? true}
+                                      onChange={(e) => updateHomeSection(section.id, {
+                                        content: { ...section.content, calendarShowDescription: e.target.checked }
+                                      })}
+                                      className="rounded border-white/20 text-blue-500"
+                                    />
+                                    <span>Enabled</span>
+                                  </label>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-white mb-1">Days To Show</label>
+                                  <select
+                                    value={section.content.calendarDaysToShow ?? 7}
+                                    onChange={(e) => updateHomeSection(section.id, {
+                                      content: { ...section.content, calendarDaysToShow: parseInt(e.target.value) }
+                                    })}
+                                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm"
+                                  >
+                                    <option value={3}>3 Days</option>
+                                    <option value={7}>7 Days</option>
+                                    <option value={14}>14 Days</option>
                                   </select>
                                 </div>
                               </div>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { sql } from '@vercel/postgres';
+import { getToken } from 'next-auth/jwt';
+import { query } from '@/lib/railway-db';
 
 interface CalendarPanelSettings {
   enabled: boolean;
@@ -8,36 +8,38 @@ interface CalendarPanelSettings {
   daysToShow: number;
 }
 
-// Ensure the calendar_panel_settings table exists
+// Reuse the same admin check style as customization-settings
+const isUserAdmin = (userId?: string) => {
+  const hardcodedAdminIds = ['441862265', '269187200'];
+  const envAdmin = userId === process.env.ADMIN_USER_ID || userId === process.env.ADMIN_USER_ID_2;
+  const hardcodedAdmin = hardcodedAdminIds.includes(userId || '');
+  return envAdmin || hardcodedAdmin;
+};
+
+// Ensure the calendar_panel_settings table exists (in the same DB as other customization data)
 async function ensureTable() {
-  try {
-    await sql`
-      CREATE TABLE IF NOT EXISTS calendar_panel_settings (
-        id SERIAL PRIMARY KEY,
-        settings JSONB NOT NULL,
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      )
-    `;
-  } catch (error) {
-    console.error('Error creating calendar_panel_settings table:', error);
-    throw error;
-  }
+  await query(`
+    CREATE TABLE IF NOT EXISTS calendar_panel_settings (
+      id SERIAL PRIMARY KEY,
+      settings JSONB NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
 }
 
 export async function GET() {
   try {
     await ensureTable();
-    
-    const result = await sql`
-      SELECT settings FROM calendar_panel_settings ORDER BY updated_at DESC LIMIT 1
-    `;
-    
+
+    const result = await query(
+      'SELECT settings FROM calendar_panel_settings ORDER BY updated_at DESC LIMIT 1'
+    );
+
     if (result.rows.length === 0) {
-      // Return default settings
       const defaultSettings: CalendarPanelSettings = {
         enabled: true,
         showDescription: true,
-        daysToShow: 7
+        daysToShow: 7,
       };
       return NextResponse.json(defaultSettings);
     }
@@ -45,57 +47,48 @@ export async function GET() {
     return NextResponse.json(result.rows[0].settings);
   } catch (error) {
     console.error('Error fetching calendar panel settings:', error);
-    
-    // Return default settings on error
-    const defaultSettings: CalendarPanelSettings = {
+    const fallback: CalendarPanelSettings = {
       enabled: true,
       showDescription: true,
-      daysToShow: 7
+      daysToShow: 7,
     };
-    return NextResponse.json(defaultSettings);
+    return NextResponse.json(fallback);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if user is admin
-    const session = await getServerSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Auth like other admin customization endpoints
+    const token = await getToken({ req: request });
+    if (!token || !isUserAdmin(token.sub)) {
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
     }
 
-    // Parse the request body
     const settings: CalendarPanelSettings = await request.json();
-    
-    // Validate settings
-    if (typeof settings.enabled !== 'boolean' ||
-        typeof settings.showDescription !== 'boolean' ||
-        typeof settings.daysToShow !== 'number') {
-      return NextResponse.json(
-        { error: 'Invalid settings format' },
-        { status: 400 }
-      );
+
+    if (
+      typeof settings.enabled !== 'boolean' ||
+      typeof settings.showDescription !== 'boolean' ||
+      typeof settings.daysToShow !== 'number'
+    ) {
+      return NextResponse.json({ error: 'Invalid settings format' }, { status: 400 });
     }
 
     await ensureTable();
 
-    // Insert new settings (we keep history by not updating, just inserting)
-    await sql`
-      INSERT INTO calendar_panel_settings (settings, updated_at)
-      VALUES (${JSON.stringify(settings)}, CURRENT_TIMESTAMP)
-    `;
+    // Upsert by inserting a new versioned row (keep history like other endpoints may)
+    await query(
+      'INSERT INTO calendar_panel_settings (settings, updated_at) VALUES ($1, NOW())',
+      [JSON.stringify(settings)]
+    );
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: 'Calendar panel settings saved successfully',
-      settings 
+      settings,
     });
-
   } catch (error) {
     console.error('Error saving calendar panel settings:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to save calendar panel settings' }, { status: 500 });
   }
 }

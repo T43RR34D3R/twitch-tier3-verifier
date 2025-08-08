@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-// Import auth options - will get from getServerSession
-import { sql } from '@vercel/postgres';
+import { getToken } from 'next-auth/jwt';
+import { query } from '@/lib/railway-db';
 
 interface MerchItem {
   id: string;
@@ -39,47 +38,41 @@ const defaultSettings: MerchSettings = {
   autoSync: false
 };
 
-// Check if user is admin
-const isUserAdmin = (session: { user?: { name?: string | null; id?: string } } | null) => {
-  if (!session?.user) return false;
-  const adminUsers = ["TearReader", "BuckFoozle"];
-  const adminIds = ["1239758967", "269187200"];
-  
-  return adminUsers.some(admin => 
-    admin.toLowerCase() === (session.user?.name || "").toLowerCase()
-  ) || adminIds.includes(session.user?.id || "");
+// Admin check consistent with other endpoints
+const isUserAdmin = (userId?: string) => {
+  const hardcodedAdminIds = ['441862265', '269187200'];
+  const envAdmin = userId === process.env.ADMIN_USER_ID || userId === process.env.ADMIN_USER_ID_2;
+  const hardcodedAdmin = hardcodedAdminIds.includes(userId || '');
+  return envAdmin || hardcodedAdmin;
 };
 
 async function ensureTable() {
   try {
-    await sql`
+    await query(`
       CREATE TABLE IF NOT EXISTS merch_settings (
         id SERIAL PRIMARY KEY,
         settings JSONB NOT NULL,
-        updated_at TIMESTAMP DEFAULT NOW(),
-        created_at TIMESTAMP DEFAULT NOW()
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        created_at TIMESTAMPTZ DEFAULT NOW()
       )
-    `;
+    `);
   } catch (error) {
     console.error('Error creating merch_settings table:', error);
+    throw error;
   }
 }
 
 export async function GET() {
   try {
     await ensureTable();
-    
-    const result = await sql`
-      SELECT settings FROM merch_settings ORDER BY updated_at DESC LIMIT 1
-    `;
-    
+
+    const result = await query('SELECT settings FROM merch_settings ORDER BY updated_at DESC LIMIT 1');
+
     if (result.rows.length === 0) {
       return NextResponse.json({ settings: defaultSettings });
     }
-    
-    return NextResponse.json({ 
-      settings: { ...defaultSettings, ...result.rows[0].settings }
-    });
+
+    return NextResponse.json({ settings: { ...defaultSettings, ...result.rows[0].settings } });
   } catch (error) {
     console.error('Error fetching merch settings:', error);
     return NextResponse.json({ settings: defaultSettings });
@@ -88,15 +81,12 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
-    
-    if (!isUserAdmin(session)) {
-      return NextResponse.json(
-        { error: 'Unauthorized' }, 
-        { status: 401 }
-      );
+    const token = await getToken({ req: request });
+
+    if (!token || !isUserAdmin(token.sub)) {
+      return NextResponse.json({ error: 'Unauthorized - Admin access required' }, { status: 401 });
     }
-    
+
     const settings: MerchSettings = await request.json();
     
     // Validate settings
@@ -135,13 +125,12 @@ export async function POST(request: NextRequest) {
     };
     
     await ensureTable();
-    
-    // Delete old settings and insert new ones (or upsert if we want to keep history)
-    await sql`DELETE FROM merch_settings`;
-    await sql`
-      INSERT INTO merch_settings (settings, updated_at) 
-      VALUES (${JSON.stringify(validatedSettings)}, NOW())
-    `;
+
+    // Delete old settings and insert new ones (or keep history by inserting new row)
+    await query('DELETE FROM merch_settings');
+    await query('INSERT INTO merch_settings (settings, updated_at) VALUES ($1, NOW())', [
+      JSON.stringify(validatedSettings),
+    ]);
     
     return NextResponse.json({ 
       success: true, 
@@ -151,7 +140,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error saving merch settings:', error);
     return NextResponse.json(
-      { error: 'Failed to save settings' }, 
+      { error: 'Failed to save settings' },
       { status: 500 }
     );
   }
