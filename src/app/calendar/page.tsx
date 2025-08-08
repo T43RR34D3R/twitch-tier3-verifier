@@ -334,7 +334,7 @@ export default function CalendarPage() {
                 const isEditing = editingDate === dateString;
                 
                 // Find the first event with an image for background
-                const backgroundEvent = dayEvents.find(event => event.image_url);
+                const backgroundEvent = dayEvents.find(event => event.image_url && event.image_url.trim() !== '');
                 
                 return (
                   <div
@@ -384,34 +384,40 @@ export default function CalendarPage() {
 
                       {/* Events with glass effect */}
                       <div className="space-y-1">
-                        {dayEvents.map(event => (
-                          <div
-                            key={event.id}
-                            className={`text-xs p-2 rounded-md cursor-pointer transition-all duration-200 hover:scale-105 ${
-                              backgroundEvent?.image_url 
-                                ? 'backdrop-blur-md bg-white/15 border border-white/25 text-white drop-shadow-md hover:bg-white/20'
-                                : 'hover:opacity-80'
-                            }`}
-                            style={{
-                              backgroundColor: backgroundEvent?.image_url ? undefined : event.background_color,
-                              color: backgroundEvent?.image_url ? undefined : event.text_color
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (isAdmin) {
-                                startEditingEvent(event);
-                              } else {
-                                setSelectedEvent(event);
-                                setShowEventDetail(true);
-                              }
-                            }}
-                          >
-                            <div className="font-medium truncate">{event.title}</div>
-                            {!event.is_all_day && event.start_time && (
-                              <div className="opacity-75 text-xs">{event.start_time}</div>
-                            )}
-                          </div>
-                        ))}
+                        {dayEvents.map(event => {
+                          // Debug: log event details
+                          console.log('Event:', event.title, 'Image URL:', event.image_url, 'Length:', event.image_url?.length);
+                          
+                          return (
+                            <div
+                              key={event.id}
+                              className={`text-xs p-2 rounded-md cursor-pointer transition-all duration-200 hover:scale-105 ${
+                                backgroundEvent?.image_url 
+                                  ? 'backdrop-blur-md bg-white/15 border border-white/25 text-white drop-shadow-md hover:bg-white/20'
+                                  : 'hover:opacity-80 hover:shadow-md'
+                              }`}
+                              style={{
+                                backgroundColor: backgroundEvent?.image_url ? undefined : event.background_color,
+                                color: backgroundEvent?.image_url ? undefined : event.text_color
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log('Event clicked:', event.title, 'isAdmin:', isAdmin);
+                                if (isAdmin) {
+                                  startEditingEvent(event);
+                                } else {
+                                  setSelectedEvent(event);
+                                  setShowEventDetail(true);
+                                }
+                              }}
+                            >
+                              <div className="font-medium truncate">{event.title}</div>
+                              {!event.is_all_day && event.start_time && (
+                                <div className="opacity-75 text-xs">{event.start_time}</div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
