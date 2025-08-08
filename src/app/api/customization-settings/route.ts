@@ -134,10 +134,11 @@ export async function GET() {
     const row = result.rows[0];
 
     // Ensure the new Calendar section exists even if older data doesn't have it
-    let sections = Array.isArray(row.home_sections) ? [...row.home_sections] : [];
-    const hasCalendar = sections.some((s: any) => s.type === 'calendar');
+    type StoredSection = { id: string; type: string; title?: string; isEnabled?: boolean; orderIndex?: number; content?: unknown };
+    const sections: StoredSection[] = Array.isArray(row.home_sections) ? [...(row.home_sections as StoredSection[])] : [];
+    const hasCalendar = sections.some((s: StoredSection) => s.type === 'calendar');
     if (!hasCalendar) {
-      const maxOrder = sections.reduce((m: number, s: any) => Math.max(m, s.orderIndex || 0), 0);
+      const maxOrder = sections.reduce((m: number, s: StoredSection) => Math.max(m, s.orderIndex || 0), 0);
       sections.push({
         id: 'calendar',
         type: 'calendar',
