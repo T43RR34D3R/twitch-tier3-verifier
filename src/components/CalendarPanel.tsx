@@ -67,8 +67,26 @@ export default function CalendarPanel({ isAdmin = false }: CalendarPanelProps) {
 
         const data = await response.json();
         
+        // Extract events from the API response and map fields
+        const apiEvents = data.events || [];
+        const mappedEvents = apiEvents.map((event: {
+          id: string;
+          title: string;
+          description: string;
+          date: string;
+          start_time?: string;
+          time?: string;
+          image_url: string | null;
+          twitch_category?: string;
+          twitch_game_id?: string;
+          [key: string]: unknown;
+        }) => ({
+          ...event,
+          time: event.start_time || event.time || '00:00' // Map start_time to time field
+        }));
+        
         // Filter events to current week only
-        const weekEvents = data.filter((event: CalendarEvent) => {
+        const weekEvents = mappedEvents.filter((event: CalendarEvent) => {
           const eventDate = new Date(event.date);
           return eventDate >= startOfWeek && eventDate <= endOfWeek;
         });
