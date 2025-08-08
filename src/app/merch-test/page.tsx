@@ -159,7 +159,7 @@ export default function MerchTestPage() {
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold text-white mb-4">Fourthwall Products Test</h1>
         <p className="text-gray-300 mb-8">
-          This page directly fetches and displays products from the Fourthwall API for store "thefoozles"
+          This page directly fetches and displays products from the Fourthwall API for store &quot;thefoozles&quot;
         </p>
         
         {error && (
@@ -167,7 +167,7 @@ export default function MerchTestPage() {
             <h3 className="text-orange-300 font-semibold mb-2">⚠️ API Issue Detected</h3>
             <p className="text-orange-200 text-sm mb-2">{error}</p>
             <p className="text-orange-200/80 text-xs">
-              Don't worry! We're showing mock data so you can see how your merch panel would look.
+              Don&apos;t worry! We&apos;re showing mock data so you can see how your merch panel would look.
             </p>
           </div>
         )}
@@ -181,7 +181,7 @@ export default function MerchTestPage() {
             <div className="text-center py-8">
               <p className="text-gray-300 mb-2">No products found in the store.</p>
               <p className="text-sm text-gray-400">
-                This could mean the store has no products, or they're not published/available.
+                This could mean the store has no products, or they&apos;re not published/available.
               </p>
             </div>
           ) : (
@@ -223,9 +223,9 @@ export default function MerchTestPage() {
           <h3 className="text-blue-300 font-semibold mb-2">How to see this on your main site:</h3>
           <ol className="text-blue-200 text-sm space-y-1 list-decimal list-inside">
             <li>Go to <code className="bg-black/20 px-1 rounded">/admin</code> and log in</li>
-            <li>Find the "Merch Panel Admin" section</li>
+            <li>Find the &quot;Merch Panel Admin&quot; section</li>
             <li>Enable the merch panel</li>
-            <li>Set store name to "thefoozles"</li>
+            <li>Set store name to &quot;thefoozles&quot;</li>
             <li>Enable auto sync</li>
             <li>Save settings</li>
             <li>Visit the home page to see the merch panel</li>
