@@ -69,6 +69,7 @@ export default function CalendarPanel({ isAdmin = false }: CalendarPanelProps) {
         
         // Extract events from the API response and map fields
         const apiEvents = data.events || [];
+        
         const mappedEvents = apiEvents.map((event: {
           id: string;
           title: string;
@@ -136,7 +137,13 @@ export default function CalendarPanel({ isAdmin = false }: CalendarPanelProps) {
 
   const getEventsForDay = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return events.filter(event => event.date === dateStr);
+    const dayEvents = events.filter(event => {
+      // Extract date part from datetime string (e.g., "2025-08-07T22:00:00.000Z" -> "2025-08-07")
+      // But treat it as the intended date (8th) by using the date portion as-is
+      const eventDateStr = event.date.split('T')[0];
+      return eventDateStr === dateStr;
+    });
+    return dayEvents;
   };
 
   if (!settings.enabled) {
