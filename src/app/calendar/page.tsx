@@ -757,6 +757,16 @@ export default function CalendarPage() {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-2xl font-bold text-white mb-2">{selectedEvent.title}</h3>
+                    
+                    {/* Description right under title */}
+                    {selectedEvent.description && (
+                      <div className="mb-3">
+                        <p className="text-gray-200 text-base leading-relaxed whitespace-pre-wrap">
+                          {selectedEvent.description}
+                        </p>
+                      </div>
+                    )}
+                    
                     <div className="text-purple-300 text-sm">
                       📅 {format(new Date(selectedEvent.date), 'EEEE, MMMM d, yyyy')}
                     </div>
@@ -775,15 +785,6 @@ export default function CalendarPage() {
                   {selectedEvent.is_all_day && (
                     <div className="text-gray-300">
                       <span className="text-blue-300">📅 All Day Event</span>
-                    </div>
-                  )}
-                  
-                  {/* Description */}
-                  {selectedEvent.description && (
-                    <div>
-                      <p className="text-gray-200 text-base leading-relaxed whitespace-pre-wrap">
-                        {selectedEvent.description}
-                      </p>
                     </div>
                   )}
                   
