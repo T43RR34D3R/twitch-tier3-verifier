@@ -39,7 +39,7 @@ const defaultSettings: MerchSettings = {
   isEnabled: false,
   title: "Check Out My Merch!",
   subtitle: "Support the stream with some awesome gear!",
-  storeName: '',
+  storeName: 'thefoozles',
   maxItemsToShow: 6,
   layout: 'grid',
   showPrices: true,
