@@ -449,7 +449,7 @@ export default function Home() {
         return (
           <section key={section.id} className="mb-16">
             <div className="md:col-span-2 lg:col-span-3">
-              <CalendarPanel />
+              <CalendarPanel isAdmin={isUserAdmin(session)} />
             </div>
           </section>
         );

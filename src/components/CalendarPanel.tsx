@@ -20,7 +20,11 @@ interface CalendarPanelSettings {
   daysToShow: number;
 }
 
-export default function CalendarPanel() {
+interface CalendarPanelProps {
+  isAdmin?: boolean;
+}
+
+export default function CalendarPanel({ isAdmin = false }: CalendarPanelProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [settings, setSettings] = useState<CalendarPanelSettings>({
     enabled: true,
@@ -157,12 +161,14 @@ export default function CalendarPanel() {
         <div className="text-center py-8">
           <div className="text-gray-400 mb-2">📅</div>
           <p className="text-gray-300 mb-4">No events scheduled for this week</p>
-          <Link
-            href="/calendar"
-            className="text-purple-400 hover:text-purple-300 underline"
-          >
-            Add events in the full calendar
-          </Link>
+          {isAdmin && (
+            <Link
+              href="/calendar"
+              className="text-purple-400 hover:text-purple-300 underline"
+            >
+              Add events in the full calendar
+            </Link>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
