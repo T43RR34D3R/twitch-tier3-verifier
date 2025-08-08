@@ -45,8 +45,11 @@ export default function CalendarPage() {
 
   useEffect(() => {
     loadEvents();
-    checkAdminStatus();
   }, [currentDate]);
+
+  useEffect(() => {
+    checkAdminStatus();
+  }, [session]);
 
   const checkAdminStatus = async () => {
     if (!session?.user) {
