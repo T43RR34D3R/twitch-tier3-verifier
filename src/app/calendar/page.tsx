@@ -1,8 +1,9 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
+import CustomBackground from "../../components/CustomBackground";
 
 interface CalendarEvent {
   id: number;
@@ -43,15 +44,7 @@ export default function CalendarPage() {
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    loadEvents();
-  }, [currentDate]);
-
-  useEffect(() => {
-    checkAdminStatus();
-  }, [session]);
-
-  const checkAdminStatus = async () => {
+  const checkAdminStatus = useCallback(async () => {
     if (!session?.user) {
       setIsAdmin(false);
       return;
@@ -65,9 +58,9 @@ export default function CalendarPage() {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);
     }
-  };
+  }, [session?.user]);
 
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     try {
       const month = currentDate.getMonth() + 1;
       const year = currentDate.getFullYear();
@@ -85,7 +78,15 @@ export default function CalendarPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentDate]);
+
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
+
+  useEffect(() => {
+    checkAdminStatus();
+  }, [checkAdminStatus]);
 
   const handlePrevMonth = () => {
     setCurrentDate(subMonths(currentDate, 1));
@@ -114,6 +115,7 @@ export default function CalendarPage() {
   const startEditingNewEvent = (date: Date) => {
     if (!isAdmin) return;
     
+    // Store the date in the user's timezone
     const dateString = format(date, 'yyyy-MM-dd');
     setEditingDate(dateString);
     setEditingEvent({
@@ -247,14 +249,16 @@ export default function CalendarPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
-        <div className="bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-700 p-8">
-          <div className="text-xl text-white flex items-center space-x-3">
-            <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-            <span>Loading Calendar...</span>
+      <CustomBackground>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-700 p-8">
+            <div className="text-xl text-white flex items-center space-x-3">
+              <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+              <span>Loading Calendar...</span>
+            </div>
           </div>
         </div>
-      </div>
+      </CustomBackground>
     );
   }
 
@@ -262,8 +266,9 @@ export default function CalendarPage() {
   const firstDayOfWeek = startOfMonth(currentDate).getDay();
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4">
-      <div className="max-w-7xl mx-auto relative z-10">
+    <CustomBackground>
+      <div className="min-h-screen p-4">
+        <div className="max-w-7xl mx-auto">
         <div className="bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-700 p-6">
           {/* Calendar Header */}
           <div className="flex items-center justify-between mb-6">
@@ -296,7 +301,8 @@ export default function CalendarPage() {
           {isAdmin && (
             <div className="mb-4 p-3 bg-blue-900/20 border border-blue-700/50 rounded-lg">
               <div className="text-blue-300 text-sm">
-                ✏️ <strong>Admin Mode:</strong> Click on any date to add events, or click existing events to edit them.
+                ✏️ <strong>Admin Mode:</strong> Click on any date to add events, or click existing events to edit them.<br />
+                📸 <strong>Pro Tip:</strong> Add an image to an event and it will become a beautiful full-screen background for that day with glass-effect text overlays!
               </div>
             </div>
           )}
@@ -326,48 +332,81 @@ export default function CalendarPage() {
                 const dateString = format(day, 'yyyy-MM-dd');
                 const isEditing = editingDate === dateString;
                 
+                // Find the first event with an image for background
+                const backgroundEvent = dayEvents.find(event => event.image_url);
+                
                 return (
                   <div
                     key={day.toISOString()}
-                    className={`min-h-24 border rounded-lg p-2 transition-all duration-200 ${
+                    className={`min-h-24 border rounded-lg overflow-hidden relative transition-all duration-200 ${
                       isToday 
-                        ? 'border-purple-500 bg-purple-900/20' 
-                        : 'border-gray-600 bg-gray-800/50'
+                        ? 'border-purple-500' 
+                        : 'border-gray-600'
                     } ${
-                      isAdmin ? 'cursor-pointer hover:border-blue-400 hover:bg-gray-700/50' : ''
+                      isAdmin ? 'cursor-pointer hover:border-blue-400' : ''
                     } ${
                       !isSameMonth(day, currentDate) ? 'opacity-30' : ''
                     }`}
                     onClick={() => isAdmin && !isEditing ? startEditingNewEvent(day) : undefined}
                   >
-                    {/* Day Number */}
-                    <div className={`text-sm font-semibold mb-1 ${
-                      isToday ? 'text-purple-300' : 'text-gray-300'
-                    }`}>
-                      {format(day, 'd')}
-                    </div>
-
-                    {/* Events */}
-                    <div className="space-y-1">
-                      {dayEvents.map(event => (
-                        <div
-                          key={event.id}
-                          className="text-xs p-1 rounded cursor-pointer hover:opacity-80 transition-opacity"
+                    {/* Background Image */}
+                    {backgroundEvent?.image_url ? (
+                      <>
+                        <div 
+                          className="absolute inset-0 bg-cover bg-center"
                           style={{
-                            backgroundColor: event.background_color,
-                            color: event.text_color
+                            backgroundImage: `url(${backgroundEvent.image_url})`
                           }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (isAdmin) startEditingEvent(event);
-                          }}
-                        >
-                          <div className="font-medium truncate">{event.title}</div>
-                          {!event.is_all_day && event.start_time && (
-                            <div className="opacity-75">{event.start_time}</div>
-                          )}
-                        </div>
-                      ))}
+                        />
+                        <div className="absolute inset-0 bg-black/20" />
+                      </>
+                    ) : (
+                      <div className={`absolute inset-0 ${
+                        isToday 
+                          ? 'bg-purple-900/20' 
+                          : 'bg-gray-800/50'
+                      }`} />
+                    )}
+                    
+                    {/* Glass morphism overlay for content */}
+                    <div className="relative h-full p-2">
+                      {/* Day Number with glass effect */}
+                      <div className={`inline-block px-2 py-1 rounded-md backdrop-blur-md bg-white/10 border border-white/20 text-sm font-bold mb-1 shadow-lg ${
+                        backgroundEvent?.image_url 
+                          ? 'text-white drop-shadow-lg' 
+                          : isToday 
+                            ? 'text-purple-300' 
+                            : 'text-gray-300'
+                      }`}>
+                        {format(day, 'd')}
+                      </div>
+
+                      {/* Events with glass effect */}
+                      <div className="space-y-1">
+                        {dayEvents.map(event => (
+                          <div
+                            key={event.id}
+                            className={`text-xs p-2 rounded-md cursor-pointer transition-all duration-200 hover:scale-105 ${
+                              backgroundEvent?.image_url 
+                                ? 'backdrop-blur-md bg-white/15 border border-white/25 text-white drop-shadow-md hover:bg-white/20'
+                                : 'hover:opacity-80'
+                            }`}
+                            style={{
+                              backgroundColor: backgroundEvent?.image_url ? undefined : event.background_color,
+                              color: backgroundEvent?.image_url ? undefined : event.text_color
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (isAdmin) startEditingEvent(event);
+                            }}
+                          >
+                            <div className="font-medium truncate">{event.title}</div>
+                            {!event.is_all_day && event.start_time && (
+                              <div className="opacity-75 text-xs">{event.start_time}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     {/* Event Editor */}
@@ -513,32 +552,39 @@ export default function CalendarPage() {
 
                             {/* Time Range */}
                             {!editingEvent?.is_all_day && (
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                                    Start Time
-                                  </label>
-                                  <input
-                                    type="time"
-                                    value={editingEvent?.start_time || '09:00'}
-                                    onChange={(e) => setEditingEvent(prev => 
-                                      prev ? {...prev, start_time: e.target.value} : null
-                                    )}
-                                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                  />
+                              <div>
+                                <div className="mb-2 p-2 bg-yellow-900/20 border border-yellow-700/50 rounded-lg">
+                                  <div className="text-yellow-300 text-xs">
+                                    ⚠️ <strong>Timezone Info:</strong> Times are shown in your local timezone ({Intl.DateTimeFormat().resolvedOptions().timeZone}). Other users will see these times as-is without conversion.
+                                  </div>
                                 </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                                    End Time
-                                  </label>
-                                  <input
-                                    type="time"
-                                    value={editingEvent?.end_time || '10:00'}
-                                    onChange={(e) => setEditingEvent(prev => 
-                                      prev ? {...prev, end_time: e.target.value} : null
-                                    )}
-                                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                  />
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                                      Start Time (Local)
+                                    </label>
+                                    <input
+                                      type="time"
+                                      value={editingEvent?.start_time || '09:00'}
+                                      onChange={(e) => setEditingEvent(prev => 
+                                        prev ? {...prev, start_time: e.target.value} : null
+                                      )}
+                                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                                      End Time (Local)
+                                    </label>
+                                    <input
+                                      type="time"
+                                      value={editingEvent?.end_time || '10:00'}
+                                      onChange={(e) => setEditingEvent(prev => 
+                                        prev ? {...prev, end_time: e.target.value} : null
+                                      )}
+                                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    />
+                                  </div>
                                 </div>
                               </div>
                             )}
@@ -592,7 +638,8 @@ export default function CalendarPage() {
             </div>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </CustomBackground>
   );
 }
