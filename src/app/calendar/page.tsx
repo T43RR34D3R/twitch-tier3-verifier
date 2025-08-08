@@ -150,12 +150,17 @@ export default function CalendarPage() {
       return;
     }
     
+    // Convert event date to the same format as dateString for proper comparison
+    const eventDate = new Date(event.date);
+    const editingDateString = format(eventDate, 'yyyy-MM-dd');
+    
     console.log('✅ Setting editing state:', {
-      editingDate: event.date,
+      originalEventDate: event.date,
+      convertedEditingDate: editingDateString,
       editingEvent: { id: event.id, title: event.title }
     });
     
-    setEditingDate(event.date);
+    setEditingDate(editingDateString);
     setEditingEvent({
       id: event.id,
       date: event.date,
