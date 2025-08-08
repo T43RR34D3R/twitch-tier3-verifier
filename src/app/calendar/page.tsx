@@ -352,7 +352,19 @@ export default function CalendarPage() {
                 const dayEvents = getEventsForDate(day);
                 const isToday = isSameDay(day, new Date());
                 const dateString = format(day, 'yyyy-MM-dd');
-                const isEditing = editingDate === dateString;
+                const isEditing = editingDate === dateString || editingDate === day.toISOString();
+                
+                // Debug: Check editing state
+                if (editingDate) {
+                  console.log(`🔍 Checking if day ${dateString} is editing:`, {
+                    dateString,
+                    editingDate,
+                    dayISOString: day.toISOString(),
+                    isEditing,
+                    exactMatch: editingDate === dateString,
+                    isoMatch: editingDate === day.toISOString()
+                  });
+                }
                 
                 // Find the first event with an image for background
                 const backgroundEvent = dayEvents.find(event => event.image_url && event.image_url.trim() !== '');
