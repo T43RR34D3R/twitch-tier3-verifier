@@ -267,7 +267,6 @@ export default function SubathonVoting() {
 
       if (response.ok) {
         const data = await response.json();
-        alert(`${data.game.name} has been added to the voting list and you automatically voted for it!`);
         setShowAddGame(false);
         setGameSearch('');
         setSearchResults([]);
@@ -304,7 +303,6 @@ export default function SubathonVoting() {
 
       if (response.ok) {
         const data = await response.json();
-        alert(`${data.game.name} has been added to the voting list and you automatically voted for it!`);
         setShowAddGame(false); // Close the entire add game modal
         setShowManualEntry(false);
         setGameSearch('');
