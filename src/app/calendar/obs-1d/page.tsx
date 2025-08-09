@@ -97,7 +97,7 @@ export default function ObsOneDayCalendar() {
   }
 
   return (
-    <div className="p-8">
+    <>
       {hasEvents ? (
         <div className="space-y-4">
           {todaysEvents.map((event, index) => (
@@ -186,6 +186,11 @@ export default function ObsOneDayCalendar() {
         html, body {
           background: transparent !important;
           background-color: transparent !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        * {
+          box-sizing: border-box;
         }
         @keyframes slideInFromLeft {
           from {
@@ -198,6 +203,6 @@ export default function ObsOneDayCalendar() {
           }
         }
       `}</style>
-    </div>
+    </>
   );
 }

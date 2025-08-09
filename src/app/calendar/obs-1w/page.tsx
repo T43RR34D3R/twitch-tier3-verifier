@@ -84,70 +84,66 @@ export default function ObsWeekCalendar() {
   }
 
   return (
-    <div className="p-6">
-      <div className="grid grid-cols-7 gap-4">
-        {weekDays.map((day) => {
+    <>
+      <div className="flex flex-wrap gap-2">
+        {weekDays.flatMap((day) => {
           const dayEvents = getEventsForDate(day);
           
-          return (
-            <div key={day.toISOString()} className="space-y-2">
-              {dayEvents.slice(0, 6).map((event, index) => {
-                const showImage = event.image_url && dayEvents.length <= 3;
-                
-                return (
-                  <div
-                    key={event.id}
-                    className="relative overflow-hidden rounded-lg shadow-lg"
-                    style={{
-                      animationDelay: `${index * 0.05}s`,
-                      animation: 'fadeInUp 0.6s ease-out forwards'
+          return dayEvents.slice(0, 6).map((event, index) => {
+            const showImage = event.image_url && dayEvents.length <= 3;
+            
+            return (
+              <div
+                key={event.id}
+                className="relative overflow-hidden rounded-lg shadow-lg"
+                style={{
+                  animationDelay: `${index * 0.05}s`,
+                  animation: 'fadeInUp 0.6s ease-out forwards'
+                }}
+              >
+                {/* Background */}
+                {showImage ? (
+                  <>
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center"
+                      style={{ backgroundImage: `url(${event.image_url})` }}
+                    />
+                    <div className="absolute inset-0 bg-black/50" />
+                  </>
+                ) : (
+                  <div 
+                    className="absolute inset-0"
+                    style={{ backgroundColor: event.background_color }}
+                  />
+                )}
+
+                {/* Content */}
+                <div className="relative p-2">
+                  <div 
+                    className="text-sm font-semibold truncate"
+                    style={{ 
+                      color: showImage ? '#ffffff' : event.text_color,
+                      textShadow: showImage ? '0 1px 2px rgba(0,0,0,0.8)' : 'none'
                     }}
                   >
-                        {/* Background */}
-                        {showImage ? (
-                          <>
-                            <div 
-                              className="absolute inset-0 bg-cover bg-center"
-                              style={{ backgroundImage: `url(${event.image_url})` }}
-                            />
-                            <div className="absolute inset-0 bg-black/50" />
-                          </>
-                        ) : (
-                          <div 
-                            className="absolute inset-0"
-                            style={{ backgroundColor: event.background_color }}
-                          />
-                        )}
-
-                        {/* Content */}
-                        <div className="relative p-2">
-                          <div 
-                            className="text-sm font-semibold truncate"
-                            style={{ 
-                              color: showImage ? '#ffffff' : event.text_color,
-                              textShadow: showImage ? '0 1px 2px rgba(0,0,0,0.8)' : 'none'
-                            }}
-                          >
-                            {event.title}
-                          </div>
-                          
-                          {!event.is_all_day && event.start_time && (
-                            <div 
-                              className="text-xs opacity-90 mt-1"
-                              style={{ 
-                                color: showImage ? '#ffffff' : event.text_color,
-                                textShadow: showImage ? '0 1px 2px rgba(0,0,0,0.8)' : 'none'
-                              }}
-                            >
-                              {event.start_time}
-                            </div>
-                          )}
-                    </div>
+                    {event.title}
                   </div>
-                );
-              })}
-            </div>
-          );
+                  
+                  {!event.is_all_day && event.start_time && (
+                    <div 
+                      className="text-xs opacity-90 mt-1"
+                      style={{ 
+                        color: showImage ? '#ffffff' : event.text_color,
+                        textShadow: showImage ? '0 1px 2px rgba(0,0,0,0.8)' : 'none'
+                      }}
+                    >
+                      {event.start_time}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          });
         })}
       </div>
 
@@ -155,6 +151,11 @@ export default function ObsWeekCalendar() {
         html, body {
           background: transparent !important;
           background-color: transparent !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        * {
+          box-sizing: border-box;
         }
         @keyframes fadeInUp {
           from {
@@ -178,6 +179,6 @@ export default function ObsWeekCalendar() {
           }
         }
       `}</style>
-    </div>
+    </>
   );
 }

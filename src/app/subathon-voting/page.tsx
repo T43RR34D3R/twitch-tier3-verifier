@@ -48,7 +48,6 @@ export default function SubathonVoting() {
   const [sortBy, setSortBy] = useState('current_vote_count');
   const [showAddGame, setShowAddGame] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [adminLoading, setAdminLoading] = useState(true);
   
   // Search and add game states
   const [searchResults, setSearchResults] = useState<GameSearchResult[]>([]);
@@ -59,6 +58,7 @@ export default function SubathonVoting() {
   // Refs for auto-focusing search inputs
   const mainSearchInputRef = useRef<HTMLInputElement>(null);
   const addGameSearchInputRef = useRef<HTMLInputElement>(null);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
   
   // Manual game entry states
   const [showManualEntry, setShowManualEntry] = useState(false);
@@ -123,7 +123,6 @@ export default function SubathonVoting() {
           console.error('Error checking admin status:', error);
         }
       }
-      setAdminLoading(false);
     };
 
     if (session) {
@@ -229,21 +228,19 @@ export default function SubathonVoting() {
   };
 
   // Debounced search function for real-time search as user types
-  const debouncedSearch = useCallback(
-    (() => {
-      let timeout: NodeJS.Timeout;
-      return (value: string) => {
-        clearTimeout(timeout);
-        if (value.trim()) {
-          timeout = setTimeout(() => {
-            searchGames(value);
-          }, 500); // 500ms delay
-        } else {
-          setSearchResults([]);
-        }
-      };
-    })()
-  , [searchGames]);
+  const debouncedSearch = useCallback((value: string) => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    
+    if (value.trim()) {
+      debounceTimeoutRef.current = setTimeout(() => {
+        searchGames(value);
+      }, 500); // 500ms delay
+    } else {
+      setSearchResults([]);
+    }
+  }, []);
 
   const addGameFromSearch = async (searchResult: GameSearchResult) => {
     setAddLoading(true);

@@ -78,60 +78,81 @@ export default function ObsMonthCalendar() {
   };
 
   const days = getDaysInMonth();
-  const firstDayOfWeek = startOfMonth(currentDate).getDay();
 
   if (loading) {
     return null;
   }
 
   return (
-    <div className="p-6">
-      <div className="grid grid-cols-7 gap-2">
-        {/* Empty cells for days before month starts */}
-        {Array.from({ length: firstDayOfWeek }, (_, i) => (
-          <div key={`empty-${i}`}></div>
-        ))}
-        
-        {/* Days of the month */}
-        {days.map((day) => {
+    <>
+      <div className="flex flex-wrap gap-3">
+        {days.flatMap((day) => {
           const dayEvents = getEventsForDate(day);
           
-          return (
-            <div key={day.toISOString()} className="space-y-1">
-              {dayEvents.slice(0, 3).map((event) => {
-                const showImage = event.image_url && dayEvents.length <= 2;
+          return dayEvents.slice(0, 3).map((event, index) => {
+            const showImage = event.image_url && dayEvents.length <= 2;
+            
+            return (
+              <div
+                key={event.id}
+                className="relative overflow-hidden rounded-lg shadow-lg p-3 min-w-[120px]"
+                style={{
+                  backgroundColor: showImage ? 'rgba(255,255,255,0.15)' : event.background_color,
+                  backdropFilter: showImage ? 'blur(4px)' : 'none',
+                  animationDelay: `${index * 0.02}s`,
+                  animation: 'fadeInScale 0.5s ease-out forwards'
+                }}
+              >
+                {/* Background image overlay */}
+                {showImage && (
+                  <>
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center"
+                      style={{ backgroundImage: `url(${event.image_url})` }}
+                    />
+                    <div className="absolute inset-0 bg-black/40" />
+                  </>
+                )}
                 
-                return (
-                  <div
-                    key={event.id}
-                    className="text-xs p-1 rounded-md transition-all duration-200"
+                {/* Content */}
+                <div className="relative">
+                  <div 
+                    className="font-semibold text-sm mb-1"
                     style={{
-                      backgroundColor: showImage ? 'rgba(255,255,255,0.15)' : event.background_color,
                       color: showImage ? '#ffffff' : event.text_color,
-                      textShadow: showImage ? '0 1px 2px rgba(0,0,0,0.8)' : 'none',
-                      backdropFilter: showImage ? 'blur(4px)' : 'none'
+                      textShadow: showImage ? '0 1px 2px rgba(0,0,0,0.8)' : 'none'
                     }}
                   >
-                    <div className="font-semibold truncate">
-                      {event.title}
-                    </div>
-                    {!event.is_all_day && event.start_time && (
-                      <div className="opacity-90 text-xs">
-                        {event.start_time}
-                      </div>
-                    )}
+                    {event.title}
                   </div>
-                );
-              })}
-            </div>
-          );
+                  {!event.is_all_day && event.start_time && (
+                    <div 
+                      className="opacity-90 text-xs"
+                      style={{
+                        color: showImage ? '#ffffff' : event.text_color,
+                        textShadow: showImage ? '0 1px 2px rgba(0,0,0,0.8)' : 'none'
+                      }}
+                    >
+                      {event.start_time}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          });
         })}
       </div>
+
 
       <style jsx global>{`
         html, body {
           background: transparent !important;
           background-color: transparent !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        * {
+          box-sizing: border-box;
         }
         @keyframes fadeInScale {
           from {
@@ -155,6 +176,6 @@ export default function ObsMonthCalendar() {
           }
         }
       `}</style>
-    </div>
+    </>
   );
 }
