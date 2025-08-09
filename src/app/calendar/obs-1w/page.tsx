@@ -80,15 +80,11 @@ export default function ObsWeekCalendar() {
   const weekDays = getWeekRange();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-white text-2xl opacity-70">Loading...</div>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="p-6">
       <div className="grid grid-cols-7 gap-4">
         {weekDays.map((day) => {
           const dayEvents = getEventsForDate(day);
@@ -155,7 +151,11 @@ export default function ObsWeekCalendar() {
         })}
       </div>
 
-      <style jsx>{`
+      <style jsx global>{`
+        html, body {
+          background: transparent !important;
+          background-color: transparent !important;
+        }
         @keyframes fadeInUp {
           from {
             opacity: 0;

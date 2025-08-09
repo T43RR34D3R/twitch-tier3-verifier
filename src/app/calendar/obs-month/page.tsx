@@ -81,15 +81,11 @@ export default function ObsMonthCalendar() {
   const firstDayOfWeek = startOfMonth(currentDate).getDay();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-white text-2xl opacity-70">Loading...</div>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="p-6">
       <div className="grid grid-cols-7 gap-2">
         {/* Empty cells for days before month starts */}
         {Array.from({ length: firstDayOfWeek }, (_, i) => (
@@ -132,7 +128,11 @@ export default function ObsMonthCalendar() {
         })}
       </div>
 
-      <style jsx>{`
+      <style jsx global>{`
+        html, body {
+          background: transparent !important;
+          background-color: transparent !important;
+        }
         @keyframes fadeInScale {
           from {
             opacity: 0;

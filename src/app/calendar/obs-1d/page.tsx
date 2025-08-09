@@ -93,15 +93,11 @@ export default function ObsOneDayCalendar() {
   const hasEvents = todaysEvents.length > 0;
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-white text-2xl opacity-70">Loading...</div>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="min-h-screen p-8">
+    <div className="p-8">
       {hasEvents ? (
         <div className="space-y-4">
           {todaysEvents.map((event, index) => (
@@ -186,7 +182,11 @@ export default function ObsOneDayCalendar() {
         </div>
       ) : null}
 
-      <style jsx>{`
+      <style jsx global>{`
+        html, body {
+          background: transparent !important;
+          background-color: transparent !important;
+        }
         @keyframes slideInFromLeft {
           from {
             opacity: 0;
