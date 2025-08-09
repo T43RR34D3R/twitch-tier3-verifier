@@ -145,11 +145,8 @@ export default function GameVotingAdmin() {
   };
 
   const deleteGame = (gameId: number, gameName: string) => {
-    const reason = prompt(`Why are you deleting "${gameName}"?`);
-    if (reason) {
-      if (confirm(`Are you sure you want to delete "${gameName}"? This will remove all votes for this game.`)) {
-        performAction('delete_game', gameId, undefined, reason);
-      }
+    if (confirm(`Are you sure you want to delete "${gameName}"? This will remove all votes for this game.`)) {
+      performAction('delete_game', gameId);
     }
   };
 

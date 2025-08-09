@@ -57,6 +57,9 @@ export default function AdminDashboard() {
   const [streamInterval, setStreamInterval] = useState<number>(120);
   const [twitchLoading, setTwitchLoading] = useState(false);
   
+  // Collapsible sections
+  const [gameVotingExpanded, setGameVotingExpanded] = useState(false);
+  
 
   useEffect(() => {
     if (status === "loading") return;
@@ -340,9 +343,37 @@ export default function AdminDashboard() {
             <SiteCustomizationPanel />
           </div>
 
-          {/* Game Voting Admin Panel */}
+          {/* Game Voting Admin Panel - Collapsible */}
           <div className="mb-8">
-            <GameVotingAdmin />
+            <div className="bg-gray-50 rounded-lg border border-gray-200">
+              <button
+                onClick={() => setGameVotingExpanded(!gameVotingExpanded)}
+                className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-100 transition-colors rounded-lg"
+              >
+                <div className="flex items-center space-x-3">
+                  <span className="text-2xl">🎮</span>
+                  <h2 className="text-2xl font-bold text-black">Game Voting Management</h2>
+                </div>
+                <svg 
+                  className={`w-6 h-6 text-gray-600 transition-transform duration-200 ${
+                    gameVotingExpanded ? 'rotate-180' : ''
+                  }`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {gameVotingExpanded && (
+                <div className="border-t border-gray-200">
+                  <div className="p-6">
+                    <GameVotingAdmin />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Merch Admin Panel */}
