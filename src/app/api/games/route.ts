@@ -170,32 +170,6 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Check for very similar names to prevent near-duplicates
-    const words = normalizedName.split(' ').filter((word: string) => word.length > 2); // Only check significant words
-    if (words.length > 0) {
-      const wordPattern = words.join('|'); // Create OR pattern for words
-      const similarGames = await query(`
-        SELECT id, name, 
-               LOWER(REGEXP_REPLACE(TRIM(name), '[^a-zA-Z0-9\\s]', '', 'g')) as normalized_name
-        FROM games 
-        WHERE LOWER(REGEXP_REPLACE(TRIM(name), '[^a-zA-Z0-9\\s]', '', 'g')) ~ $1
-        LIMIT 3
-      `, [wordPattern]);
-      
-      // Check if any similar game has high similarity (>= 70% word overlap)
-      for (const similar of similarGames.rows) {
-        const similarWords = (similar.normalized_name as string).split(' ').filter((word: string) => word.length > 2);
-        const commonWords = words.filter((word: string) => similarWords.includes(word));
-        const similarity = (commonWords.length * 2) / (words.length + similarWords.length);
-        
-        if (similarity >= 0.7) {
-          return NextResponse.json(
-            { error: `A very similar game "${similar.name}" already exists. Please check if this is the same game.` },
-            { status: 409 }
-          );
-        }
-      }
-    }
 
     // Insert new game
     const insertResult = await query(`
