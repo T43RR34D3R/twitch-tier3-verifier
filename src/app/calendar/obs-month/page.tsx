@@ -82,21 +82,15 @@ export default function ObsMonthCalendar() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black/80 backdrop-blur-xl flex items-center justify-center">
-        <div className="text-white text-2xl">Loading calendar...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white text-2xl opacity-70">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900/95 via-purple-900/95 to-blue-900/95 backdrop-blur-xl p-6">
+    <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold text-white mb-2">
-            📅 {format(currentDate, 'MMMM yyyy')}
-          </h1>
-        </div>
 
         {/* Calendar Grid */}
         <div className="bg-gray-800/60 backdrop-blur-md rounded-3xl p-6 border border-gray-600/50">
@@ -209,84 +203,6 @@ export default function ObsMonthCalendar() {
           </div>
         </div>
 
-        {/* Monthly Highlights */}
-        {(() => {
-          const upcomingEvents = events
-            .filter(event => new Date(event.date) >= new Date())
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-            .slice(0, 6);
-
-          if (upcomingEvents.length === 0) return null;
-
-          return (
-            <div className="mt-8 bg-gray-800/80 backdrop-blur-md rounded-2xl border border-purple-400/50 p-6">
-              <h2 className="text-3xl font-bold text-white mb-6 text-center">
-                🎯 Upcoming Events
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {upcomingEvents.map((event, index) => (
-                  <div
-                    key={event.id}
-                    className="relative overflow-hidden rounded-xl shadow-lg border border-white/20"
-                    style={{
-                      animationDelay: `${index * 0.1}s`,
-                      animation: 'slideInFromBottom 0.8s ease-out forwards'
-                    }}
-                  >
-                    {event.image_url ? (
-                      <>
-                        <div 
-                          className="absolute inset-0 bg-cover bg-center"
-                          style={{ backgroundImage: `url(${event.image_url})` }}
-                        />
-                        <div className="absolute inset-0 bg-black/40" />
-                      </>
-                    ) : (
-                      <div 
-                        className="absolute inset-0"
-                        style={{ backgroundColor: event.background_color }}
-                      />
-                    )}
-
-                    <div className="relative p-4">
-                      <div className="text-sm font-semibold mb-2" style={{ 
-                        color: event.image_url ? '#ffffff' : event.text_color,
-                        textShadow: event.image_url ? '0 1px 2px rgba(0,0,0,0.8)' : 'none'
-                      }}>
-                        {format(new Date(event.date), 'MMM d')}
-                      </div>
-                      
-                      <h3 className="text-lg font-bold mb-2" style={{ 
-                        color: event.image_url ? '#ffffff' : event.text_color,
-                        textShadow: event.image_url ? '0 2px 4px rgba(0,0,0,0.8)' : 'none'
-                      }}>
-                        {event.title}
-                      </h3>
-                      
-                      <div className="text-sm" style={{ 
-                        color: event.image_url ? '#ffffff' : event.text_color,
-                        textShadow: event.image_url ? '0 1px 2px rgba(0,0,0,0.8)' : 'none'
-                      }}>
-                        {event.is_all_day ? 'All Day' : event.start_time}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Live indicator */}
-        <div className="fixed top-4 right-4 flex items-center space-x-2 bg-red-600/90 backdrop-blur-md rounded-full px-4 py-2 border border-red-400/50">
-          <div className="w-3 h-3 bg-red-400 rounded-full animate-pulse"></div>
-          <span className="text-white font-medium">LIVE</span>
-        </div>
-
-        {/* Last updated */}
-        <div className="fixed bottom-4 right-4 text-white/60 text-sm bg-black/30 backdrop-blur-md rounded-lg px-3 py-2">
-          Last updated: {format(new Date(), 'HH:mm')}
-        </div>
       </div>
 
       <style jsx>{`

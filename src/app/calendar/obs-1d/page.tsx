@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { format, isSameDay } from "date-fns";
+import { isSameDay } from "date-fns";
 
 interface CalendarEvent {
   id: number;
@@ -94,24 +94,15 @@ export default function ObsOneDayCalendar() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black/80 backdrop-blur-xl flex items-center justify-center">
-        <div className="text-white text-2xl">Loading today&apos;s events...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white text-2xl opacity-70">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900/95 via-purple-900/95 to-blue-900/95 backdrop-blur-xl p-8">
+    <div className="min-h-screen p-8">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold text-white mb-2">
-            📅 {format(currentDate, 'EEEE')}
-          </h1>
-          <div className="text-3xl text-purple-200">
-            {format(currentDate, 'MMMM d, yyyy')}
-          </div>
-        </div>
 
         {/* Events */}
         {hasEvents ? (
@@ -196,28 +187,7 @@ export default function ObsOneDayCalendar() {
               </div>
             ))}
           </div>
-        ) : (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">🌅</div>
-            <div className="text-3xl text-white font-semibold mb-2">
-              No Events Today
-            </div>
-            <div className="text-xl text-purple-200">
-              Enjoy your free day!
-            </div>
-          </div>
-        )}
-
-        {/* Live indicator */}
-        <div className="fixed top-4 right-4 flex items-center space-x-2 bg-red-600/90 backdrop-blur-md rounded-full px-4 py-2 border border-red-400/50">
-          <div className="w-3 h-3 bg-red-400 rounded-full animate-pulse"></div>
-          <span className="text-white font-medium">LIVE</span>
-        </div>
-
-        {/* Last updated */}
-        <div className="fixed bottom-4 right-4 text-white/60 text-sm bg-black/30 backdrop-blur-md rounded-lg px-3 py-2">
-          Last updated: {format(new Date(), 'HH:mm')}
-        </div>
+        ) : null}
       </div>
 
       <style jsx>{`
