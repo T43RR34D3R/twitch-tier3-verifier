@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isToday } from "date-fns";
+import { startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns";
 
 interface CalendarEvent {
   id: number;
@@ -89,51 +89,24 @@ export default function ObsWeekCalendar() {
 
   return (
     <div className="min-h-screen p-6">
-      <div className="max-w-7xl mx-auto">
-
-        {/* Week Grid */}
-        <div className="grid grid-cols-7 gap-4 h-[calc(100vh-200px)]">
-          {weekDays.map((day) => {
-            const dayEvents = getEventsForDate(day);
-            const isDayToday = isToday(day);
-            
-            return (
-              <div
-                key={day.toISOString()}
-                className={`bg-gray-800/60 backdrop-blur-md rounded-2xl border-2 p-4 flex flex-col ${
-                  isDayToday 
-                    ? 'border-purple-400 bg-purple-900/30' 
-                    : 'border-gray-600/50'
-                }`}
-              >
-                {/* Day Header */}
-                <div className="text-center mb-4">
-                  <div className={`text-lg font-semibold ${
-                    isDayToday ? 'text-purple-300' : 'text-gray-300'
-                  }`}>
-                    {format(day, 'EEE')}
-                  </div>
-                  <div className={`text-2xl font-bold ${
-                    isDayToday ? 'text-white' : 'text-gray-200'
-                  }`}>
-                    {format(day, 'd')}
-                  </div>
-                </div>
-
-                {/* Events */}
-                <div className="flex-1 space-y-2 overflow-hidden">
-                  {dayEvents.slice(0, 6).map((event, index) => {
-                    const showImage = event.image_url && dayEvents.length <= 3;
-                    
-                    return (
-                      <div
-                        key={event.id}
-                        className="relative overflow-hidden rounded-lg shadow-lg border border-white/20"
-                        style={{
-                          animationDelay: `${index * 0.05}s`,
-                          animation: 'fadeInUp 0.6s ease-out forwards'
-                        }}
-                      >
+      <div className="grid grid-cols-7 gap-4">
+        {weekDays.map((day) => {
+          const dayEvents = getEventsForDate(day);
+          
+          return (
+            <div key={day.toISOString()} className="space-y-2">
+              {dayEvents.slice(0, 6).map((event, index) => {
+                const showImage = event.image_url && dayEvents.length <= 3;
+                
+                return (
+                  <div
+                    key={event.id}
+                    className="relative overflow-hidden rounded-lg shadow-lg"
+                    style={{
+                      animationDelay: `${index * 0.05}s`,
+                      animation: 'fadeInUp 0.6s ease-out forwards'
+                    }}
+                  >
                         {/* Background */}
                         {showImage ? (
                           <>
@@ -173,30 +146,13 @@ export default function ObsWeekCalendar() {
                               {event.start_time}
                             </div>
                           )}
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* Show more indicator */}
-                  {dayEvents.length > 6 && (
-                    <div className="text-center py-2 text-gray-400 text-sm">
-                      +{dayEvents.length - 6} more
                     </div>
-                  )}
-
-                  {/* Empty state */}
-                  {dayEvents.length === 0 && (
-                    <div className="text-center py-8 text-gray-500 text-sm">
-                      No events
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
 
       <style jsx>{`

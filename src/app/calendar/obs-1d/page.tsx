@@ -102,20 +102,17 @@ export default function ObsOneDayCalendar() {
 
   return (
     <div className="min-h-screen p-8">
-      <div className="max-w-4xl mx-auto">
-
-        {/* Events */}
-        {hasEvents ? (
-          <div className="space-y-4">
-            {todaysEvents.map((event, index) => (
-              <div
-                key={event.id}
-                className="relative overflow-hidden rounded-2xl shadow-2xl border border-white/20"
-                style={{
-                  animationDelay: `${index * 0.1}s`,
-                  animation: 'slideInFromLeft 0.8s ease-out forwards'
-                }}
-              >
+      {hasEvents ? (
+        <div className="space-y-4">
+          {todaysEvents.map((event, index) => (
+            <div
+              key={event.id}
+              className="relative overflow-hidden rounded-2xl shadow-2xl"
+              style={{
+                animationDelay: `${index * 0.1}s`,
+                animation: 'slideInFromLeft 0.8s ease-out forwards'
+              }}
+            >
                 {/* Background */}
                 {event.image_url ? (
                   <>
@@ -186,9 +183,8 @@ export default function ObsOneDayCalendar() {
                 </div>
               </div>
             ))}
-          </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       <style jsx>{`
         @keyframes slideInFromLeft {
