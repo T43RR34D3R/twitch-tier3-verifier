@@ -47,6 +47,8 @@ export default function SubathonVoting() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('current_vote_count');
   const [showAddGame, setShowAddGame] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(true);
   
   // Search and add game states
   const [searchResults, setSearchResults] = useState<GameSearchResult[]>([]);
@@ -106,6 +108,28 @@ export default function SubathonVoting() {
       console.error('Error loading user votes:', error);
     }
   }, [games]);
+
+  // Check admin status
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (session?.user?.id) {
+        try {
+          const response = await fetch('/api/admin/check');
+          if (response.ok) {
+            const data = await response.json();
+            setIsAdmin(data.isAdmin);
+          }
+        } catch (error) {
+          console.error('Error checking admin status:', error);
+        }
+      }
+      setAdminLoading(false);
+    };
+
+    if (session) {
+      checkAdminStatus();
+    }
+  }, [session]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -305,6 +329,38 @@ export default function SubathonVoting() {
     }
   };
 
+  // Admin function to delete a game
+  const deleteGame = async (gameId: number, gameName: string) => {
+    if (!confirm(`Are you sure you want to delete "${gameName}"? This will remove all votes for this game.`)) {
+      return;
+    }
+
+    setAddLoading(true);
+    try {
+      const response = await fetch('/api/admin/game-voting', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'delete_game', gameId }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(data.message);
+        loadGames(); // Refresh the games list
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to delete game');
+      }
+    } catch (error) {
+      console.error('Error deleting game:', error);
+      alert('Failed to delete game');
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
@@ -425,17 +481,30 @@ export default function SubathonVoting() {
                     {game.current_vote_count} vote{game.current_vote_count !== 1 ? 's' : ''}
                   </span>
                   
-                  <button
-                    onClick={() => handleVote(game.id)}
-                    disabled={addLoading}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      votedGames.has(game.id)
-                        ? 'bg-red-600 hover:bg-red-700 text-white'
-                        : 'bg-purple-600 hover:bg-purple-700 text-white'
-                    } disabled:opacity-50`}
-                  >
-                    {votedGames.has(game.id) ? '❤️ Voted' : '🗳️ Vote'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleVote(game.id)}
+                      disabled={addLoading}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        votedGames.has(game.id)
+                          ? 'bg-red-600 hover:bg-red-700 text-white'
+                          : 'bg-purple-600 hover:bg-purple-700 text-white'
+                      } disabled:opacity-50`}
+                    >
+                      {votedGames.has(game.id) ? '❤️ Voted' : '🗳️ Vote'}
+                    </button>
+                    
+                    {isAdmin && (
+                      <button
+                        onClick={() => deleteGame(game.id, game.name)}
+                        disabled={addLoading}
+                        className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+                        title="Remove game (Admin)"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
