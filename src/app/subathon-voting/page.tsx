@@ -58,7 +58,7 @@ export default function SubathonVoting() {
   // Refs for auto-focusing search inputs
   const mainSearchInputRef = useRef<HTMLInputElement>(null);
   const addGameSearchInputRef = useRef<HTMLInputElement>(null);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Manual game entry states
   const [showManualEntry, setShowManualEntry] = useState(false);
@@ -240,7 +240,7 @@ export default function SubathonVoting() {
     } else {
       setSearchResults([]);
     }
-  }, []);
+  }, [searchGames]);
 
   const addGameFromSearch = async (searchResult: GameSearchResult) => {
     setAddLoading(true);
