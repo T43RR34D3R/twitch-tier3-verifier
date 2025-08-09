@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const limit = parseInt(searchParams.get('limit') || '100'); // Increased default limit
     const offset = parseInt(searchParams.get('offset') || '0');
     const sortBy = searchParams.get('sortBy') || 'vote_count'; // vote_count, created_at, name
     const order = searchParams.get('order') || 'DESC';
@@ -205,8 +205,47 @@ export async function POST(request: NextRequest) {
 
     const newGame = insertResult.rows[0];
 
+    // Auto-vote for the user who added the game
+    try {
+      await query(`
+        INSERT INTO game_votes (game_id, user_id, username, voted_at)
+        VALUES ($1, $2, $3, NOW())
+      `, [newGame.id, session.user.id, session.user.name || 'Unknown']);
+
+      // Update the vote count in the games table
+      await query(`
+        UPDATE games 
+        SET vote_count = (
+          SELECT COUNT(*) FROM game_votes WHERE game_id = $1
+        )
+        WHERE id = $1
+      `, [newGame.id]);
+
+      // Update or insert voting user record
+      await query(`
+        INSERT INTO voting_users (
+          twitch_user_id, 
+          twitch_username, 
+          twitch_display_name,
+          last_vote_at, 
+          total_votes,
+          last_login_at
+        ) VALUES ($1, $2, $3, NOW(), 1, NOW())
+        ON CONFLICT (twitch_user_id) 
+        DO UPDATE SET 
+          last_vote_at = NOW(),
+          total_votes = voting_users.total_votes + 1,
+          last_login_at = NOW()
+      `, [session.user.id, session.user.name || 'Unknown', session.user.name || 'Unknown']);
+
+      console.log(`Auto-voted for game ${newGame.name} by user ${session.user.name}`);
+    } catch (voteError) {
+      // Log the error but don't fail the game addition
+      console.error('Error auto-voting for new game:', voteError);
+    }
+
     return NextResponse.json({
-      message: 'Game added successfully',
+      message: 'Game added successfully and you automatically voted for it!',
       game: newGame
     }, { status: 201 });
 

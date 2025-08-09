@@ -75,7 +75,7 @@ export default function SubathonVoting() {
   const loadGames = useCallback(async () => {
     try {
       const params = new URLSearchParams({
-        limit: '50',
+        limit: '100', // Increased limit to show more games
         sortBy,
         order: 'DESC'
       });
@@ -209,7 +209,7 @@ export default function SubathonVoting() {
     }
   };
 
-  const searchGames = async (searchQuery?: string) => {
+  const searchGames = useCallback(async (searchQuery?: string) => {
     const query = searchQuery || gameSearch;
     if (!query.trim()) return;
     
@@ -225,7 +225,7 @@ export default function SubathonVoting() {
     } finally {
       setSearchLoading(false);
     }
-  };
+  }, [gameSearch]);
 
   // Debounced search function for real-time search as user types
   const debouncedSearch = useCallback((value: string) => {
@@ -267,10 +267,12 @@ export default function SubathonVoting() {
 
       if (response.ok) {
         const data = await response.json();
-        alert(`${data.game.name} has been added to the voting list!`);
+        alert(`${data.game.name} has been added to the voting list and you automatically voted for it!`);
         setShowAddGame(false);
         setGameSearch('');
         setSearchResults([]);
+        // Add the new game ID to voted games since we auto-voted
+        setVotedGames(prev => new Set([...prev, data.game.id]));
         loadGames(); // Refresh the games list
       } else {
         const error = await response.json();
@@ -302,8 +304,11 @@ export default function SubathonVoting() {
 
       if (response.ok) {
         const data = await response.json();
-        alert(`${data.game.name} has been added to the voting list!`);
+        alert(`${data.game.name} has been added to the voting list and you automatically voted for it!`);
+        setShowAddGame(false); // Close the entire add game modal
         setShowManualEntry(false);
+        setGameSearch('');
+        setSearchResults([]);
         setManualGame({
           name: '',
           description: '',
@@ -313,6 +318,8 @@ export default function SubathonVoting() {
           genre: '',
           release_date: ''
         });
+        // Add the new game ID to voted games since we auto-voted
+        setVotedGames(prev => new Set([...prev, data.game.id]));
         loadGames(); // Refresh the games list
       } else {
         const error = await response.json();
