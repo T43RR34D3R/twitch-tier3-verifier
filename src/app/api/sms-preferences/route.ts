@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../lib/auth';
-import { queryRows, queryRow } from '../../../lib/railway-db';
+import { queryRow } from '../../../lib/railway-db';
 import { sendVerificationSMS, generateVerificationCode, isValidPhoneNumber, formatPhoneNumber } from '../../../lib/twilio';
 
 // Get SMS preferences for the current user
@@ -30,7 +30,8 @@ export async function GET() {
     }
 
     // Don't send verification code in response
-    const { verification_code, ...safePreferences } = preferences;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { verification_code: _, ...safePreferences } = preferences;
     
     return NextResponse.json({ preferences: safePreferences });
   } catch (error) {
@@ -107,7 +108,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Don't send verification code in response
-    const { verification_code, ...safeResult } = result;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { verification_code: __, ...safeResult } = result;
 
     return NextResponse.json({ 
       preferences: safeResult,
@@ -123,7 +125,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Send verification code
-export async function PUT(request: NextRequest) {
+export async function PUT() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -237,7 +239,8 @@ export async function PATCH(request: NextRequest) {
       [session.user.id]
     );
 
-    const { verification_code: _, ...safeResult } = result;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { verification_code: ___, ...safeResult } = result;
 
     return NextResponse.json({ 
       success: true,

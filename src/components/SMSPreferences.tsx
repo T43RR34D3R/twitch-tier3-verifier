@@ -308,7 +308,7 @@ export default function SMSPreferences({ onClose }: SMSPreferencesProps) {
             <div className="text-blue-300 text-sm">
               ℹ️ <strong>How it works:</strong>
               <ul className="mt-1 ml-4 list-disc">
-                <li>You'll receive SMS notifications when events start</li>
+                <li>You&apos;ll receive SMS notifications when events start</li>
                 <li>All-day events notify at 9:00 AM</li>
                 <li>Timed events notify exactly when they begin</li>
                 <li>Only events with SMS enabled will send notifications</li>

@@ -1,9 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../lib/auth';
+import { NextResponse } from 'next/server';
 import { query } from '../../../lib/railway-db';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // For initial setup, we'll allow this to run without authentication
     // You can add authentication back later if needed
@@ -19,9 +17,10 @@ export async function POST(request: NextRequest) {
       await query('ALTER TABLE calendar_events ADD COLUMN IF NOT EXISTS sms_sent BOOLEAN DEFAULT false');
       await query('ALTER TABLE calendar_events ADD COLUMN IF NOT EXISTS sms_sent_at TIMESTAMP WITH TIME ZONE');
       results.push('✅ Added SMS fields to calendar_events table');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error adding SMS fields:', error);
-      results.push(`❌ Error adding SMS fields: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      results.push(`❌ Error adding SMS fields: ${errorMessage}`);
     }
 
     // Step 2: Create user_sms_preferences table
@@ -42,9 +41,10 @@ export async function POST(request: NextRequest) {
         )
       `);
       results.push('✅ Created user_sms_preferences table');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating user_sms_preferences table:', error);
-      results.push(`❌ Error creating user_sms_preferences table: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      results.push(`❌ Error creating user_sms_preferences table: ${errorMessage}`);
     }
 
     // Step 3: Create sms_notifications_log table
@@ -64,9 +64,10 @@ export async function POST(request: NextRequest) {
         )
       `);
       results.push('✅ Created sms_notifications_log table');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating sms_notifications_log table:', error);
-      results.push(`❌ Error creating sms_notifications_log table: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      results.push(`❌ Error creating sms_notifications_log table: ${errorMessage}`);
     }
 
     // Step 4: Create indexes for performance
@@ -79,9 +80,10 @@ export async function POST(request: NextRequest) {
       await query('CREATE INDEX IF NOT EXISTS idx_sms_notifications_log_user_id ON sms_notifications_log(user_id)');
       await query('CREATE INDEX IF NOT EXISTS idx_sms_notifications_log_sent_at ON sms_notifications_log(sent_at DESC)');
       results.push('✅ Created performance indexes');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating indexes:', error);
-      results.push(`❌ Error creating indexes: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      results.push(`❌ Error creating indexes: ${errorMessage}`);
     }
 
     // Step 5: Check if update trigger function exists, if not create it
@@ -117,9 +119,10 @@ export async function POST(request: NextRequest) {
         FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()
       `);
       results.push('✅ Created update trigger for user_sms_preferences');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error setting up triggers:', error);
-      results.push(`❌ Error setting up triggers: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      results.push(`❌ Error setting up triggers: ${errorMessage}`);
     }
 
     // Step 6: Verify setup by checking tables exist
@@ -145,9 +148,10 @@ export async function POST(request: NextRequest) {
       
       const columns = columnCheck.rows.map(row => row.column_name);
       results.push(`✅ Verified SMS columns in calendar_events: ${columns.join(', ')}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error verifying setup:', error);
-      results.push(`❌ Error verifying setup: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      results.push(`❌ Error verifying setup: ${errorMessage}`);
     }
 
     console.log('🎉 SMS notification database setup completed!');
@@ -164,12 +168,12 @@ export async function POST(request: NextRequest) {
       ]
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Database setup error:', error);
     return NextResponse.json(
       { 
         error: 'Failed to set up SMS notification database',
-        details: error.message,
+        details: error instanceof Error ? error.message : 'Unknown error',
         hint: 'Make sure your DATABASE_URL is correct and the database is accessible'
       },
       { status: 500 }

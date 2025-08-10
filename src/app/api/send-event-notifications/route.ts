@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { queryRows, queryRow } from '../../../lib/railway-db';
 import { sendSMS } from '../../../lib/twilio';
 import { format } from 'date-fns';
 
 // This API route will be called by a cron job to send notifications for events starting now
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // Get the current date and time
     const now = new Date();
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     console.log(`👥 Found ${users.length} users with SMS notifications enabled`);
 
     let notificationsSent = 0;
-    let errors: string[] = [];
+    const errors: string[] = [];
 
     // Send notifications for each event to each user
     for (const event of eventsToNotify) {
@@ -108,9 +108,10 @@ export async function POST(request: NextRequest) {
             errors.push(`Failed to send SMS to ${user.phone_number} for event ${event.title}: ${smsResult.error}`);
             console.error(`❌ Failed to send SMS to ${user.phone_number}: ${smsResult.error}`);
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error(`Error sending notification to ${user.user_id}:`, error);
-          errors.push(`Error sending notification to ${user.user_id}: ${error.message}`);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(`Error sending notification to ${user.user_id}: ${errorMessage}`);
         }
       }
       
@@ -136,19 +137,26 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(response);
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in notification scheduler:', error);
     return NextResponse.json(
       { 
         error: 'Failed to process notifications',
-        details: error.message 
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );
   }
 }
 
-function createNotificationMessage(event: any): string {
+function createNotificationMessage(event: {
+  title: string;
+  date: string;
+  description?: string;
+  is_all_day: boolean;
+  start_time?: string;
+  end_time?: string;
+}): string {
   const eventDate = format(new Date(event.date), 'EEEE, MMMM do');
   
   if (event.is_all_day) {
@@ -165,11 +173,6 @@ function createNotificationMessage(event: any): string {
 export async function GET() {
   console.log('🧪 Manual notification trigger called');
   
-  // Create a mock request to reuse the POST logic
-  const mockRequest = new Request('http://localhost/api/send-event-notifications', {
-    method: 'POST',
-    body: JSON.stringify({}),
-  });
-  
-  return POST(mockRequest as NextRequest);
+  // Just call POST directly since we removed the request parameter
+  return POST();
 }

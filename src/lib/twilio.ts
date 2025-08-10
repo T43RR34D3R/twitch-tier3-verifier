@@ -41,11 +41,11 @@ export async function sendSMS(to: string, message: string): Promise<SMSResult> {
       success: true,
       sid: messageResult.sid,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to send SMS:', error);
     return {
       success: false,
-      error: error.message || 'Unknown error occurred',
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
   }
 }
