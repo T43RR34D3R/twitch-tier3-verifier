@@ -126,9 +126,18 @@ export async function POST(request: NextRequest) {
 
 // Send verification code
 export async function PUT() {
+  console.log('📱 [SMS API Debug] PUT /api/sms-preferences called');
+  console.log('📱 [SMS API Debug] Environment variables:');
+  console.log('- TWILIO_ACCOUNT_SID:', process.env.TWILIO_ACCOUNT_SID ? 'SET' : 'NOT SET');
+  console.log('- TWILIO_AUTH_TOKEN:', process.env.TWILIO_AUTH_TOKEN ? 'SET' : 'NOT SET');
+  console.log('- TWILIO_PHONE_NUMBER:', process.env.TWILIO_PHONE_NUMBER ? 'SET' : 'NOT SET');
+  
   try {
     const session = await getServerSession(authOptions);
+    console.log('📱 [SMS API Debug] Session user:', session?.user?.id || 'NO SESSION');
+    
     if (!session?.user) {
+      console.log('📱 [SMS API Debug] No session, returning 401');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -136,8 +145,11 @@ export async function PUT() {
       'SELECT phone_number FROM user_sms_preferences WHERE user_id = $1',
       [session.user.id]
     );
+    
+    console.log('📱 [SMS API Debug] User preferences:', preferences);
 
     if (!preferences?.phone_number) {
+      console.log('📱 [SMS API Debug] No phone number found for user');
       return NextResponse.json(
         { error: 'No phone number found. Please save your phone number first.' },
         { status: 400 }
@@ -159,9 +171,13 @@ export async function PUT() {
     );
 
     // Send SMS
+    console.log('📱 [SMS API Debug] Attempting to send SMS to:', preferences.phone_number);
+    console.log('📱 [SMS API Debug] Generated code:', code);
     const smsResult = await sendVerificationSMS(preferences.phone_number, code);
+    console.log('📱 [SMS API Debug] SMS Result:', smsResult);
     
     if (!smsResult.success) {
+      console.log('📱 [SMS API Debug] SMS send failed:', smsResult.error);
       return NextResponse.json(
         { error: `Failed to send verification SMS: ${smsResult.error}` },
         { status: 500 }

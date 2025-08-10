@@ -3,6 +3,12 @@ import { sendSMS } from '../../../lib/twilio';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🧪 SMS Test endpoint called');
+    console.log('🔍 Environment variables check:');
+    console.log('- TWILIO_ACCOUNT_SID:', process.env.TWILIO_ACCOUNT_SID ? 'SET' : 'NOT SET');
+    console.log('- TWILIO_AUTH_TOKEN:', process.env.TWILIO_AUTH_TOKEN ? 'SET' : 'NOT SET');
+    console.log('- TWILIO_PHONE_NUMBER:', process.env.TWILIO_PHONE_NUMBER ? 'SET' : 'NOT SET');
+    
     const { phone_number } = await request.json();
     
     if (!phone_number) {

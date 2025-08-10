@@ -5,8 +5,20 @@ const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const fromNumber = process.env.TWILIO_PHONE_NUMBER;
 
+// Debug logging for environment variables
+console.log('🔍 Twilio Environment Variables Debug:');
+console.log('- TWILIO_ACCOUNT_SID:', accountSid ? `${accountSid.substring(0, 8)}...` : 'NOT SET');
+console.log('- TWILIO_AUTH_TOKEN:', authToken ? `${authToken.substring(0, 8)}...` : 'NOT SET');
+console.log('- TWILIO_PHONE_NUMBER:', fromNumber || 'NOT SET');
+console.log('- All env vars present:', !!(accountSid && authToken && fromNumber));
+
 if (!accountSid || !authToken || !fromNumber) {
-  console.warn('Twilio credentials not found. SMS notifications will not work.');
+  console.warn('❌ Twilio credentials not found. SMS notifications will not work.');
+  console.warn('Missing variables:', {
+    accountSid: !accountSid,
+    authToken: !authToken,
+    phoneNumber: !fromNumber
+  });
 }
 
 const client = accountSid && authToken ? twilio(accountSid, authToken) : null;

@@ -88,24 +88,32 @@ export default function SMSPreferences({ onClose }: SMSPreferencesProps) {
   };
 
   const sendVerificationCode = async () => {
+    console.log('📱 [SMS Debug] Send verification button clicked');
+    console.log('📱 [SMS Debug] Current preferences:', preferences);
+    
     setSendingCode(true);
     setMessage(null);
     
     try {
+      console.log('📱 [SMS Debug] Making request to /api/sms-preferences PUT');
       const response = await fetch('/api/sms-preferences', {
         method: 'PUT'
       });
 
+      console.log('📱 [SMS Debug] Response status:', response.status);
       const data = await response.json();
+      console.log('📱 [SMS Debug] Response data:', data);
       
       if (response.ok) {
+        console.log('📱 [SMS Debug] Verification code sent successfully');
         setMessage({ type: 'success', text: 'Verification code sent to your phone!' });
         setShowVerification(true);
       } else {
+        console.log('📱 [SMS Debug] Error sending verification:', data.error);
         setMessage({ type: 'error', text: data.error || 'Failed to send verification code' });
       }
     } catch (error) {
-      console.error('Error sending verification code:', error);
+      console.error('📱 [SMS Debug] Exception sending verification code:', error);
       setMessage({ type: 'error', text: 'Error sending verification code' });
     } finally {
       setSendingCode(false);
