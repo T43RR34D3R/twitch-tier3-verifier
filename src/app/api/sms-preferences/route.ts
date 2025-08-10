@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../lib/auth';
 import { queryRow } from '../../../lib/railway-db';
-import { sendVerificationSMS, generateVerificationCode, isValidPhoneNumber, formatPhoneNumber } from '../../../lib/twilio';
+import { sendVerificationSMS, generateVerificationCode, isValidPhoneNumber } from '../../../lib/twilio';
 
 // Get SMS preferences for the current user
 export async function GET() {
@@ -23,7 +23,7 @@ export async function GET() {
         preferences: {
           phone_number: null,
           is_enabled: false,
-          country_code: '+1',
+          country_code: '+46',
           verified: false
         }
       });
@@ -53,8 +53,17 @@ export async function POST(request: NextRequest) {
 
     const { phone_number, is_enabled, country_code } = await request.json();
 
-    // Validate phone number if provided
-    if (phone_number && !isValidPhoneNumber(phone_number)) {
+    // Format the full phone number (country code + number)
+    let formattedPhone = null;
+    if (phone_number && country_code) {
+      // Remove any non-digits from phone number
+      const cleanNumber = phone_number.replace(/\D/g, '');
+      // Combine country code with clean number
+      formattedPhone = country_code + cleanNumber;
+    }
+
+    // Validate the formatted phone number if provided
+    if (formattedPhone && !isValidPhoneNumber(formattedPhone)) {
       return NextResponse.json(
         { error: 'Invalid phone number format' },
         { status: 400 }
@@ -68,7 +77,6 @@ export async function POST(request: NextRequest) {
     );
 
     let result;
-    const formattedPhone = phone_number ? formatPhoneNumber(phone_number) : null;
     const phoneChanged = existing && existing.phone_number !== formattedPhone;
 
     if (existing) {
@@ -85,7 +93,8 @@ export async function POST(request: NextRequest) {
         [
           formattedPhone,
           is_enabled || false,
-          country_code || '+1',
+          country_code || '+46',
+
           phoneChanged ? false : existing.verified, // Reset verification if phone changed
           session.user.id
         ]
@@ -101,7 +110,7 @@ export async function POST(request: NextRequest) {
           session.user.id,
           formattedPhone,
           is_enabled || false,
-          country_code || '+1',
+          country_code || '+46',
           false
         ]
       );

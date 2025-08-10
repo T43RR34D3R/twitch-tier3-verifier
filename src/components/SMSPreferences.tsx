@@ -19,7 +19,7 @@ export default function SMSPreferences({ onClose }: SMSPreferencesProps) {
   const [preferences, setPreferences] = useState<SMSPreferences>({
     phone_number: '',
     is_enabled: false,
-    country_code: '+1',
+    country_code: '+46', // Default to Sweden
     verified: false
   });
   const [loading, setLoading] = useState(true);
@@ -239,6 +239,9 @@ export default function SMSPreferences({ onClose }: SMSPreferencesProps) {
                 }))}
                 className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
+                <option value="+46">🇸🇪 +46</option>
+                <option value="+47">🇳🇴 +47</option>
+                <option value="+45">🇩🇰 +45</option>
                 <option value="+1">🇺🇸 +1</option>
                 <option value="+44">🇬🇧 +44</option>
                 <option value="+49">🇩🇪 +49</option>
@@ -246,9 +249,6 @@ export default function SMSPreferences({ onClose }: SMSPreferencesProps) {
                 <option value="+39">🇮🇹 +39</option>
                 <option value="+34">🇪🇸 +34</option>
                 <option value="+31">🇳🇱 +31</option>
-                <option value="+46">🇸🇪 +46</option>
-                <option value="+47">🇳🇴 +47</option>
-                <option value="+45">🇩🇰 +45</option>
               </select>
               <input
                 type="tel"
@@ -257,7 +257,7 @@ export default function SMSPreferences({ onClose }: SMSPreferencesProps) {
                   ...prev,
                   phone_number: e.target.value
                 }))}
-                placeholder="(555) 123-4567"
+                placeholder="70 123 45 67"
                 className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>
