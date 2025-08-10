@@ -15,7 +15,7 @@ interface SMSPreferencesProps {
 }
 
 export default function SMSPreferences({ onClose }: SMSPreferencesProps) {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [preferences, setPreferences] = useState<SMSPreferences>({
     phone_number: '',
     is_enabled: false,
