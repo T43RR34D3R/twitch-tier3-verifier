@@ -3,6 +3,10 @@
     {
       "path": "/api/collect-analytics",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/send-event-notifications",
+      "schedule": "* * * * *"
     }
   ],
   "functions": {

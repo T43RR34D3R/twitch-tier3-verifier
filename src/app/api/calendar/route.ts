@@ -31,7 +31,10 @@ export async function GET(request: NextRequest) {
         end_time, 
         created_by, 
         created_at, 
-        updated_at
+        updated_at,
+        sms_enabled,
+        sms_sent,
+        sms_sent_at
       FROM calendar_events 
       ${whereClause}
       ORDER BY date ASC, start_time ASC NULLS LAST`,
@@ -74,7 +77,8 @@ export async function POST(request: NextRequest) {
       text_color,
       is_all_day,
       start_time,
-      end_time
+      end_time,
+      sms_enabled
     } = await request.json();
 
     if (!date || !title) {
@@ -87,8 +91,8 @@ export async function POST(request: NextRequest) {
     const result = await queryRow(
       `INSERT INTO calendar_events (
         date, title, description, image_url, background_color, text_color,
-        is_all_day, start_time, end_time, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        is_all_day, start_time, end_time, created_by, sms_enabled
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *`,
       [
         date,
@@ -100,7 +104,8 @@ export async function POST(request: NextRequest) {
         is_all_day !== false,
         start_time || null,
         end_time || null,
-        session.user.id
+        session.user.id,
+        sms_enabled || false
       ]
     );
 
@@ -141,7 +146,8 @@ export async function PUT(request: NextRequest) {
       text_color,
       is_all_day,
       start_time,
-      end_time
+      end_time,
+      sms_enabled
     } = await request.json();
 
     if (!id || !date || !title) {
@@ -163,8 +169,10 @@ export async function PUT(request: NextRequest) {
         start_time = $8,
         end_time = $9,
         updated_by = $10,
+        sms_enabled = $11,
+        sms_sent = $12,
         updated_at = NOW()
-      WHERE id = $11
+      WHERE id = $13
       RETURNING *`,
       [
         date,
@@ -177,6 +185,8 @@ export async function PUT(request: NextRequest) {
         start_time || null,
         end_time || null,
         session.user.id,
+        sms_enabled || false,
+        false, // Reset sms_sent when event is updated
         id
       ]
     );

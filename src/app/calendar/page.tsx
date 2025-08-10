@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState, useCallback } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
 import CustomBackground from "../../components/CustomBackground";
+import SMSPreferences from "../../components/SMSPreferences";
 
 interface CalendarEvent {
   id: number;
@@ -19,6 +20,9 @@ interface CalendarEvent {
   created_by: string;
   created_at: string;
   updated_at: string;
+  sms_enabled?: boolean;
+  sms_sent?: boolean;
+  sms_sent_at?: string;
 }
 
 interface EditingEvent {
@@ -32,6 +36,7 @@ interface EditingEvent {
   is_all_day: boolean;
   start_time: string;
   end_time: string;
+  sms_enabled: boolean;
 }
 
 export default function CalendarPage() {
@@ -54,6 +59,7 @@ export default function CalendarPage() {
   const [saving, setSaving] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showEventDetail, setShowEventDetail] = useState(false);
+  const [showSMSSettings, setShowSMSSettings] = useState(false);
 
   const checkAdminStatus = useCallback(async () => {
     if (!session?.user) {
@@ -138,7 +144,8 @@ export default function CalendarPage() {
       text_color: '#ffffff',
       is_all_day: true,
       start_time: '09:00',
-      end_time: '10:00'
+      end_time: '10:00',
+      sms_enabled: false
     });
   };
 
@@ -171,7 +178,8 @@ export default function CalendarPage() {
       text_color: event.text_color,
       is_all_day: event.is_all_day,
       start_time: event.start_time || '09:00',
-      end_time: event.end_time || '10:00'
+      end_time: event.end_time || '10:00',
+      sms_enabled: event.sms_enabled || false
     });
     
     console.log('🎯 Edit state set!');
@@ -323,6 +331,12 @@ export default function CalendarPage() {
                 className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 Next →
+              </button>
+              <button
+                onClick={() => setShowSMSSettings(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                📱 SMS Settings
               </button>
             </div>
           </div>
@@ -622,6 +636,27 @@ export default function CalendarPage() {
                               </label>
                             </div>
 
+                            {/* SMS Notification Toggle */}
+                            <div>
+                              <label className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  checked={editingEvent?.sms_enabled || false}
+                                  onChange={(e) => setEditingEvent(prev => 
+                                    prev ? {...prev, sms_enabled: e.target.checked} : null
+                                  )}
+                                  className="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-gray-300">📱 Send SMS notifications when this event starts</span>
+                              </label>
+                              {editingEvent?.sms_enabled && (
+                                <div className="mt-2 p-2 bg-blue-900/20 border border-blue-700/50 rounded text-xs text-blue-300">
+                                  ℹ️ SMS notifications will be sent to all users who have enabled and verified SMS notifications.
+                                  {editingEvent.is_all_day ? " All-day events notify at 9:00 AM." : " Timed events notify at the start time."}
+                                </div>
+                              )}
+                            </div>
+
                             {/* Time Range */}
                             {!editingEvent?.is_all_day && (
                               <div>
@@ -798,6 +833,11 @@ export default function CalendarPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* SMS Settings Modal */}
+        {showSMSSettings && (
+          <SMSPreferences onClose={() => setShowSMSSettings(false)} />
         )}
       </div>
     </CustomBackground>
