@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
 interface SMSPreferences {
   phone_number: string | null;
@@ -14,6 +15,7 @@ interface SMSPreferencesProps {
 }
 
 export default function SMSPreferences({ onClose }: SMSPreferencesProps) {
+  const { data: session, status } = useSession();
   const [preferences, setPreferences] = useState<SMSPreferences>({
     phone_number: '',
     is_enabled: false,
@@ -29,12 +31,20 @@ export default function SMSPreferences({ onClose }: SMSPreferencesProps) {
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
   useEffect(() => {
-    loadPreferences();
-  }, []);
+    // Wait for session to load, then load preferences
+    if (status === 'authenticated') {
+      loadPreferences();
+    } else if (status === 'unauthenticated') {
+      setMessage({ type: 'error', text: 'Please log in to access SMS settings' });
+      setLoading(false);
+    }
+  }, [status]);
 
   const loadPreferences = async () => {
     try {
-      const response = await fetch('/api/sms-preferences');
+      const response = await fetch('/api/sms-preferences', {
+        credentials: 'include'
+      });
       const data = await response.json();
       
       if (response.ok) {
@@ -57,6 +67,7 @@ export default function SMSPreferences({ onClose }: SMSPreferencesProps) {
     try {
       const response = await fetch('/api/sms-preferences', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -97,7 +108,8 @@ export default function SMSPreferences({ onClose }: SMSPreferencesProps) {
     try {
       console.log('📱 [SMS Debug] Making request to /api/sms-preferences PUT');
       const response = await fetch('/api/sms-preferences', {
-        method: 'PUT'
+        method: 'PUT',
+        credentials: 'include'
       });
 
       console.log('📱 [SMS Debug] Response status:', response.status);
@@ -132,6 +144,7 @@ export default function SMSPreferences({ onClose }: SMSPreferencesProps) {
     try {
       const response = await fetch('/api/sms-preferences', {
         method: 'PATCH',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
