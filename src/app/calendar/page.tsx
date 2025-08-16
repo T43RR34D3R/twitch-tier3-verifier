@@ -4,7 +4,6 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState, useCallback } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
 import CustomBackground from "../../components/CustomBackground";
-import SMSPreferences from "../../components/SMSPreferences";
 
 interface CalendarEvent {
   id: number;
@@ -59,7 +58,6 @@ export default function CalendarPage() {
   const [saving, setSaving] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showEventDetail, setShowEventDetail] = useState(false);
-  const [showSMSSettings, setShowSMSSettings] = useState(false);
 
   const checkAdminStatus = useCallback(async () => {
     if (!session?.user) {
@@ -331,12 +329,6 @@ export default function CalendarPage() {
                 className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 Next →
-              </button>
-              <button
-                onClick={() => setShowSMSSettings(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                📱 SMS Settings
               </button>
             </div>
           </div>
@@ -835,10 +827,6 @@ export default function CalendarPage() {
           </div>
         )}
 
-        {/* SMS Settings Modal */}
-        {showSMSSettings && (
-          <SMSPreferences onClose={() => setShowSMSSettings(false)} />
-        )}
       </div>
     </CustomBackground>
   );
