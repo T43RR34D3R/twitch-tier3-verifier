@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { igdbTokenManager } from '@/lib/igdb-token-manager';
 
 // Types for different game sources
 
@@ -64,8 +65,11 @@ export async function GET(request: NextRequest) {
 
     const results: GameSearchResult[] = [];
 
-    // Only search IGDB if API key is available
-    if (process.env.IGDB_CLIENT_ID && process.env.IGDB_ACCESS_TOKEN) {
+    // Only search IGDB if credentials are available
+    const clientId = process.env.IGDB_CLIENT_ID || process.env.TWITCH_CLIENT_ID;
+    const clientSecret = process.env.TWITCH_CLIENT_SECRET;
+    
+    if (clientId && clientSecret) {
       try {
         const igdbResults = await searchIGDB(query);
         results.push(...igdbResults);
@@ -103,37 +107,76 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Search IGDB (requires API key and OAuth)
+// Search IGDB (requires API key and OAuth) with automatic token management
 async function searchIGDB(query: string): Promise<GameSearchResult[]> {
-  const clientId = process.env.IGDB_CLIENT_ID;
-  const accessToken = process.env.IGDB_ACCESS_TOKEN;
+  const clientId = process.env.IGDB_CLIENT_ID || process.env.TWITCH_CLIENT_ID;
   
-  if (!clientId || !accessToken) {
-    console.warn('IGDB credentials not configured');
+  if (!clientId) {
+    console.warn('IGDB Client ID not configured');
     return [];
   }
 
-  const response = await fetch('https://api.igdb.com/v4/games', {
-    method: 'POST',
-    headers: {
-      'Client-ID': clientId,
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'text/plain'
-    },
-    body: `
-      search "${query.replace(/"/g, '\\"')}";
-      fields name,summary,cover.image_id,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,first_release_date,genres.name,platforms.name,rating,rating_count;
-      where category = 0 & version_parent = null;
-      limit 20;
-    `
-  });
+  try {
+    // Get a valid token (automatically refreshes if needed)
+    const accessToken = await igdbTokenManager.getValidToken();
 
-  if (!response.ok) {
-    throw new Error('IGDB API request failed');
+    const response = await fetch('https://api.igdb.com/v4/games', {
+      method: 'POST',
+      headers: {
+        'Client-ID': clientId,
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'text/plain'
+      },
+      body: `
+        search "${query.replace(/"/g, '\\"')}";
+        fields name,summary,cover.image_id,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,first_release_date,genres.name,platforms.name,rating,rating_count;
+        where category = 0 & version_parent = null;
+        limit 20;
+      `
+    });
+
+    if (!response.ok) {
+      // If token is invalid, try once more with a fresh token
+      if (response.status === 401 || response.status === 403) {
+        console.log('Token appears invalid, forcing refresh...');
+        const freshToken = await igdbTokenManager.refreshToken();
+        
+        const retryResponse = await fetch('https://api.igdb.com/v4/games', {
+          method: 'POST',
+          headers: {
+            'Client-ID': clientId,
+            'Authorization': `Bearer ${freshToken}`,
+            'Content-Type': 'text/plain'
+          },
+          body: `
+            search "${query.replace(/"/g, '\\"')}";
+            fields name,summary,cover.image_id,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,first_release_date,genres.name,platforms.name,rating,rating_count;
+            where category = 0 & version_parent = null;
+            limit 20;
+          `
+        });
+        
+        if (!retryResponse.ok) {
+          throw new Error('IGDB API request failed after token refresh');
+        }
+        
+        const games: IGDBGame[] = await retryResponse.json();
+        return mapIGDBGames(games);
+      } else {
+        throw new Error('IGDB API request failed');
+      }
+    }
+
+    const games: IGDBGame[] = await response.json();
+    return mapIGDBGames(games);
+  } catch (error) {
+    console.error('IGDB search error:', error);
+    throw error;
   }
+}
 
-  const games: IGDBGame[] = await response.json();
-  
+// Helper function to map IGDB games to search results
+function mapIGDBGames(games: IGDBGame[]): GameSearchResult[] {
   return games.map((game) => {
     const developer = game.involved_companies?.find(c => c.developer)?.company.name;
     const publisher = game.involved_companies?.find(c => c.publisher)?.company.name;

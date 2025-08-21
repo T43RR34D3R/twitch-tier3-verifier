@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { igdbTokenManager } from '@/lib/igdb-token-manager';
 
 export async function POST() {
   try {
@@ -25,78 +26,27 @@ export async function POST() {
       );
     }
 
-    const twitchClientId = process.env.TWITCH_CLIENT_ID;
-    const twitchClientSecret = process.env.TWITCH_CLIENT_SECRET;
-
-    if (!twitchClientId || !twitchClientSecret) {
+    try {
+      // Use the token manager to refresh the token
+      const newToken = await igdbTokenManager.refreshToken();
+      
+      return NextResponse.json({
+        success: true,
+        message: 'IGDB token refreshed successfully',
+        token_preview: `${newToken.substring(0, 8)}...`,
+        instructions: {
+          note: 'The new token has been generated and validated. For production deployment, update the Railway environment variable:',
+          command: `railway variables set IGDB_ACCESS_TOKEN=${newToken}`,
+          auto_refresh: 'The application will now automatically use this token and refresh it when needed.'
+        }
+      });
+    } catch (error) {
+      console.error('Token refresh failed:', error);
       return NextResponse.json(
-        { error: 'Twitch credentials not configured' },
+        { error: error instanceof Error ? error.message : 'Failed to refresh IGDB token' },
         { status: 500 }
       );
     }
-
-    console.log('Refreshing IGDB access token...');
-
-    // Step 1: Get a new access token from Twitch
-    const response = await fetch('https://id.twitch.tv/oauth2/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: new URLSearchParams({
-        client_id: twitchClientId,
-        client_secret: twitchClientSecret,
-        grant_type: 'client_credentials'
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Failed to get access token:', response.status, errorText);
-      return NextResponse.json(
-        { error: 'Failed to refresh IGDB token' },
-        { status: 500 }
-      );
-    }
-
-    const tokenData = await response.json();
-
-    // Step 2: Test the new token with IGDB API
-    const testResponse = await fetch('https://api.igdb.com/v4/games', {
-      method: 'POST',
-      headers: {
-        'Client-ID': twitchClientId,
-        'Authorization': `Bearer ${tokenData.access_token}`,
-        'Content-Type': 'text/plain'
-      },
-      body: `
-        search "test";
-        fields name;
-        limit 1;
-      `
-    });
-
-    if (!testResponse.ok) {
-      const errorText = await testResponse.text();
-      console.error('New token test failed:', testResponse.status, errorText);
-      return NextResponse.json(
-        { error: 'New IGDB token failed validation' },
-        { status: 500 }
-      );
-    }
-
-    console.log('✅ New IGDB token validated successfully');
-
-    return NextResponse.json({
-      success: true,
-      message: 'IGDB token refreshed successfully',
-      expires_in: tokenData.expires_in,
-      token_preview: `${tokenData.access_token.substring(0, 8)}...`,
-      instructions: {
-        note: 'The new token has been generated and validated, but you need to manually update the Railway environment variable',
-        command: `railway variables --set "IGDB_ACCESS_TOKEN=${tokenData.access_token}"`
-      }
-    });
 
   } catch (error) {
     console.error('Error refreshing IGDB token:', error);
@@ -131,47 +81,35 @@ export async function GET() {
       );
     }
 
-    const clientId = process.env.IGDB_CLIENT_ID;
-    const accessToken = process.env.IGDB_ACCESS_TOKEN;
+    const clientId = process.env.IGDB_CLIENT_ID || process.env.TWITCH_CLIENT_ID;
+    const clientSecret = process.env.TWITCH_CLIENT_SECRET;
 
-    if (!clientId || !accessToken) {
+    if (!clientId || !clientSecret) {
       return NextResponse.json({
         configured: false,
         error: 'IGDB credentials not configured'
       });
     }
 
-    // Test current token
+    // Test current token using the token manager
     try {
-      const response = await fetch('https://api.igdb.com/v4/games', {
-        method: 'POST',
-        headers: {
-          'Client-ID': clientId,
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'text/plain'
-        },
-        body: `
-          search "test";
-          fields name;
-          limit 1;
-        `
-      });
-
-      const isValid = response.ok;
+      const validToken = await igdbTokenManager.getValidToken();
+      const isValid = await igdbTokenManager.isTokenValid(validToken, clientId);
       
       return NextResponse.json({
         configured: true,
         token_valid: isValid,
-        token_preview: `${accessToken.substring(0, 8)}...`,
+        token_preview: `${validToken.substring(0, 8)}...`,
         client_id: clientId,
-        status: isValid ? 'Working' : 'Expired/Invalid'
+        status: isValid ? 'Working (Auto-managed)' : 'Invalid',
+        auto_refresh: 'Enabled - tokens are automatically refreshed when needed'
       });
 
-    } catch {
+    } catch (error) {
       return NextResponse.json({
         configured: true,
         token_valid: false,
-        error: 'Failed to test token'
+        error: error instanceof Error ? error.message : 'Failed to test token'
       });
     }
 
