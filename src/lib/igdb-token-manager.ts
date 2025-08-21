@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 
 interface TokenData {
   access_token: string;
