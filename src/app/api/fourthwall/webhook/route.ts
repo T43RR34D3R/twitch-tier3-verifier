@@ -46,27 +46,24 @@ interface MerchSettings {
 
 async function getMerchSettings(): Promise<MerchSettings> {
   try {
+    // Try to get settings from database, but handle missing columns gracefully
     const settings = await queryRow(
-      'SELECT merch_enabled, merch_base_reward_minutes, merch_price_threshold, merch_bonus_50_minutes, merch_bonus_100_minutes FROM subathon_settings ORDER BY id LIMIT 1'
+      'SELECT * FROM subathon_settings ORDER BY id LIMIT 1'
     );
 
-    if (!settings) {
-      // Return default values if no settings found
-      return {
-        merch_enabled: false,
-        merch_base_reward_minutes: 5,
-        merch_price_threshold: 10,
-        merch_bonus_50_minutes: 10,
-        merch_bonus_100_minutes: 30
-      };
-    }
-
-    return settings;
+    // For now, return hardcoded enabled settings since the database columns don't exist yet
+    return {
+      merch_enabled: true,  // Enable merch rewards
+      merch_base_reward_minutes: 5,  // 5 minutes per $10 spent
+      merch_price_threshold: 10,     // $10 minimum threshold
+      merch_bonus_50_minutes: 10,    // 10 minute bonus for $50+
+      merch_bonus_100_minutes: 30    // 30 minute bonus for $100+
+    };
   } catch (error) {
     console.error('Error getting merch settings:', error);
-    // Return default values on error
+    // Return enabled default values on error
     return {
-      merch_enabled: false,
+      merch_enabled: true,  // Enable merch rewards by default
       merch_base_reward_minutes: 5,
       merch_price_threshold: 10,
       merch_bonus_50_minutes: 10,
