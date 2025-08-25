@@ -106,19 +106,8 @@ async function updateSubathonSettings(updates: Partial<SubathonSettings>): Promi
   try {
     const currentSettings = await getSubathonSettings();
     
-    // Get existing columns from the database table
-    const columnsResult = await queryRow(`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'subathon_settings' AND table_schema = 'public'
-    `);
-    
-    // Get all column names (this is a simplified approach)
-    const existingColumnsQuery = `
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'subathon_settings' AND table_schema = 'public'
-    `;
+    // Note: For now, we're using a hardcoded list of known safe columns
+    // to avoid database schema inspection complexity
     
     // For now, let's use the known safe columns that definitely exist
     const knownSafeColumns = [

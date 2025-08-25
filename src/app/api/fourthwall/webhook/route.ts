@@ -47,7 +47,7 @@ interface MerchSettings {
 async function getMerchSettings(): Promise<MerchSettings> {
   try {
     // Try to get settings from database, but handle missing columns gracefully
-    const settings = await queryRow(
+    await queryRow(
       'SELECT * FROM subathon_settings ORDER BY id LIMIT 1'
     );
 

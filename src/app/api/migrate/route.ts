@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { queryRow, queryRows } from '@/lib/railway-db';
+import { queryRow } from '@/lib/railway-db';
 
 export async function POST(request: NextRequest) {
   try {
