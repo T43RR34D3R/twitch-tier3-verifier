@@ -1,77 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { queryRow } from '@/lib/railway-db';
 
-interface FourthwallWebhookOrder {
-  id: string;
-  customer: {
-    name: string;
-    email?: string;
-  };
-  items: {
-    id: string;
-    name: string;
-    quantity: number;
-    price: {
-      amount: number;
-      currency: string;
-    };
-    total: {
-      amount: number;
-      currency: string;
-    };
-  }[];
-  total: {
-    amount: number;
-    currency: string;
-  };
-  status: string;
-  created_at: string;
-}
+// Interfaces will be defined once we understand Fourthwall's actual payload structure
 
-// Will update this interface once we see the actual payload structure
-// interface FourthwallWebhookPayload {
-//   event: string;
-//   data: {
-//     order: FourthwallWebhookOrder;
-//   };
+// Temporarily commented out until we understand payload structure
+// async function getMerchSettings(): Promise<MerchSettings> {
+//   try {
+//     // Try to get settings from database, but handle missing columns gracefully
+//     await queryRow(
+//       'SELECT * FROM subathon_settings ORDER BY id LIMIT 1'
+//     );
+
+//     // For now, return hardcoded enabled settings since the database columns don't exist yet
+//     return {
+//       merch_enabled: true,  // Enable merch rewards
+//       merch_base_reward_minutes: 5,  // 5 minutes per $10 spent
+//       merch_price_threshold: 10,     // $10 minimum threshold
+//       merch_bonus_50_minutes: 10,    // 10 minute bonus for $50+
+//       merch_bonus_100_minutes: 30    // 30 minute bonus for $100+
+//     };
+//   } catch (error) {
+//     console.error('Error getting merch settings:', error);
+//     // Return enabled default values on error
+//     return {
+//       merch_enabled: true,  // Enable merch rewards by default
+//       merch_base_reward_minutes: 5,
+//       merch_price_threshold: 10,
+//       merch_bonus_50_minutes: 10,
+//       merch_bonus_100_minutes: 30
+//     };
+//   }
 // }
-
-interface MerchSettings {
-  merch_enabled: boolean;
-  merch_base_reward_minutes: number;
-  merch_price_threshold: number;
-  merch_bonus_50_minutes: number;
-  merch_bonus_100_minutes: number;
-}
-
-async function getMerchSettings(): Promise<MerchSettings> {
-  try {
-    // Try to get settings from database, but handle missing columns gracefully
-    await queryRow(
-      'SELECT * FROM subathon_settings ORDER BY id LIMIT 1'
-    );
-
-    // For now, return hardcoded enabled settings since the database columns don't exist yet
-    return {
-      merch_enabled: true,  // Enable merch rewards
-      merch_base_reward_minutes: 5,  // 5 minutes per $10 spent
-      merch_price_threshold: 10,     // $10 minimum threshold
-      merch_bonus_50_minutes: 10,    // 10 minute bonus for $50+
-      merch_bonus_100_minutes: 30    // 30 minute bonus for $100+
-    };
-  } catch (error) {
-    console.error('Error getting merch settings:', error);
-    // Return enabled default values on error
-    return {
-      merch_enabled: true,  // Enable merch rewards by default
-      merch_base_reward_minutes: 5,
-      merch_price_threshold: 10,
-      merch_bonus_50_minutes: 10,
-      merch_bonus_100_minutes: 30
-    };
-  }
-}
 
 function verifyFourthwallSignature(body: string, signature: string | null, secret: string): boolean {
   if (!signature || !secret) {
@@ -104,23 +63,24 @@ function verifyFourthwallSignature(body: string, signature: string | null, secre
   }
 }
 
-function calculateRewardTime(purchaseAmount: number, settings: MerchSettings): number {
-  let totalMinutes = 0;
+// Temporarily commented out until we understand payload structure
+// function calculateRewardTime(purchaseAmount: number, settings: MerchSettings): number {
+//   let totalMinutes = 0;
 
-  // Base reward: configurable minutes for every $ threshold
-  const baseReward = Math.floor(purchaseAmount / settings.merch_price_threshold) * settings.merch_base_reward_minutes;
-  totalMinutes += baseReward;
+//   // Base reward: configurable minutes for every $ threshold
+//   const baseReward = Math.floor(purchaseAmount / settings.merch_price_threshold) * settings.merch_base_reward_minutes;
+//   totalMinutes += baseReward;
 
-  // Bonus rewards
-  if (purchaseAmount >= 50) {
-    totalMinutes += settings.merch_bonus_50_minutes;
-  }
-  if (purchaseAmount >= 100) {
-    totalMinutes += settings.merch_bonus_100_minutes;
-  }
+//   // Bonus rewards
+//   if (purchaseAmount >= 50) {
+//     totalMinutes += settings.merch_bonus_50_minutes;
+//   }
+//   if (purchaseAmount >= 100) {
+//     totalMinutes += settings.merch_bonus_100_minutes;
+//   }
 
-  return totalMinutes * 60; // Convert to seconds
-}
+//   return totalMinutes * 60; // Convert to seconds
+// }
 
 export async function POST(request: NextRequest) {
   try {
@@ -160,85 +120,20 @@ export async function POST(request: NextRequest) {
     console.log('Fourthwall webhook received. Type:', payload.type || payload.event);
     console.log('Payload keys:', Object.keys(payload));
     if (payload.order) console.log('Order found in payload.order');
-    if (payload.data) console.log('Data found in payload.data, keys:', Object.keys(payload.data));
-    if (payload.data?.order) console.log('Order found in payload.data.order');
-
-    // Only process order and gift purchase events
-    const validEvents = ['order.completed', 'order.paid', 'order.placed', 'gift.purchase'];
-    if (!validEvents.includes(payload.event)) {
-      console.log('Ignoring event type:', payload.event);
-      return NextResponse.json({ success: true, message: 'Event ignored' });
+    if (payload.data && typeof payload.data === 'object' && payload.data !== null) {
+      console.log('Data found in payload.data, keys:', Object.keys(payload.data as Record<string, unknown>));
+      if ((payload.data as Record<string, unknown>).order) console.log('Order found in payload.data.order');
     }
 
-    const order = payload.data?.order;
-    if (!order) {
-      console.error('No order data in webhook payload');
-      return NextResponse.json({ error: 'No order data' }, { status: 400 });
-    }
-
-    // Get merch settings from database
-    const merchSettings = await getMerchSettings();
+    // For now, just log and accept all webhook types to see the structure
+    console.log('Webhook accepted for debugging - will process once we understand structure');
     
-    // Check if merch rewards are enabled
-    if (!merchSettings.merch_enabled) {
-      console.log('Merch rewards are disabled');
-      return NextResponse.json({ success: true, message: 'Merch rewards disabled' });
-    }
-
-    // Calculate reward time based on purchase amount
-    const purchaseAmount = order.total.amount;
-    const rewardSeconds = calculateRewardTime(purchaseAmount, merchSettings);
-
-    if (rewardSeconds <= 0) {
-      console.log('No reward time for purchase amount:', purchaseAmount);
-      return NextResponse.json({ success: true, message: 'No reward time calculated' });
-    }
-
-    // Format customer name (fallback to "Someone" if no name)
-    const customerName = order.customer?.name || 'Someone';
-    
-    // Create a summary of purchased items
-    const itemsSummary = order.items.length === 1 
-      ? order.items[0].name
-      : `${order.items.length} items`;
-
-    // Format the reward message
-    const rewardMinutes = Math.floor(rewardSeconds / 60);
-    const rewardSecondsRemainder = rewardSeconds % 60;
-    const timeDisplay = rewardSecondsRemainder > 0 
-      ? `${rewardMinutes}:${rewardSecondsRemainder.toString().padStart(2, '0')}`
-      : `${rewardMinutes} minutes`;
-
-    const customMessage = `🛒 ${customerName} bought ${itemsSummary} ($${purchaseAmount})! Added ${timeDisplay}!`;
-
-    // Add time to the subathon timer
-    const timerResponse = await fetch(`${request.nextUrl.origin}/api/subathon-timer`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: 'addCustomTime',
-        time: rewardSeconds,
-        customMessage
-      }),
-    });
-
-    if (!timerResponse.ok) {
-      console.error('Failed to add time to timer:', await timerResponse.text());
-      return NextResponse.json({ error: 'Failed to add time to timer' }, { status: 500 });
-    }
-
-    const timerResult = await timerResponse.json();
-    console.log('Successfully added time to timer:', timerResult);
-
     return NextResponse.json({
       success: true,
-      message: `Added ${timeDisplay} for merch purchase`,
-      order_id: order.id,
-      customer: customerName,
-      amount: purchaseAmount,
-      time_added_seconds: rewardSeconds
+      message: 'Webhook received and logged for analysis',
+      type: payload.type || payload.event,
+      hasOrder: !!payload.order,
+      hasDataOrder: !!(payload.data && typeof payload.data === 'object' && (payload.data as Record<string, unknown>).order)
     });
 
   } catch (error) {
