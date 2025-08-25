@@ -142,8 +142,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { action, time } = await request.json();
-    console.log('POST request:', { action, time });
+    const requestData = await request.json();
+    const { action, time, customMessage } = requestData;
+    console.log('POST request:', { action, time, customMessage });
     const now = Date.now();
     const currentState = await getTimerState();
     console.log('Current state:', currentState);
@@ -217,6 +218,23 @@ export async function POST(request: NextRequest) {
             pending_duration: Math.max(0, currentDuration - 300),
             status: currentDuration > 0 ? '➖ Removed 5 minutes!' : 'Cannot remove time - timer at 00:00:00'
           };
+        }
+        break;
+        
+      case 'addCustomTime':
+        if (time && time > 0) {
+          if (currentState.is_running) {
+            updates = {
+              end_time: currentState.end_time + (time * 1000),
+              status: customMessage || `➕ Added ${Math.floor(time / 60)}:${(time % 60).toString().padStart(2, '0')}!`
+            };
+          } else {
+            const currentDuration = currentState.pending_duration || 0;
+            updates = {
+              pending_duration: currentDuration + time,
+              status: customMessage || `➕ Added ${Math.floor(time / 60)}:${(time % 60).toString().padStart(2, '0')}!`
+            };
+          }
         }
         break;
     }
