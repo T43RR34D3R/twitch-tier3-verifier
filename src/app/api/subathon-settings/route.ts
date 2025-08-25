@@ -106,16 +106,44 @@ async function updateSubathonSettings(updates: Partial<SubathonSettings>): Promi
   try {
     const currentSettings = await getSubathonSettings();
     
-    // Build dynamic update query
+    // Get existing columns from the database table
+    const columnsResult = await queryRow(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'subathon_settings' AND table_schema = 'public'
+    `);
+    
+    // Get all column names (this is a simplified approach)
+    const existingColumnsQuery = `
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'subathon_settings' AND table_schema = 'public'
+    `;
+    
+    // For now, let's use the known safe columns that definitely exist
+    const knownSafeColumns = [
+      'tier1_sub_time', 'tier2_sub_time', 'tier3_sub_time',
+      'tier1_gift_time', 'tier2_gift_time', 'tier3_gift_time', 
+      'tier1_resub_time', 'tier2_resub_time', 'tier3_resub_time',
+      'follow_time', 'bits_per_second', 'min_bits_time', 'max_bits_time',
+      'raid_time_per_viewer', 'min_raid_time', 'max_raid_time', 'host_time', 'enabled'
+    ];
+    
+    // Build dynamic update query only with safe columns
     const updateFields: string[] = [];
     const values: unknown[] = [];
     let paramIndex = 1;
     
     for (const [key, value] of Object.entries(updates)) {
       if (key !== 'id' && key !== 'created_at' && key !== 'updated_at') {
-        updateFields.push(`${key} = $${paramIndex}`);
-        values.push(value);
-        paramIndex++;
+        // Only include columns that we know exist to avoid errors
+        if (knownSafeColumns.includes(key)) {
+          updateFields.push(`${key} = $${paramIndex}`);
+          values.push(value);
+          paramIndex++;
+        } else {
+          console.log(`Skipping column '${key}' - not in known safe columns list`);
+        }
       }
     }
     
