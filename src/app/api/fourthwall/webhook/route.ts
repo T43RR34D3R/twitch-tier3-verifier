@@ -29,12 +29,13 @@ interface FourthwallWebhookOrder {
   created_at: string;
 }
 
-interface FourthwallWebhookPayload {
-  event: string;
-  data: {
-    order: FourthwallWebhookOrder;
-  };
-}
+// Will update this interface once we see the actual payload structure
+// interface FourthwallWebhookPayload {
+//   event: string;
+//   data: {
+//     order: FourthwallWebhookOrder;
+//   };
+// }
 
 interface MerchSettings {
   merch_enabled: boolean;
@@ -147,7 +148,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse the webhook payload
-    let payload: any;
+    let payload: Record<string, unknown>;
     try {
       payload = JSON.parse(rawBody);
       console.log('🔍 FULL PAYLOAD STRUCTURE:', JSON.stringify(payload, null, 2));
