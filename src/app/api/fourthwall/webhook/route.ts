@@ -78,20 +78,24 @@ function verifyFourthwallSignature(body: string, signature: string | null, secre
   }
 
   try {
-    // Fourthwall typically uses HMAC-SHA256 for webhook signatures
+    // Fourthwall uses HMAC-SHA256 and sends the signature as base64
     const expectedSignature = crypto
       .createHmac('sha256', secret)
       .update(body, 'utf8')
-      .digest('hex');
+      .digest('base64');
 
-    // Signature might come as 'sha256=...' format
-    const receivedSignature = signature.startsWith('sha256=') 
-      ? signature.slice(7) 
-      : signature;
+    // Clean the received signature (remove any prefixes)
+    let receivedSignature = signature;
+    if (signature.startsWith('sha256=')) {
+      receivedSignature = signature.slice(7);
+    }
+
+    console.log('Expected signature (base64):', expectedSignature);
+    console.log('Received signature (base64):', receivedSignature);
 
     return crypto.timingSafeEqual(
-      Buffer.from(expectedSignature, 'hex'),
-      Buffer.from(receivedSignature, 'hex')
+      Buffer.from(expectedSignature, 'utf8'),
+      Buffer.from(receivedSignature, 'utf8')
     );
   } catch (error) {
     console.error('Error verifying signature:', error);
@@ -121,7 +125,8 @@ export async function POST(request: NextRequest) {
   try {
     // Get the raw body for signature verification
     const rawBody = await request.text();
-    const signature = request.headers.get('x-fourthwall-signature') || 
+    const signature = request.headers.get('x-fourthwall-hmac-sha256') || 
+                     request.headers.get('x-fourthwall-signature') || 
                      request.headers.get('x-signature') ||
                      request.headers.get('signature');
 
