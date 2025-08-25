@@ -141,9 +141,7 @@ export async function POST(request: NextRequest) {
     if (webhookSecret && !verifyFourthwallSignature(rawBody, signature, webhookSecret)) {
       console.error('Invalid Fourthwall webhook signature');
       console.log('Expected signature would be generated from body:', rawBody.substring(0, 100) + '...');
-      // TEMPORARILY allow through for debugging - remove this in production!
-      console.log('⚠️  BYPASSING SIGNATURE VERIFICATION FOR DEBUGGING');
-      // return NextResponse.json({ error: 'Invalid signature' }, { status: 403 });
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 403 });
     }
 
     // Parse the webhook payload
