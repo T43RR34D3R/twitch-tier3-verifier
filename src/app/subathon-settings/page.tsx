@@ -21,6 +21,12 @@ interface SubathonSettings {
   min_raid_time: number;
   max_raid_time: number;
   host_time: number;
+  // Merch purchase settings
+  merch_enabled: boolean;
+  merch_base_reward_minutes: number;
+  merch_price_threshold: number;
+  merch_bonus_50_minutes: number;
+  merch_bonus_100_minutes: number;
   enabled: boolean;
 }
 
@@ -620,6 +626,97 @@ export default function SubathonSettingsPage() {
           </div>
         </div>
 
+        {/* Fourthwall Merch Purchases */}
+        <div className="settings-section">
+          <h3 className="section-title">🛒 Fourthwall Merch Purchases</h3>
+          
+          <div className="setting-row">
+            <span className="setting-label">Enable Merch Rewards</span>
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={settings.merch_enabled || false}
+                onChange={(e) => updateSetting('merch_enabled', e.target.checked)}
+              />
+              <span className="slider"></span>
+            </label>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">Base Reward (minutes per $)</span>
+            <div className="setting-value">
+              <input
+                type="number"
+                className="time-input"
+                value={settings.merch_base_reward_minutes || 5}
+                onChange={(e) => updateSetting('merch_base_reward_minutes', parseInt(e.target.value) || 0)}
+                min="0"
+                max="60"
+              />
+              <span className="time-display">$20 = {formatTime((settings.merch_base_reward_minutes || 5) * 2 * 60)}</span>
+            </div>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">Price Threshold ($)</span>
+            <div className="setting-value">
+              <input
+                type="number"
+                className="time-input"
+                value={settings.merch_price_threshold || 10}
+                onChange={(e) => updateSetting('merch_price_threshold', parseInt(e.target.value) || 1)}
+                min="1"
+              />
+              <span className="time-display">Minimum $ for rewards</span>
+            </div>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">$50+ Bonus (minutes)</span>
+            <div className="setting-value">
+              <input
+                type="number"
+                className="time-input"
+                value={settings.merch_bonus_50_minutes || 10}
+                onChange={(e) => updateSetting('merch_bonus_50_minutes', parseInt(e.target.value) || 0)}
+                min="0"
+              />
+              <span className="time-display">{formatTime((settings.merch_bonus_50_minutes || 10) * 60)}</span>
+              <button 
+                className="test-btn"
+                onClick={() => testAddTime(((50 / (settings.merch_price_threshold || 10)) * (settings.merch_base_reward_minutes || 5) + (settings.merch_bonus_50_minutes || 10)) * 60, '🛒 Test $50 Merch Purchase!')}
+              >
+                Test
+              </button>
+            </div>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">$100+ Bonus (minutes)</span>
+            <div className="setting-value">
+              <input
+                type="number"
+                className="time-input"
+                value={settings.merch_bonus_100_minutes || 30}
+                onChange={(e) => updateSetting('merch_bonus_100_minutes', parseInt(e.target.value) || 0)}
+                min="0"
+              />
+              <span className="time-display">{formatTime((settings.merch_bonus_100_minutes || 30) * 60)}</span>
+              <button 
+                className="test-btn"
+                onClick={() => testAddTime(((100 / (settings.merch_price_threshold || 10)) * (settings.merch_base_reward_minutes || 5) + (settings.merch_bonus_50_minutes || 10) + (settings.merch_bonus_100_minutes || 30)) * 60, '🛒 Test $100 Merch Purchase!')}
+              >
+                Test
+              </button>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '15px', padding: '10px', background: 'rgba(20, 20, 30, 0.5)', borderRadius: '6px', fontSize: '0.8rem', opacity: 0.8 }}>
+            <div><strong>💡 Webhook URL:</strong> https://yourdomain.com/api/fourthwall/webhook</div>
+            <div style={{ marginTop: '5px' }}><strong>🔒 Environment Variable:</strong> FOURTHWALL_WEBHOOK_SECRET</div>
+          </div>
+        </div>
+
         {/* Gift Subscriptions */}
         <div className="settings-section">
           <h3 className="section-title">🎁 Gift Subscriptions</h3>
@@ -967,6 +1064,30 @@ export default function SubathonSettingsPage() {
               style={{ padding: '8px 16px' }}
             >
               👋 Simulate
+            </button>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">$25 Merch Purchase</span>
+            <button 
+              className="test-btn"
+              onClick={() => testAddTime(((25 / (settings.merch_price_threshold || 10)) * (settings.merch_base_reward_minutes || 5)) * 60, '🛒 TestUser bought Cool Shirt ($25)!')}
+              disabled={simulationLoading}
+              style={{ padding: '8px 16px' }}
+            >
+              🛒 Simulate
+            </button>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">$75 Merch Purchase</span>
+            <button 
+              className="test-btn"
+              onClick={() => testAddTime(((75 / (settings.merch_price_threshold || 10)) * (settings.merch_base_reward_minutes || 5) + (settings.merch_bonus_50_minutes || 10)) * 60, '🛒 BigFan bought Hoodie Bundle ($75)!')}
+              disabled={simulationLoading}
+              style={{ padding: '8px 16px' }}
+            >
+              🛒 Simulate
             </button>
           </div>
         </div>

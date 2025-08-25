@@ -24,6 +24,12 @@ export interface SubathonSettings {
   min_raid_time: number;
   max_raid_time: number;
   host_time: number;
+  // Merch purchase settings
+  merch_enabled: boolean;
+  merch_base_reward_minutes: number;
+  merch_price_threshold: number;
+  merch_bonus_50_minutes: number;
+  merch_bonus_100_minutes: number;
   // General
   enabled: boolean;
   webhook_secret?: string;
@@ -57,6 +63,12 @@ async function getSubathonSettings(): Promise<SubathonSettings> {
         min_raid_time: 60,          // 1 minute minimum
         max_raid_time: 1800,        // 30 minutes maximum
         host_time: 120,             // 2 minutes
+        // Merch purchase defaults
+        merch_enabled: false,       // Disabled by default
+        merch_base_reward_minutes: 5, // 5 minutes per $10
+        merch_price_threshold: 10,  // $10 minimum
+        merch_bonus_50_minutes: 10, // 10 minute bonus for $50+
+        merch_bonus_100_minutes: 30, // 30 minute bonus for $100+
         enabled: true
       };
 
@@ -166,7 +178,9 @@ export async function POST(request: NextRequest) {
       'tier1_gift_time', 'tier2_gift_time', 'tier3_gift_time',
       'tier1_resub_time', 'tier2_resub_time', 'tier3_resub_time',
       'follow_time', 'min_bits_time', 'max_bits_time',
-      'min_raid_time', 'max_raid_time', 'host_time'
+      'min_raid_time', 'max_raid_time', 'host_time',
+      'merch_base_reward_minutes', 'merch_price_threshold', 
+      'merch_bonus_50_minutes', 'merch_bonus_100_minutes'
     ];
     
     const decimalFields = ['bits_per_second', 'raid_time_per_viewer'];
