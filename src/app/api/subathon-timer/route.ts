@@ -99,12 +99,13 @@ async function updateTimerState(updates: Partial<TimerState>, id?: number): Prom
 }
 
 function getCurrentTimeRemaining(state: TimerState): number {
-  if (!state.is_running || state.end_time <= 0) {
+  const endTime = typeof state.end_time === 'string' ? parseInt(state.end_time) : state.end_time;
+  
+  if (!state.is_running || endTime <= 0) {
     return state.pending_duration || 0;
   }
   
   const now = Date.now();
-  const endTime = typeof state.end_time === 'string' ? parseInt(state.end_time) : state.end_time;
   const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
   
   return remaining;
