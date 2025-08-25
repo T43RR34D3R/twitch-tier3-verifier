@@ -147,15 +147,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse the webhook payload
-    let payload: FourthwallWebhookPayload;
+    let payload: any;
     try {
       payload = JSON.parse(rawBody);
+      console.log('🔍 FULL PAYLOAD STRUCTURE:', JSON.stringify(payload, null, 2));
     } catch (error) {
       console.error('Invalid JSON payload:', error);
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
 
-    console.log('Fourthwall webhook received:', payload.event, payload.data?.order?.id);
+    console.log('Fourthwall webhook received. Type:', payload.type || payload.event);
+    console.log('Payload keys:', Object.keys(payload));
+    if (payload.order) console.log('Order found in payload.order');
+    if (payload.data) console.log('Data found in payload.data, keys:', Object.keys(payload.data));
+    if (payload.data?.order) console.log('Order found in payload.data.order');
 
     // Only process order and gift purchase events
     const validEvents = ['order.completed', 'order.paid', 'order.placed', 'gift.purchase'];
