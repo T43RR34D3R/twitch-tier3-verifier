@@ -712,7 +712,7 @@ export default function SubathonSettingsPage() {
           </div>
 
           <div style={{ marginTop: '15px', padding: '10px', background: 'rgba(20, 20, 30, 0.5)', borderRadius: '6px', fontSize: '0.8rem', opacity: 0.8 }}>
-            <div><strong>💡 Webhook URL:</strong> https://yourdomain.com/api/fourthwall/webhook</div>
+            <div><strong>💡 Webhook URL:</strong> https://buckfoozle.com/api/fourthwall/webhook</div>
             <div style={{ marginTop: '5px' }}><strong>🔒 Environment Variable:</strong> FOURTHWALL_WEBHOOK_SECRET</div>
           </div>
         </div>
