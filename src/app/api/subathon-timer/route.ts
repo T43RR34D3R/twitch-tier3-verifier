@@ -3,7 +3,7 @@ import { queryRow } from '@/lib/railway-db';
 
 type TimerState = {
   id: number;
-  end_time: number;
+  end_time: string | number;  // Can be string from DB or number for calculations
   is_running: boolean;
   status: string;
   pending_duration?: number;
@@ -104,7 +104,8 @@ function getCurrentTimeRemaining(state: TimerState): number {
   }
   
   const now = Date.now();
-  const remaining = Math.max(0, Math.ceil((state.end_time - now) / 1000));
+  const endTime = typeof state.end_time === 'string' ? parseInt(state.end_time) : state.end_time;
+  const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
   
   return remaining;
 }
@@ -168,7 +169,7 @@ export async function POST(request: NextRequest) {
           const duration = currentState.pending_duration || 0;
           if (duration > 0) {
             updates = {
-              end_time: now + (duration * 1000),
+              end_time: String(now + (duration * 1000)),  // Store as string
               is_running: true,
               status: '⏳ Timer Running...',
               pending_duration: 0
@@ -191,8 +192,9 @@ export async function POST(request: NextRequest) {
         
       case 'addTime':
         if (currentState.is_running) {
+          const currentEndTime = typeof currentState.end_time === 'string' ? parseInt(currentState.end_time) : currentState.end_time;
           updates = {
-            end_time: currentState.end_time + (300 * 1000),
+            end_time: String(currentEndTime + (300 * 1000)),  // Store as string to avoid integer overflow
             status: '➕ Added 5 minutes!'
           };
         } else {
@@ -207,8 +209,9 @@ export async function POST(request: NextRequest) {
         
       case 'removeTime':
         if (currentState.is_running) {
+          const currentEndTime = typeof currentState.end_time === 'string' ? parseInt(currentState.end_time) : currentState.end_time;
           updates = {
-            end_time: Math.max(now, currentState.end_time - (300 * 1000)),
+            end_time: String(Math.max(now, currentEndTime - (300 * 1000))),
             status: '➖ Removed 5 minutes!'
           };
         } else {
@@ -224,8 +227,9 @@ export async function POST(request: NextRequest) {
       case 'addCustomTime':
         if (time && time > 0) {
           if (currentState.is_running) {
+            const currentEndTime = typeof currentState.end_time === 'string' ? parseInt(currentState.end_time) : currentState.end_time;
             updates = {
-              end_time: currentState.end_time + (time * 1000),
+              end_time: String(currentEndTime + (time * 1000)),
               status: customMessage || `➕ Added ${Math.floor(time / 60)}:${(time % 60).toString().padStart(2, '0')}!`
             };
           } else {
