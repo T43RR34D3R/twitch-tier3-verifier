@@ -132,12 +132,19 @@ class TwitchChatHighlighter {
   constructor() {
     this.isEnabled = true;
     this.highlightedMessages = new Set();
+    this.emoteCache = new Map(); // Cache for emote data
+    this.channelId = null;
+    this.channelName = null;
     this.init();
   }
 
   async init() {
     // Get settings from extension storage
     await this.loadSettings();
+    
+    // Extract channel info and load emotes
+    await this.loadChannelInfo();
+    await this.loadEmotes();
     
     // Wait for chat to load
     this.waitForChat();
@@ -726,6 +733,111 @@ class TwitchChatHighlighter {
     return Math.abs(hash).toString(36);
   }
   
+  async loadChannelInfo() {
+    try {
+      const url = window.location.href;
+      this.channelName = this.getChannelFromUrl();
+      
+      if (this.channelName) {
+        console.log('📺 Loading channel info for:', this.channelName);
+        // We'll get channel ID from Twitch API if needed
+        // For now, store channel name for emote fetching
+      }
+    } catch (error) {
+      console.error('Error loading channel info:', error);
+    }
+  }
+
+  async loadEmotes() {
+    try {
+      console.log('🎭 Loading Twitch emotes...');
+      
+      // Load global Twitch emotes
+      await this.loadGlobalEmotes();
+      
+      // Load channel-specific emotes if we have a channel
+      if (this.channelName) {
+        await this.loadChannelEmotes(this.channelName);
+      }
+      
+      console.log('✅ Emote cache loaded with', this.emoteCache.size, 'emotes');
+    } catch (error) {
+      console.error('Error loading emotes:', error);
+    }
+  }
+
+  async loadGlobalEmotes() {
+    try {
+      // Twitch Global Emotes API (public, no auth needed)
+      const response = await fetch('https://api.twitch.tv/helix/chat/emotes/global', {
+        headers: {
+          'Client-ID': 'kimne78kx3ncx6brgo4mv6wki5h1ko' // Public Twitch client ID
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        data.data?.forEach(emote => {
+          this.emoteCache.set(emote.name, {
+            id: emote.id,
+            name: emote.name,
+            imageUrl: emote.images.url_1x,
+            imageUrl2x: emote.images.url_2x,
+            imageUrl4x: emote.images.url_4x,
+            type: 'global'
+          });
+        });
+        console.log('🌐 Loaded', data.data?.length || 0, 'global emotes');
+      }
+    } catch (error) {
+      console.warn('Failed to load global emotes:', error);
+    }
+  }
+
+  async loadChannelEmotes(channelName) {
+    try {
+      // First get channel ID from username
+      const userResponse = await fetch(`https://api.twitch.tv/helix/users?login=${channelName}`, {
+        headers: {
+          'Client-ID': 'kimne78kx3ncx6brgo4mv6wki5h1ko'
+        }
+      });
+      
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        const channelId = userData.data?.[0]?.id;
+        
+        if (channelId) {
+          this.channelId = channelId;
+          
+          // Get channel emotes
+          const emotesResponse = await fetch(`https://api.twitch.tv/helix/chat/emotes?broadcaster_id=${channelId}`, {
+            headers: {
+              'Client-ID': 'kimne78kx3ncx6brgo4mv6wki5h1ko'
+            }
+          });
+          
+          if (emotesResponse.ok) {
+            const emotesData = await emotesResponse.json();
+            emotesData.data?.forEach(emote => {
+              this.emoteCache.set(emote.name, {
+                id: emote.id,
+                name: emote.name,
+                imageUrl: emote.images.url_1x,
+                imageUrl2x: emote.images.url_2x,
+                imageUrl4x: emote.images.url_4x,
+                type: 'channel'
+              });
+            });
+            console.log('📺 Loaded', emotesData.data?.length || 0, 'channel emotes for', channelName);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load channel emotes:', error);
+    }
+  }
+
   // Generate HTML version of message with emotes
   generateMessageHtml(messageElement, emotes, fallbackText) {
     try {
@@ -744,6 +856,12 @@ class TwitchChatHighlighter {
         return emotes.map(emote => 
           `<img src="${emote.imageUrl}" alt="${emote.name}" class="emote-image" style="height: 1.4em; width: auto; vertical-align: middle; margin: 0 1px;" />`
         ).join('');
+      }
+      
+      // Try to parse text content for emotes using our cache
+      if (textContent && this.emoteCache.size > 0) {
+        console.log('🎭 Parsing message text for emotes:', textContent);
+        return this.parseTextForEmotes(textContent);
       }
       
       // For mixed text and emotes, or pure text, use the DOM content
@@ -780,6 +898,44 @@ class TwitchChatHighlighter {
       // Fallback to plain text or provided fallback
       return fallbackText || messageElement.textContent || '';
     }
+  }
+  
+  parseTextForEmotes(text) {
+    try {
+      if (!text || this.emoteCache.size === 0) {
+        return text;
+      }
+      
+      // Split text by spaces to find potential emote names
+      const words = text.split(' ');
+      const htmlParts = [];
+      
+      for (const word of words) {
+        // Check if this word is an emote in our cache
+        const emoteData = this.emoteCache.get(word);
+        
+        if (emoteData) {
+          // Replace with emote image
+          htmlParts.push(
+            `<img src="${emoteData.imageUrl}" alt="${emoteData.name}" title="${emoteData.name}" class="emote-image" style="height: 1.4em; width: auto; vertical-align: middle; margin: 0 1px;" />`
+          );
+        } else {
+          // Keep as text
+          htmlParts.push(this.escapeHtml(word));
+        }
+      }
+      
+      return htmlParts.join(' ');
+    } catch (error) {
+      console.error('Error parsing text for emotes:', error);
+      return text;
+    }
+  }
+  
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 }
 
