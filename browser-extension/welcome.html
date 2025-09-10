@@ -201,11 +201,20 @@
 
     <script>
         function openTwitch() {
-            chrome.tabs.create({ url: 'https://www.twitch.tv/' });
+            window.open('https://www.twitch.tv/', '_blank');
         }
 
         function openExtensionOptions() {
-            chrome.action.openPopup();
+            // Try to open extension popup, fallback to alert
+            try {
+                if (chrome && chrome.action && chrome.action.openPopup) {
+                    chrome.action.openPopup();
+                } else {
+                    alert('Click the extension icon in your browser toolbar to open settings.');
+                }
+            } catch (error) {
+                alert('Click the extension icon in your browser toolbar to open settings.');
+            }
         }
 
         // Auto-close this tab after a delay if user doesn't interact

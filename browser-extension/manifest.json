@@ -34,8 +34,8 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["injected-script.js"],
-      "matches": ["*://www.twitch.tv/*", "*://twitch.tv/*"]
+      "resources": ["welcome.html", "test.html"],
+      "matches": ["<all_urls>"]
     }
   ]
 }

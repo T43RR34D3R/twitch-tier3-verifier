@@ -54,6 +54,13 @@ class TwitchChatHighlighter {
   }
 
   waitForChat() {
+    // Only activate on the specific URL
+    const targetUrl = 'https://www.twitch.tv/popout/moderator/buckfoozle/chat';
+    if (!window.location.href.startsWith(targetUrl)) {
+      console.log('🚫 Not on target URL, extension inactive');
+      return;
+    }
+
     const checkForChat = () => {
       // Look for chat containers in various Twitch layouts
       const chatSelectors = [
@@ -306,16 +313,48 @@ class TwitchChatHighlighter {
   }
 
   addIndicator() {
-    // Add status indicator to show extension is active
+    // Add minimal, dismissible status indicator
     const indicator = document.createElement('div');
     indicator.id = 'chat-highlighter-indicator';
     indicator.className = 'chat-highlighter-indicator';
-    indicator.innerHTML = '⭐ Chat Highlighter Active';
-    indicator.title = 'Click any chat message to highlight it in OBS';
+    indicator.innerHTML = `
+      <span class="indicator-content">
+        <span class="indicator-text">⭐ Chat Highlighter Active</span>
+        <button class="indicator-minimize" title="Minimize">−</button>
+      </span>
+    `;
+    indicator.title = 'Click any chat message to highlight it. Click - to minimize this indicator.';
+    
+    // Add click handler for minimize button
+    const minimizeBtn = indicator.querySelector('.indicator-minimize');
+    let isMinimized = localStorage.getItem('chatHighlighter_minimized') === 'true';
+    
+    const updateIndicatorState = () => {
+      const textElement = indicator.querySelector('.indicator-text');
+      if (isMinimized) {
+        indicator.classList.add('minimized');
+        textElement.textContent = '⭐';
+        minimizeBtn.innerHTML = '+';
+        minimizeBtn.title = 'Expand';
+      } else {
+        indicator.classList.remove('minimized');
+        textElement.textContent = '⭐ Chat Highlighter Active';
+        minimizeBtn.innerHTML = '−';
+        minimizeBtn.title = 'Minimize';
+      }
+    };
+    
+    minimizeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      isMinimized = !isMinimized;
+      localStorage.setItem('chatHighlighter_minimized', isMinimized.toString());
+      updateIndicatorState();
+    });
+    
+    // Initialize state
+    updateIndicatorState();
     
     document.body.appendChild(indicator);
-
-    // Toggle indicator based on enabled state
     this.updateUI();
   }
 
