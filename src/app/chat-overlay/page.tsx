@@ -74,8 +74,17 @@ export default function ChatOverlay() {
     return () => clearInterval(interval);
   }, []);
 
-  const formatTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleTimeString();
+  const formatTime = (timestamp: number | string) => {
+    // Handle both number and string timestamps
+    const ts = typeof timestamp === 'string' ? parseInt(timestamp) : timestamp;
+    const date = new Date(ts);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return new Date().toLocaleTimeString(); // Fallback to current time
+    }
+    
+    return date.toLocaleTimeString();
   };
 
 
@@ -125,35 +134,34 @@ export default function ChatOverlay() {
                         {badgeInfos.slice(0, 4).map((badgeInfo, badgeIndex) => (
                           <div
                             key={badgeIndex}
-                            className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold border backdrop-blur-sm shadow-md"
-                            style={{ 
-                              backgroundColor: badgeInfo.imageUrl ? 'rgba(0,0,0,0.3)' : `${badgeInfo.color || '#64748b'}25`,
-                              borderColor: badgeInfo.imageUrl ? 'rgba(255,255,255,0.2)' : `${badgeInfo.color || '#64748b'}60`,
-                              color: badgeInfo.color || '#ffffff',
-                              boxShadow: `0 0 8px ${badgeInfo.color || '#64748b'}30`
-                            }}
+                            className="inline-flex items-center justify-center"
                             title={badgeInfo.alt || badgeInfo.label}
+                            style={{ marginRight: '4px' }}
                           >
                             {badgeInfo.imageUrl ? (
                               <img 
                                 src={badgeInfo.imageUrl} 
                                 alt={badgeInfo.alt || badgeInfo.label}
-                                className="w-4 h-4 mr-1"
+                                className="w-5 h-5"
+                                style={{ 
+                                  border: 'none',
+                                  borderRadius: '2px',
+                                  display: 'block'
+                                }}
                                 onError={(e) => {
-                                  // Fallback to emoji/text if image fails
+                                  // Fallback to text if image fails
                                   const target = e.target as HTMLImageElement;
                                   target.style.display = 'none';
                                   const span = document.createElement('span');
                                   span.textContent = badgeInfo.label || 'Badge';
-                                  span.className = 'text-xs';
+                                  span.className = 'text-xs text-gray-400 px-1 py-0.5 bg-gray-700 rounded';
                                   target.parentNode?.insertBefore(span, target);
                                 }}
                               />
                             ) : (
-                              badgeInfo.label && <span className="mr-1 text-xs">{badgeInfo.label}</span>
-                            )}
-                            {!badgeInfo.imageUrl && (
-                              <span className="truncate max-w-14 text-xs">{badgeInfo.label}</span>
+                              <span className="text-xs text-gray-400 px-1 py-0.5 bg-gray-700 rounded">
+                                {badgeInfo.label}
+                              </span>
                             )}
                           </div>
                         ))}

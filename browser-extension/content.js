@@ -264,6 +264,8 @@ class TwitchChatHighlighter {
 
   extractMessageData(messageElement) {
     try {
+      console.log('🔍 Extracting message data from element:', messageElement);
+      
       // Extract username - updated selectors based on DOM inspection
       const usernameElement = messageElement.querySelector([
         '[data-a-target="chat-message-username"]',
@@ -272,6 +274,8 @@ class TwitchChatHighlighter {
         '[data-a-target="chat-line-username"]',
         '.chat-line__username'
       ].join(','));
+      
+      console.log('👤 Username element found:', usernameElement);
 
       // Extract message text - updated selectors 
       const messageTextElement = messageElement.querySelector([
@@ -280,6 +284,8 @@ class TwitchChatHighlighter {
         '.text-fragment',
         '.chat-line__message-body'
       ].join(','));
+      
+      console.log('💬 Message text element found:', messageTextElement);
 
       // Extract badges with better detection
       const badgeElements = messageElement.querySelectorAll([
@@ -316,11 +322,20 @@ class TwitchChatHighlighter {
         console.log('Username element:', usernameElement);
         console.log('Message text element:', messageTextElement);
         console.log('Full message element:', messageElement);
+        console.log('Element HTML:', messageElement.outerHTML);
         return null;
       }
 
-      const username = usernameElement.textContent.trim();
-      const messageText = messageTextElement.textContent.trim();
+      const username = usernameElement.textContent?.trim() || '';
+      const messageText = messageTextElement.textContent?.trim() || '';
+      
+      console.log('📝 Extracted username:', username);
+      console.log('📝 Extracted message text:', messageText);
+      
+      if (!username || !messageText) {
+        console.log('❌ Username or message text is empty');
+        return null;
+      }
       
       // Enhanced badge extraction with image URLs
       const badges = Array.from(badgeElements).map(badge => {
@@ -390,7 +405,7 @@ class TwitchChatHighlighter {
       const messageHash = this.hashString(`${username}-${messageText}`);
       const messageId = `twitch_${messageHash}_${username}`;
       
-      return {
+      const finalData = {
         id: messageId,
         username: username.toLowerCase(),
         displayName: username,
@@ -402,6 +417,9 @@ class TwitchChatHighlighter {
         messageHtml: messageHtml,
         source: 'extension'
       };
+      
+      console.log('✅ Final message data:', finalData);
+      return finalData;
     } catch (error) {
       console.error('Error extracting message data:', error);
       return null;
@@ -697,6 +715,11 @@ class TwitchChatHighlighter {
   // Generate HTML version of message with emotes
   generateMessageHtml(messageElement, emotes) {
     try {
+      if (!messageElement) {
+        console.log('⚠️ No message element provided for HTML generation');
+        return '';
+      }
+      
       // Create a copy of the message element to work with
       const messageClone = messageElement.cloneNode(true);
       
