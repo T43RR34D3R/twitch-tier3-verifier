@@ -1,23 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { HighlightsDB } from '../../../../lib/railway-db';
 
-// Store highlighted messages per channel (in production, use Redis or database)
-const channelHighlights = new Map<string, Map<string, {
-  id: string;
-  username: string;
-  displayName: string;
-  message: string;
-  timestamp: number;
-  color: string;
-  badges: string[];
-  source?: string;
-}>>();
-
-// Helper to get or create channel highlights
-function getChannelHighlights(channel: string) {
-  if (!channelHighlights.has(channel)) {
-    channelHighlights.set(channel, new Map());
-  }
-  return channelHighlights.get(channel)!;
+// Helper function to add CORS headers
+function addCorsHeaders(response: NextResponse) {
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+  return response;
 }
 
 // GET /api/highlights/[channel] - Fetch highlights for a channel
@@ -28,26 +17,30 @@ export async function GET(
   const params = await context.params;
   try {
     const channel = params.channel.toLowerCase();
-    const highlights = getChannelHighlights(channel);
-    const highlightArray = Array.from(highlights.values())
-      .sort((a, b) => b.timestamp - a.timestamp) // Most recent first
-      .slice(0, 50); // Limit to 50 most recent highlights
+    const highlights = await HighlightsDB.getChannelHighlights(channel, 50);
+
+    // Convert database format to API format for backwards compatibility
+    const highlightArray = highlights.map(highlight => ({
+      id: highlight.message_id,
+      username: highlight.username,
+      displayName: highlight.display_name,
+      message: highlight.message,
+      timestamp: highlight.timestamp,
+      color: highlight.color,
+      badges: highlight.badges,
+      source: highlight.source
+    }));
 
     const response = NextResponse.json(highlightArray);
-    
-    // Add CORS headers for browser extension
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
-    
-    return response;
+    return addCorsHeaders(response);
   } catch (error) {
     console.error('Error fetching highlights:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const errorResponse = NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return addCorsHeaders(errorResponse);
   }
 }
 
-// POST /api/highlights/[channel] - Add a highlight for a channel
+// POST /api/highlights/[channel] - Toggle highlight for a channel (add if doesn't exist, remove if exists)
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ channel: string }> }
@@ -59,17 +52,17 @@ export async function POST(
     
     // Validate required fields
     if (!body.id || !body.username || !body.message) {
-      return NextResponse.json({ 
+      const errorResponse = NextResponse.json({ 
         error: 'Missing required fields: id, username, message' 
       }, { status: 400 });
+      return addCorsHeaders(errorResponse);
     }
 
-    const highlights = getChannelHighlights(channel);
-    
     const highlight = {
-      id: body.id,
+      message_id: body.id,
+      channel: channel,
       username: body.username.toLowerCase(),
-      displayName: body.displayName || body.username,
+      display_name: body.displayName || body.username,
       message: body.message,
       timestamp: body.timestamp || Date.now(),
       color: body.color || '#ffffff',
@@ -77,34 +70,40 @@ export async function POST(
       source: body.source || 'extension'
     };
 
-    highlights.set(body.id, highlight);
+    // Toggle the highlight (add if doesn't exist, remove if exists)
+    const result = await HighlightsDB.toggleHighlight(highlight);
     
-    // Keep only the most recent 100 highlights per channel
-    if (highlights.size > 100) {
-      const sortedHighlights = Array.from(highlights.entries())
-        .sort(([, a], [, b]) => b.timestamp - a.timestamp);
-      
-      const toKeep = sortedHighlights.slice(0, 100);
-      highlights.clear();
-      toKeep.forEach(([id, highlight]) => {
-        highlights.set(id, highlight);
+    if (result.action === 'added') {
+      console.log(`✅ Highlight added to channel ${channel}:`, result.highlight);
+      const response = NextResponse.json({ 
+        success: true, 
+        action: 'added',
+        highlight: {
+          id: result.highlight!.message_id,
+          username: result.highlight!.username,
+          displayName: result.highlight!.display_name,
+          message: result.highlight!.message,
+          timestamp: result.highlight!.timestamp,
+          color: result.highlight!.color,
+          badges: result.highlight!.badges,
+          source: result.highlight!.source
+        }
       });
+      return addCorsHeaders(response);
+    } else {
+      console.log(`🗑️ Highlight removed from channel ${channel}:`, body.id);
+      const response = NextResponse.json({ 
+        success: true, 
+        action: 'removed',
+        messageId: body.id
+      });
+      return addCorsHeaders(response);
     }
 
-    console.log(`✅ Highlight added to channel ${channel}:`, highlight);
-    
-    const response = NextResponse.json({ success: true, highlight });
-    
-    // Add CORS headers for browser extension
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
-    
-    return response;
-
   } catch (error) {
-    console.error('Error adding highlight:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error toggling highlight:', error);
+    const errorResponse = NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return addCorsHeaders(errorResponse);
   }
 }
 
@@ -120,54 +119,37 @@ export async function DELETE(
     const { searchParams } = new URL(request.url);
     const messageId = searchParams.get('id');
     
-    const highlights = getChannelHighlights(channel);
-    
     if (messageId) {
       // Remove specific highlight
-      const removed = highlights.delete(messageId);
+      const removed = await HighlightsDB.removeHighlight(messageId);
       if (removed) {
         console.log(`🗑️ Highlight removed from channel ${channel}: ${messageId}`);
         
         const response = NextResponse.json({ success: true, action: 'removed', messageId });
-        response.headers.set('Access-Control-Allow-Origin', '*');
-        response.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-        response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
-        
-        return response;
+        return addCorsHeaders(response);
       } else {
         const response = NextResponse.json({ error: 'Highlight not found' }, { status: 404 });
-        response.headers.set('Access-Control-Allow-Origin', '*');
-        
-        return response;
+        return addCorsHeaders(response);
       }
     } else {
       // Clear all highlights for channel
-      const count = highlights.size;
-      highlights.clear();
+      const count = await HighlightsDB.clearChannelHighlights(channel);
       console.log(`🗑️ All highlights cleared for channel ${channel} (${count} items)`);
       
       const response = NextResponse.json({ success: true, action: 'cleared', count });
-      response.headers.set('Access-Control-Allow-Origin', '*');
-      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-      response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
-      
-      return response;
+      return addCorsHeaders(response);
     }
 
   } catch (error) {
     console.error('Error deleting highlights:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const errorResponse = NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return addCorsHeaders(errorResponse);
   }
 }
 
-// Handle CORS preflight requests and provide debug stats
+// Handle CORS preflight requests
 export async function OPTIONS() {
-  // Handle CORS preflight
   const response = new NextResponse(null, { status: 200 });
-  response.headers.set('Access-Control-Allow-Origin', '*');
-  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
   response.headers.set('Access-Control-Max-Age', '86400');
-  
-  return response;
+  return addCorsHeaders(response);
 }

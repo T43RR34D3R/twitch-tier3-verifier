@@ -443,7 +443,8 @@ class TwitchChatHighlighter {
       // Match various Twitch URL patterns
       const patterns = [
         /twitch\.tv\/([^\/#?]+)/, // Basic channel URL
-        /twitch\.tv\/popout\/([^\/#?]+)\/chat/, // Popout chat
+        /twitch\.tv\/popout\/moderator\/([^\/#?]+)\/chat/, // Moderator popout chat
+        /twitch\.tv\/popout\/([^\/#?]+)\/chat/, // Regular popout chat
         /twitch\.tv\/embed\/([^\/#?]+)/, // Embed
         /twitch\.tv\/moderator\/([^\/#?]+)/, // Moderator view
       ];

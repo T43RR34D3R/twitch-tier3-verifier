@@ -300,6 +300,22 @@ CREATE TABLE IF NOT EXISTS navigation_settings (
 -- ANALYTICS TABLES (existing)
 -- =====================================================
 
+-- Chat highlights table (for browser extension)
+CREATE TABLE IF NOT EXISTS chat_highlights (
+    id BIGSERIAL PRIMARY KEY,
+    message_id TEXT NOT NULL UNIQUE,
+    channel TEXT NOT NULL,
+    username TEXT NOT NULL,
+    display_name TEXT NOT NULL,
+    message TEXT NOT NULL,
+    timestamp BIGINT NOT NULL,
+    color TEXT DEFAULT '#ffffff',
+    badges JSONB DEFAULT '[]',
+    source TEXT DEFAULT 'extension',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);
+
 -- Stream analytics data
 CREATE TABLE IF NOT EXISTS stream_analytics (
   id BIGSERIAL PRIMARY KEY,
@@ -330,6 +346,13 @@ CREATE TABLE IF NOT EXISTS stream_analytics (
 -- Existing table indexes
 CREATE INDEX IF NOT EXISTS idx_verification_logs_created_at ON verification_logs(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_verification_logs_user_id ON verification_logs(user_id);
+
+-- Chat highlights indexes
+CREATE INDEX IF NOT EXISTS idx_chat_highlights_channel ON chat_highlights(channel);
+CREATE INDEX IF NOT EXISTS idx_chat_highlights_username ON chat_highlights(username);
+CREATE INDEX IF NOT EXISTS idx_chat_highlights_timestamp ON chat_highlights(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_chat_highlights_created_at ON chat_highlights(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chat_highlights_message_id ON chat_highlights(message_id);
 CREATE INDEX IF NOT EXISTS idx_subscribers_user_id ON subscribers(user_id);
 CREATE INDEX IF NOT EXISTS idx_subscribers_broadcaster_id ON subscribers(broadcaster_id);
 CREATE INDEX IF NOT EXISTS idx_subscribers_tier ON subscribers(tier);
@@ -383,6 +406,12 @@ DROP TRIGGER IF EXISTS update_stream_analytics_updated_at ON stream_analytics;
 CREATE TRIGGER update_stream_analytics_updated_at 
   BEFORE UPDATE ON stream_analytics 
   FOR EACH ROW EXECUTE PROCEDURE update_analytics_updated_at_column();
+
+-- Chat highlights trigger
+DROP TRIGGER IF EXISTS update_chat_highlights_updated_at ON chat_highlights;
+CREATE TRIGGER update_chat_highlights_updated_at 
+  BEFORE UPDATE ON chat_highlights 
+  FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
 -- Voting system triggers
 DROP TRIGGER IF EXISTS update_games_updated_at ON games;

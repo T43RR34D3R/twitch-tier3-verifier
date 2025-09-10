@@ -17,12 +17,46 @@ export default function ChatOverlay() {
 
   useEffect(() => {
     const fetchHighlights = async () => {
+      console.log('🔄 Fetching highlights...');
       try {
-        const response = await fetch('/api/twitch/chat?type=highlights');
-        const data = await response.json();
-        if (data.highlights) {
-          setHighlightedMessages(data.highlights);
+        // Fetch highlights from multiple possible channels
+        const channels = ['buckfoozle', 'popout'];
+        const allHighlights: HighlightedMessage[] = [];
+        console.log('📋 Checking channels:', channels);
+        
+        for (const channel of channels) {
+          try {
+            console.log(`📡 Fetching channel: ${channel}`);
+            const response = await fetch(`/api/highlights/${channel}`);
+            console.log(`📋 Response for ${channel}:`, response.status, response.ok);
+            if (response.ok) {
+              const data = await response.json();
+              console.log(`📊 Data for ${channel}:`, data);
+              if (Array.isArray(data)) {
+                console.log(`✅ Adding ${data.length} highlights from ${channel}`);
+                allHighlights.push(...data);
+              } else {
+                console.log(`⚠️ Data is not an array for ${channel}:`, typeof data);
+              }
+            } else {
+              console.log(`❌ Response not ok for ${channel}:`, response.status);
+            }
+          } catch (channelError) {
+            console.warn(`Failed to fetch highlights for channel ${channel}:`, channelError);
+          }
         }
+        
+        // Remove duplicates based on message ID and sort by timestamp (newest first)
+        console.log(`🔄 Processing ${allHighlights.length} total highlights`);
+        const uniqueHighlights = allHighlights
+          .filter((highlight, index, arr) => 
+            index === arr.findIndex(h => h.id === highlight.id)
+          )
+          .sort((a, b) => b.timestamp - a.timestamp);
+          
+        console.log(`✨ Final unique highlights: ${uniqueHighlights.length}`);
+        console.log('📊 Final data:', uniqueHighlights);
+        setHighlightedMessages(uniqueHighlights);
       } catch (error) {
         console.error('Failed to fetch highlights:', error);
       }
