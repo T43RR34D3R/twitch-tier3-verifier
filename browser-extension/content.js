@@ -308,9 +308,6 @@ class TwitchChatHighlighter {
         name: emote.getAttribute('alt') || 'emote',
         imageUrl: emote.getAttribute('src')
       })).filter(emote => emote.imageUrl);
-      
-      // Generate HTML version of message with emotes
-      const messageHtml = this.generateMessageHtml(messageTextElement, emotes, messageText);
 
       // Extract user color
       const colorElement = usernameElement || messageElement.querySelector('[style*="color"]');
@@ -350,6 +347,9 @@ class TwitchChatHighlighter {
         console.log('  - Message element HTML:', messageTextElement?.outerHTML);
         return null;
       }
+      
+      // Generate HTML version of message with emotes (after messageText is defined)
+      const messageHtml = this.generateMessageHtml(messageTextElement, emotes, messageText);
       
       // Enhanced badge extraction with image URLs
       const badges = Array.from(badgeElements).map(badge => {
