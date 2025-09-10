@@ -2,6 +2,18 @@
 
 import { useEffect, useState } from 'react';
 
+interface BadgeInfo {
+  label: string;
+  imageUrl: string;
+  alt: string;
+}
+
+interface EmoteInfo {
+  name: string;
+  imageUrl: string;
+  positions: number[][];
+}
+
 interface HighlightedMessage {
   id: string;
   username: string;
@@ -9,7 +21,9 @@ interface HighlightedMessage {
   message: string;
   timestamp: number;
   color: string;
-  badges: string[];
+  badges: BadgeInfo[];
+  emotes: EmoteInfo[];
+  messageHtml?: string; // HTML version with emotes
 }
 
 // Comprehensive badge mapping based on streamdatabase and Twitch data
@@ -143,9 +157,9 @@ export default function ChatOverlay() {
       <div className="space-y-4">
         {highlightedMessages.map((msg, index) => {
           const badgeInfos = msg.badges
-            .filter(badge => badge && badge.trim())
-            .map(badge => getBadgeInfo(badge))
-            .filter(info => info.icon || info.label);
+            .filter(badge => badge && (typeof badge === 'string' ? badge.trim() : badge.label))
+            .map(badge => typeof badge === 'string' ? getBadgeInfo(badge) : badge)
+            .filter(info => info.imageUrl || info.label);
             
           return (
             <div
@@ -173,15 +187,34 @@ export default function ChatOverlay() {
                             key={badgeIndex}
                             className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold border backdrop-blur-sm shadow-md"
                             style={{ 
-                              backgroundColor: `${badgeInfo.color}25`,
-                              borderColor: `${badgeInfo.color}60`,
-                              color: badgeInfo.color,
-                              boxShadow: `0 0 8px ${badgeInfo.color}30`
+                              backgroundColor: badgeInfo.imageUrl ? 'rgba(0,0,0,0.3)' : `${badgeInfo.color || '#64748b'}25`,
+                              borderColor: badgeInfo.imageUrl ? 'rgba(255,255,255,0.2)' : `${badgeInfo.color || '#64748b'}60`,
+                              color: badgeInfo.color || '#ffffff',
+                              boxShadow: `0 0 8px ${badgeInfo.color || '#64748b'}30`
                             }}
-                            title={badgeInfo.label}
+                            title={badgeInfo.alt || badgeInfo.label}
                           >
-                            {badgeInfo.icon && <span className="mr-1 text-xs">{badgeInfo.icon}</span>}
-                            <span className="truncate max-w-14 text-xs">{badgeInfo.label}</span>
+                            {badgeInfo.imageUrl ? (
+                              <img 
+                                src={badgeInfo.imageUrl} 
+                                alt={badgeInfo.alt || badgeInfo.label}
+                                className="w-4 h-4 mr-1"
+                                onError={(e) => {
+                                  // Fallback to emoji/text if image fails
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const span = document.createElement('span');
+                                  span.textContent = badgeInfo.label || 'Badge';
+                                  span.className = 'text-xs';
+                                  target.parentNode?.insertBefore(span, target);
+                                }}
+                              />
+                            ) : (
+                              badgeInfo.label && <span className="mr-1 text-xs">{badgeInfo.label}</span>
+                            )}
+                            {!badgeInfo.imageUrl && (
+                              <span className="truncate max-w-14 text-xs">{badgeInfo.label}</span>
+                            )}
                           </div>
                         ))}
                         {badgeInfos.length > 4 && (
@@ -210,9 +243,13 @@ export default function ChatOverlay() {
                   </div>
                 </div>
 
-                {/* Message with soft shadow */}
+                {/* Message with emotes and soft shadow */}
                 <div className="text-white text-sm font-medium leading-relaxed drop-shadow-md">
-                  {msg.message}
+                  {msg.messageHtml ? (
+                    <span dangerouslySetInnerHTML={{ __html: msg.messageHtml }} />
+                  ) : (
+                    msg.message
+                  )}
                 </div>
               </div>
               
@@ -310,6 +347,20 @@ export default function ChatOverlay() {
         /* Backdrop blur enhancement */
         .backdrop-blur-enhanced {
           backdrop-filter: blur(12px) saturate(180%);
+        }
+        
+        /* Emote styling */
+        .chat-emote {
+          display: inline-block;
+          vertical-align: middle;
+          margin: 0 1px;
+        }
+        
+        .emote-image {
+          height: 1.4em;
+          width: auto;
+          vertical-align: middle;
+          max-width: none;
         }
       `}</style>
     </div>

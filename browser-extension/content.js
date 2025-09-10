@@ -1,6 +1,133 @@
 // Enhanced Twitch Chat Highlighter - Content Script
 console.log('🎯 Enhanced Twitch Chat Highlighter loaded!');
 
+// Inject CSS for extension styling
+const style = document.createElement('style');
+style.textContent = `
+  .chat-highlighter-selected {
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.2)) !important;
+    border-left: 3px solid #3b82f6 !important;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3) !important;
+    animation: highlightPulse 2s ease-in-out !important;
+  }
+  
+  @keyframes highlightPulse {
+    0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); }
+    100% { box-shadow: 0 0 10px rgba(59, 130, 246, 0.3); }
+  }
+  
+  .chat-highlighter-feedback {
+    position: absolute;
+    top: -30px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 10000;
+    animation: feedbackSlide 2s ease-out forwards;
+    pointer-events: none;
+  }
+  
+  .chat-highlighter-feedback--success {
+    background: rgba(34, 197, 94, 0.9);
+    border: 1px solid #22c55e;
+  }
+  
+  .chat-highlighter-feedback--remove {
+    background: rgba(239, 68, 68, 0.9);
+    border: 1px solid #ef4444;
+  }
+  
+  @keyframes feedbackSlide {
+    0% { opacity: 0; transform: translateY(10px); }
+    20% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-10px); }
+  }
+  
+  .chat-highlighter-indicator {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(20, 20, 30, 0.95);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 10001;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .chat-highlighter-indicator:hover {
+    background: rgba(30, 30, 50, 0.98);
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  }
+  
+  .chat-highlighter-indicator.minimized {
+    padding: 6px 8px;
+    border-radius: 50%;
+    width: auto;
+    height: auto;
+  }
+  
+  .indicator-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .indicator-minimize {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 2px;
+    font-size: 14px;
+    font-weight: bold;
+    transition: color 0.2s ease;
+  }
+  
+  .indicator-minimize:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .chat-highlighter-global-feedback {
+    position: fixed;
+    top: 60px;
+    right: 10px;
+    background: rgba(239, 68, 68, 0.95);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    z-index: 10002;
+    border: 1px solid #ef4444;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    max-width: 300px;
+    display: none;
+  }
+  
+  .chat-highlighter-global-feedback--error {
+    background: rgba(239, 68, 68, 0.95);
+    border-color: #ef4444;
+  }
+`;
+document.head.appendChild(style);
+
 class TwitchChatHighlighter {
   constructor() {
     this.isEnabled = true;
@@ -162,6 +289,22 @@ class TwitchChatHighlighter {
         '[class*="ChatBadge"] img',
         '[class*="badge"] img'
       ].join(','));
+      
+      // Extract emotes from the message
+      const emoteElements = messageTextElement.querySelectorAll([
+        'img[data-a-target="emote"]',
+        'img[alt]:not([data-a-target*="badge"])',
+        '.chat-line__message--emote img',
+        '[class*="emote"] img'
+      ].join(','));
+      
+      const emotes = Array.from(emoteElements).map(emote => ({
+        name: emote.getAttribute('alt') || 'emote',
+        imageUrl: emote.getAttribute('src')
+      })).filter(emote => emote.imageUrl);
+      
+      // Generate HTML version of message with emotes
+      const messageHtml = this.generateMessageHtml(messageTextElement, emotes);
 
       // Extract user color
       const colorElement = usernameElement || messageElement.querySelector('[style*="color"]');
@@ -179,51 +322,69 @@ class TwitchChatHighlighter {
       const username = usernameElement.textContent.trim();
       const messageText = messageTextElement.textContent.trim();
       
-      // Enhanced badge extraction
+      // Enhanced badge extraction with image URLs
       const badges = Array.from(badgeElements).map(badge => {
-        // Try multiple methods to get badge info
         const alt = badge.getAttribute('alt');
         const title = badge.getAttribute('title');
         const src = badge.getAttribute('src');
         
-        // Parse badge type from image src if available
-        if (src) {
-          if (src.includes('subscriber')) {
-            const monthMatch = src.match(/([0-9]+)/g);
-            if (monthMatch) {
-              const months = parseInt(monthMatch[monthMatch.length - 1]);
-              if (months >= 36) return `Subscriber 3-Year`;
-              if (months >= 30) return `Subscriber 2.5-Year`;
-              if (months >= 24) return `Subscriber 2-Year`;
-              if (months >= 18) return `Subscriber 1.5-Year`;
-              if (months >= 12) return `Subscriber 1-Year`;
-              if (months >= 9) return `Subscriber 9-Month`;
-              if (months >= 6) return `Subscriber 6-Month`;
-              if (months >= 3) return `Subscriber 3-Month`;
-              if (months >= 2) return `Subscriber 2-Month`;
-              return 'Subscriber';
-            }
+        if (!src) return null;
+        
+        // Extract badge info and preserve image URL
+        let badgeType = alt || title || 'badge';
+        let badgeLabel = badgeType;
+        
+        // Parse badge type from image src for better labeling
+        if (src.includes('subscriber')) {
+          const monthMatch = src.match(/([0-9]+)/g);
+          if (monthMatch) {
+            const months = parseInt(monthMatch[monthMatch.length - 1]);
+            if (months >= 36) badgeLabel = 'Subscriber 3-Year';
+            else if (months >= 30) badgeLabel = 'Subscriber 2.5-Year';
+            else if (months >= 24) badgeLabel = 'Subscriber 2-Year';
+            else if (months >= 18) badgeLabel = 'Subscriber 1.5-Year';
+            else if (months >= 12) badgeLabel = 'Subscriber 1-Year';
+            else if (months >= 9) badgeLabel = 'Subscriber 9-Month';
+            else if (months >= 6) badgeLabel = 'Subscriber 6-Month';
+            else if (months >= 3) badgeLabel = 'Subscriber 3-Month';
+            else if (months >= 2) badgeLabel = 'Subscriber 2-Month';
+            else badgeLabel = 'Subscriber';
           }
-          if (src.includes('moderator')) return 'Moderator';
-          if (src.includes('broadcaster')) return 'Broadcaster';
-          if (src.includes('vip')) return 'VIP';
-          if (src.includes('partner')) return 'Partner';
-          if (src.includes('staff')) return 'Staff';
-          if (src.includes('admin')) return 'Admin';
-          if (src.includes('global_mod')) return 'Global Mod';
-          if (src.includes('turbo')) return 'Turbo';
-          if (src.includes('premium') || src.includes('prime')) return 'Premium';
-          if (src.includes('founder')) return 'Founder';
-          if (src.includes('bits') || src.includes('cheer')) {
-            const bitsMatch = src.match(/([0-9]+)/g);
-            if (bitsMatch) {
-              return `Cheer ${bitsMatch[bitsMatch.length - 1]}`;
-            }
+        } else if (src.includes('moderator')) {
+          badgeLabel = 'Moderator';
+        } else if (src.includes('broadcaster')) {
+          badgeLabel = 'Broadcaster';
+        } else if (src.includes('vip')) {
+          badgeLabel = 'VIP';
+        } else if (src.includes('partner')) {
+          badgeLabel = 'Partner';
+        } else if (src.includes('staff')) {
+          badgeLabel = 'Staff';
+        } else if (src.includes('admin')) {
+          badgeLabel = 'Admin';
+        } else if (src.includes('global_mod')) {
+          badgeLabel = 'Global Mod';
+        } else if (src.includes('turbo')) {
+          badgeLabel = 'Turbo';
+        } else if (src.includes('premium') || src.includes('prime')) {
+          badgeLabel = 'Prime';
+        } else if (src.includes('founder')) {
+          badgeLabel = 'Founder';
+        } else if (src.includes('bits') || src.includes('cheer')) {
+          const bitsMatch = src.match(/([0-9]+)/g);
+          if (bitsMatch) {
+            const amount = parseInt(bitsMatch[bitsMatch.length - 1]);
+            badgeLabel = `Cheer ${amount >= 1000 ? Math.floor(amount/1000) + 'K' : amount}`;
           }
         }
         
-        return alt || title || 'badge';
-      }).filter(badge => badge && badge !== 'badge');
+        // Return badge object with image URL
+        return {
+          label: badgeLabel,
+          imageUrl: src,
+          alt: alt || title || badgeLabel
+        };
+      }).filter(badge => badge !== null);
 
       // Create a consistent ID based on message content and username
       const messageHash = this.hashString(`${username}-${messageText}`);
@@ -237,6 +398,8 @@ class TwitchChatHighlighter {
         timestamp: Date.now(),
         color: this.rgbToHex(userColor) || '#9146FF',
         badges: badges,
+        emotes: emotes,
+        messageHtml: messageHtml,
         source: 'extension'
       };
     } catch (error) {
@@ -529,6 +692,40 @@ class TwitchChatHighlighter {
       hash = hash & hash; // Convert to 32bit integer
     }
     return Math.abs(hash).toString(36);
+  }
+  
+  // Generate HTML version of message with emotes
+  generateMessageHtml(messageElement, emotes) {
+    try {
+      // Create a copy of the message element to work with
+      const messageClone = messageElement.cloneNode(true);
+      
+      // Find all emote images in the cloned element
+      const emoteImages = messageClone.querySelectorAll('img[alt]');
+      
+      // Replace emote images with properly styled versions
+      emoteImages.forEach(img => {
+        const emoteWrapper = document.createElement('span');
+        emoteWrapper.className = 'chat-emote';
+        emoteWrapper.style.cssText = 'display: inline-block; vertical-align: middle; margin: 0 1px;';
+        
+        const newImg = document.createElement('img');
+        newImg.src = img.src;
+        newImg.alt = img.alt;
+        newImg.style.cssText = 'height: 1.2em; width: auto; vertical-align: middle;';
+        newImg.className = 'emote-image';
+        
+        emoteWrapper.appendChild(newImg);
+        img.parentNode?.replaceChild(emoteWrapper, img);
+      });
+      
+      // Return the HTML content
+      return messageClone.innerHTML || messageElement.textContent;
+    } catch (error) {
+      console.error('Error generating message HTML:', error);
+      // Fallback to plain text
+      return messageElement.textContent || '';
+    }
   }
 }
 
