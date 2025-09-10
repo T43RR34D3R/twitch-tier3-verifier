@@ -362,8 +362,8 @@ class TwitchChatHighlighter {
         console.log('📝 Final extracted text:', messageText);
       }
       
-      console.log('📝 Extracted username:', username);
-      console.log('📝 Extracted message text:', messageText);
+    console.log('📝 Extracted username:', username);
+    console.log('📝 Extracted message text:', messageText);
       
       if (!username || !messageText) {
         console.log('❌ Username or message text is empty');
@@ -372,9 +372,6 @@ class TwitchChatHighlighter {
         console.log('  - Message element HTML:', messageTextElement?.outerHTML);
         return null;
       }
-      
-      // Generate HTML version of message with emotes (after messageText is defined)
-      const messageHtml = this.generateMessageHtml(messageTextElement, emotes, messageText);
       
       // Enhanced badge extraction with image URLs
       const badges = Array.from(badgeElements).map(badge => {
@@ -439,6 +436,10 @@ class TwitchChatHighlighter {
           alt: alt || title || badgeLabel
         };
       }).filter(badge => badge !== null);
+
+      // Generate clean HTML with inline emotes based on text
+      const messageHtml = this.generateMessageHtml(messageTextElement, emotes, messageText);
+      console.log('📝 Generated messageHtml:', messageHtml);
 
       // Create a consistent ID based on message content and username
       const messageHash = this.hashString(`${username}-${messageText}`);
@@ -909,32 +910,20 @@ class TwitchChatHighlighter {
       
       if (!messageElement) {
         console.log('⚠️ No message element provided for HTML generation');
-        return fallbackText || '';
+        return this.parseTextForEmotes(fallbackText || '');
       }
       
-      // Simple approach: Just clone the DOM and ensure emote images are properly styled
-      const messageClone = messageElement.cloneNode(true);
+      // Extract clean text from the message element
+      const cleanText = this.extractMessageText(messageElement);
+      console.log('🎭 Extracted clean text:', cleanText);
       
-      // Find all images (emotes) in the cloned element and style them
-      const images = messageClone.querySelectorAll('img[alt]');
-      images.forEach(img => {
-        // Skip badge images
-        if (img.getAttribute('data-a-target')?.includes('badge') || 
-            img.className?.includes('badge')) {
-          return;
-        }
-        
-        // Style emote images
-        img.style.cssText = 'height: 1.4em; width: auto; vertical-align: middle; margin: 0 1px;';
-        img.className = 'emote-image';
-      });
-      
-      const result = messageClone.innerHTML || messageClone.textContent || fallbackText || '';
+      // Parse the clean text for emotes and generate inline HTML
+      const result = this.parseTextForEmotes(cleanText);
       console.log('🎭 Generated HTML:', result);
       return result;
     } catch (error) {
       console.error('Error generating message HTML:', error);
-      return fallbackText || messageElement?.textContent || '';
+      return this.parseTextForEmotes(fallbackText || messageElement?.textContent || '');
     }
   }
   
@@ -945,7 +934,7 @@ class TwitchChatHighlighter {
       
       if (!text || this.emoteCache.size === 0) {
         console.log('🎭 No text or empty emote cache, returning original text');
-        return text;
+        return this.escapeHtml(text);
       }
       
       // Split text by spaces to find potential emote names
@@ -961,9 +950,9 @@ class TwitchChatHighlighter {
         if (emoteData) {
           console.log('🎭 ✅ Found emote:', word, emoteData);
           foundEmotes++;
-          // Replace with emote image
+          // Replace with simple inline emote image
           htmlParts.push(
-            `<img src="${emoteData.imageUrl}" alt="${emoteData.name}" title="${emoteData.name}" class="emote-image" style="height: 1.4em; width: auto; vertical-align: middle; margin: 0 1px;" />`
+            `<img src="${emoteData.imageUrl}" alt="${emoteData.name}" title="${emoteData.name}" class="emote-image" style="height: 1.4em; width: auto; vertical-align: middle; margin: 0 1px; display: inline;" />`
           );
         } else {
           console.log('🎭 ❌ Not found in cache:', `"${word}"`);
@@ -977,11 +966,12 @@ class TwitchChatHighlighter {
       return result;
     } catch (error) {
       console.error('Error parsing text for emotes:', error);
-      return text;
+      return this.escapeHtml(text);
     }
   }
   
   escapeHtml(text) {
+    if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;

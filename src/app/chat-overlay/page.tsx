@@ -334,6 +334,19 @@ export default function ChatOverlay() {
         .text-fragment {
           display: inline;
         }
+        
+        /* Force ALL elements with emote classes to be inline */
+        span[dangerouslySetInnerHTML] img,
+        span[dangerouslySetInnerHTML] * {
+          display: inline !important;
+          vertical-align: middle !important;
+        }
+        
+        /* Additional fallback for any block-level elements in messages */
+        .text-white div,
+        .text-white span[dangerouslySetInnerHTML] div {
+          display: inline !important;
+        }
       `}</style>
     </div>
   );
