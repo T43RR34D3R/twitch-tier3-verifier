@@ -8,6 +8,7 @@ const elements = {
   serverUrl: document.getElementById('serverUrl'),
   channelName: document.getElementById('channelName'),
   saveConfig: document.getElementById('saveConfig'),
+  testConnection: document.getElementById('testConnection'),
   highlightCount: document.getElementById('highlightCount'),
   sessionTime: document.getElementById('sessionTime'),
   highlightsList: document.getElementById('highlightsList'),
@@ -114,6 +115,7 @@ async function saveStoredData() {
 function setupEventListeners() {
   // Configuration
   elements.saveConfig.addEventListener('click', handleSaveConfig);
+  elements.testConnection.addEventListener('click', handleTestConnection);
   
   // Controls
   elements.toggleExtension.addEventListener('click', handleToggleExtension);
@@ -145,6 +147,70 @@ function setupEventListeners() {
   
   // Listen for messages from content script
   chrome.runtime.onMessage.addListener(handleMessage);
+}
+
+// Handle test connection
+async function handleTestConnection() {
+  const serverUrl = elements.serverUrl.value.trim() || extensionState.serverUrl;
+  const channelName = elements.channelName.value.trim().toLowerCase() || extensionState.channelName;
+  
+  if (!serverUrl || !channelName) {
+    showError('Please enter server URL and channel name first');
+    return;
+  }
+  
+  showLoading(true);
+  
+  try {
+    // Test POST request like content script does
+    const testData = {
+      id: `test_${Date.now()}`,
+      username: 'testuser',
+      displayName: 'TestUser', 
+      message: 'Test highlight from extension popup',
+      timestamp: Date.now(),
+      color: '#FF0000',
+      badges: ['test'],
+      source: 'popup-test'
+    };
+    
+    console.log(`Testing POST to: ${serverUrl}/api/highlights/${channelName}`);
+    console.log('Test data:', testData);
+    
+    const response = await fetch(`${serverUrl}/api/highlights/${channelName}`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      mode: 'cors',
+      body: JSON.stringify(testData)
+    });
+    
+    console.log('Response status:', response.status);
+    console.log('Response headers:', response.headers);
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Response data:', data);
+      showSuccess('✅ POST test successful! Check console for details.');
+    } else {
+      const errorText = await response.text();
+      console.error('HTTP Error:', response.status, response.statusText);
+      console.error('Error body:', errorText);
+      showError(`POST failed: ${response.status} ${response.statusText}`);
+    }
+    
+  } catch (error) {
+    console.error('Test connection error:', error);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
+    showError(`Connection test failed: ${error.message}`);
+  } finally {
+    showLoading(false);
+  }
 }
 
 // Handle save configuration
