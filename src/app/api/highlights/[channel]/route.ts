@@ -33,7 +33,14 @@ export async function GET(
       .sort((a, b) => b.timestamp - a.timestamp) // Most recent first
       .slice(0, 50); // Limit to 50 most recent highlights
 
-    return NextResponse.json(highlightArray);
+    const response = NextResponse.json(highlightArray);
+    
+    // Add CORS headers for browser extension
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+    
+    return response;
   } catch (error) {
     console.error('Error fetching highlights:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -85,7 +92,15 @@ export async function POST(
     }
 
     console.log(`✅ Highlight added to channel ${channel}:`, highlight);
-    return NextResponse.json({ success: true, highlight });
+    
+    const response = NextResponse.json({ success: true, highlight });
+    
+    // Add CORS headers for browser extension
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+    
+    return response;
 
   } catch (error) {
     console.error('Error adding highlight:', error);
@@ -112,16 +127,31 @@ export async function DELETE(
       const removed = highlights.delete(messageId);
       if (removed) {
         console.log(`🗑️ Highlight removed from channel ${channel}: ${messageId}`);
-        return NextResponse.json({ success: true, action: 'removed', messageId });
+        
+        const response = NextResponse.json({ success: true, action: 'removed', messageId });
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        response.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+        
+        return response;
       } else {
-        return NextResponse.json({ error: 'Highlight not found' }, { status: 404 });
+        const response = NextResponse.json({ error: 'Highlight not found' }, { status: 404 });
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        
+        return response;
       }
     } else {
       // Clear all highlights for channel
       const count = highlights.size;
       highlights.clear();
       console.log(`🗑️ All highlights cleared for channel ${channel} (${count} items)`);
-      return NextResponse.json({ success: true, action: 'cleared', count });
+      
+      const response = NextResponse.json({ success: true, action: 'cleared', count });
+      response.headers.set('Access-Control-Allow-Origin', '*');
+      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+      response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+      
+      return response;
     }
 
   } catch (error) {
@@ -130,20 +160,14 @@ export async function DELETE(
   }
 }
 
-// Helper endpoint to get all channels with highlights (for debugging)
+// Handle CORS preflight requests and provide debug stats
 export async function OPTIONS() {
-  const channels = Array.from(channelHighlights.keys());
-  const stats = channels.map(channel => ({
-    channel,
-    highlightCount: channelHighlights.get(channel)?.size || 0,
-    lastActivity: Math.max(
-      ...Array.from(channelHighlights.get(channel)?.values() || [])
-        .map(h => h.timestamp)
-    )
-  }));
-
-  return NextResponse.json({ 
-    totalChannels: channels.length,
-    channels: stats
-  });
+  // Handle CORS preflight
+  const response = new NextResponse(null, { status: 200 });
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+  response.headers.set('Access-Control-Max-Age', '86400');
+  
+  return response;
 }

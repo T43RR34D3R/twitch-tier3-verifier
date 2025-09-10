@@ -173,13 +173,22 @@ async function handleSaveConfig() {
   showLoading(true);
   
   try {
+    console.log(`Testing connection to: ${serverUrl}/api/highlights/${channelName}`);
+    
     // Test server connection
     const response = await fetch(`${serverUrl}/api/highlights/${channelName}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      mode: 'cors'
     });
     
+    console.log(`Response status: ${response.status}`);
+    console.log(`Response headers:`, response.headers);
+    
     if (response.ok) {
+      const data = await response.json();
+      console.log(`Server response:`, data);
+      
       extensionState.serverUrl = serverUrl;
       extensionState.channelName = channelName;
       await saveStoredData();
@@ -193,11 +202,17 @@ async function handleSaveConfig() {
       showSuccess('Configuration saved successfully!');
       updateUI();
     } else {
-      showError('Failed to connect to server. Check URL and try again.');
+      console.error(`HTTP Error: ${response.status} ${response.statusText}`);
+      showError(`Server returned ${response.status}: ${response.statusText}`);
     }
   } catch (error) {
     console.error('Config save error:', error);
-    showError('Failed to connect to server. Check URL and try again.');
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
+    showError(`Connection failed: ${error.message}`);
   } finally {
     showLoading(false);
   }

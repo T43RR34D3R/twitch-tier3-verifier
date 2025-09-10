@@ -9,6 +9,7 @@
   ],
   "host_permissions": [
     "*://www.twitch.tv/popout/moderator/buckfoozle/chat*",
+    "*://buckfoozle.com/*",
     "*://localhost:*/*",
     "*://*.vercel.app/*",
     "*://*.netlify.app/*"
