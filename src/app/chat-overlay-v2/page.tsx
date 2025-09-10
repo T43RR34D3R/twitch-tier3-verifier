@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 interface HighlightedMessage {
@@ -14,7 +14,7 @@ interface HighlightedMessage {
   source?: string;
 }
 
-export default function EnhancedChatOverlay() {
+function ChatOverlayContent() {
   const searchParams = useSearchParams();
   const [highlightedMessages, setHighlightedMessages] = useState<HighlightedMessage[]>([]);
   const [channel, setChannel] = useState<string>('general');
@@ -26,7 +26,7 @@ export default function EnhancedChatOverlay() {
 
   // Get channel from URL params or use default
   useEffect(() => {
-    const channelParam = searchParams.get('channel') || 'general';
+    const channelParam = searchParams?.get('channel') || 'general';
     setChannel(channelParam.toLowerCase());
   }, [searchParams]);
 
@@ -177,7 +177,7 @@ export default function EnhancedChatOverlay() {
       </div>
 
       {/* Settings overlay (hidden by default, can be shown with ?settings=true) */}
-      {searchParams.get('settings') === 'true' && (
+      {searchParams?.get('settings') === 'true' && (
         <div className="fixed top-4 right-4 bg-black/80 backdrop-blur-sm rounded-lg p-4 text-white text-sm">
           <h3 className="font-bold mb-2">Overlay Settings</h3>
           <div className="space-y-2">
@@ -219,5 +219,17 @@ export default function EnhancedChatOverlay() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function EnhancedChatOverlay() {
+  return (
+    <Suspense fallback={
+      <div className="w-full h-screen bg-transparent flex items-center justify-center">
+        <div className="text-white/20 text-lg font-medium">Loading...</div>
+      </div>
+    }>
+      <ChatOverlayContent />
+    </Suspense>
   );
 }
