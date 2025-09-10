@@ -327,13 +327,27 @@ class TwitchChatHighlighter {
       }
 
       const username = usernameElement.textContent?.trim() || '';
-      const messageText = messageTextElement.textContent?.trim() || '';
+      let messageText = messageTextElement.textContent?.trim() || '';
+      
+      // If message text is empty (likely emote-only), get alt text from emotes
+      if (!messageText && messageTextElement) {
+        const emoteImages = messageTextElement.querySelectorAll('img[alt]');
+        if (emoteImages.length > 0) {
+          messageText = Array.from(emoteImages)
+            .map(img => img.getAttribute('alt') || 'emote')
+            .join(' ');
+          console.log('🎭 Extracted emote-only message text:', messageText);
+        }
+      }
       
       console.log('📝 Extracted username:', username);
       console.log('📝 Extracted message text:', messageText);
       
       if (!username || !messageText) {
         console.log('❌ Username or message text is empty');
+        console.log('  - Username length:', username.length);
+        console.log('  - Message text length:', messageText.length);
+        console.log('  - Message element HTML:', messageTextElement?.outerHTML);
         return null;
       }
       

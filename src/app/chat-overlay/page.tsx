@@ -185,8 +185,8 @@ export default function ChatOverlay() {
                     </span>
                   </div>
                   
-                  {/* Timestamp with subtle glow */}
-                  <div className="text-gray-300 text-xs font-mono uppercase tracking-wider bg-gray-900/50 px-2 py-1 rounded border border-gray-700/50 shadow-lg">
+                  {/* Timestamp */}
+                  <div className="text-gray-300 text-xs font-mono uppercase tracking-wider">
                     {formatTime(msg.timestamp)}
                   </div>
                 </div>
