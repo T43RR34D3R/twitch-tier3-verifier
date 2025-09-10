@@ -98,16 +98,21 @@ export default function TwitchChatPage() {
   // Check if user is mod/admin
   const isUserMod = session?.user?.name && (['TearReader', 'BuckFoozle'].includes(session.user.name) || session.user.id === '269187200');
 
-  const getChatUrl = () => {
-    const baseUrl = `https://www.twitch.tv/popout/${channelName}/chat`;
-    const parent = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+  const openTwitchChat = () => {
+    // Use correct Twitch popout URLs
+    const url = isUserMod 
+      ? `https://www.twitch.tv/popout/moderator/${channelName}/chat?id=4`
+      : `https://www.twitch.tv/popout/${channelName}/chat?popout=`;
     
-    // Use mod view if user is a moderator
-    if (isUserMod) {
-      return `${baseUrl}?popout=&moderator=true&parent=${parent}`;
-    }
+    window.open(url, 'twitchChat', 'width=400,height=600,scrollbars=yes,resizable=yes');
+  };
+
+  const openTwitchChatNewTab = () => {
+    const url = isUserMod 
+      ? `https://www.twitch.tv/popout/moderator/${channelName}/chat?id=4`
+      : `https://www.twitch.tv/popout/${channelName}/chat?popout=`;
     
-    return `${baseUrl}?popout=&parent=${parent}`;
+    window.open(url, '_blank');
   };
 
   return (
@@ -199,54 +204,125 @@ export default function TwitchChatPage() {
         </div>
       </header>
 
-      {/* Main Chat Area */}
+      {/* Main Content Area */}
       <div className="flex-1 p-4 relative">
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 h-full overflow-hidden">
-          <iframe
-            src={getChatUrl()}
-            className="w-full h-full border-0 rounded-xl"
-            title={`${channelName} Twitch Chat`}
-            allow="autoplay"
-          />
+        
+        {/* Chat Launch Section */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-8 mb-6 text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">
+            {isUserMod ? '🛡️ Moderator Chat' : '💬 Twitch Chat'}
+          </h2>
+          <p className="text-gray-300 mb-6">
+            {isUserMod 
+              ? 'Launch Twitch moderator chat with all mod tools'
+              : 'Launch Twitch chat for viewing and chatting'
+            }
+          </p>
           
-          {/* Highlight Indicator Overlay */}
-          {settings.showHighlightOverlay && highlightedMessages.length > 0 && (
-            <div className={`absolute ${
-              settings.overlayPosition === 'top-left' ? 'top-4 left-4' :
-              settings.overlayPosition === 'top-right' ? 'top-4 right-4' :
-              settings.overlayPosition === 'bottom-left' ? 'bottom-4 left-4' :
-              'bottom-4 right-4'
-            } space-y-2 pointer-events-none z-10`}>
-              {highlightedMessages.slice(0, 3).map((msg) => (
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={openTwitchChat}
+              className={`px-6 py-3 rounded-xl font-semibold text-white transition-all duration-300 hover:scale-105 ${
+                isUserMod 
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
+              }`}
+            >
+              {isUserMod ? '🛡️ Open Mod Chat (Popout)' : '💬 Open Chat (Popout)'}
+            </button>
+            
+            <button
+              onClick={openTwitchChatNewTab}
+              className="px-6 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl font-semibold text-white transition-all duration-300 hover:scale-105"
+            >
+              🗂️ Open in New Tab
+            </button>
+          </div>
+          
+          <div className="mt-4 text-sm text-gray-400">
+            Channel: <span className="text-white font-mono">{channelName}</span>
+          </div>
+        </div>
+
+        {/* Highlighted Messages Display */}
+        {highlightedMessages.length > 0 ? (
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                ⭐ Highlighted Messages ({highlightedMessages.length})
+              </h3>
+              <button
+                onClick={clearHighlights}
+                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
+              >
+                Clear All
+              </button>
+            </div>
+            
+            <div className="grid gap-4 max-h-96 overflow-y-auto">
+              {highlightedMessages.map((msg) => (
                 <div
                   key={msg.id}
-                  className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-3 py-2 rounded-lg shadow-lg animate-pulse max-w-xs"
+                  className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-400/30 rounded-lg p-4 hover:from-yellow-500/30 hover:to-orange-500/30 transition-all"
                 >
-                  <div className="font-bold text-sm" style={{ color: msg.color }}>
-                    {msg.displayName}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span 
+                      className="font-bold"
+                      style={{ color: msg.color || '#ffffff' }}
+                    >
+                      {msg.displayName}
+                    </span>
+                    {msg.badges.map((badge) => (
+                      <span key={badge} className="text-xs bg-gray-700 px-1 rounded">
+                        {badge}
+                      </span>
+                    ))}
+                    <span className="text-xs text-gray-400">
+                      {new Date(msg.timestamp).toLocaleTimeString()}
+                    </span>
                   </div>
-                  <div className="text-xs truncate">
+                  <div className="text-white break-words">
                     {msg.message}
                   </div>
                 </div>
               ))}
-              {highlightedMessages.length > 3 && (
-                <div className="text-yellow-400 text-xs text-center">
-                  +{highlightedMessages.length - 3} more
-                </div>
-              )}
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="bg-white/5 backdrop-blur-lg rounded-xl border border-white/10 p-8 text-center">
+            <div className="text-6xl mb-4">💬</div>
+            <h3 className="text-xl font-bold text-white mb-2">No Highlighted Messages</h3>
+            <p className="text-gray-400 mb-4">
+              Click any message in the Twitch chat to highlight it here and in your OBS overlay
+            </p>
+            <div className="text-sm text-gray-500">
+              Messages you highlight will appear here and in your OBS browser source
+            </div>
+          </div>
+        )}
 
-        {/* Instructions */}
-        <div className="mt-4 text-center">
-          <p className="text-gray-400 text-sm">
-            Click any message in chat to highlight it for your OBS overlay
-          </p>
-          <p className="text-gray-300 text-xs mt-1">
-            OBS Browser Source URL: <code className="bg-black/20 px-2 py-1 rounded">{typeof window !== 'undefined' ? `${window.location.origin}/chat-overlay` : '/chat-overlay'}</code>
-          </p>
+        {/* OBS Instructions */}
+        <div className="mt-6 bg-gradient-to-r from-purple-900/50 to-blue-900/50 backdrop-blur-lg rounded-xl border border-purple-400/20 p-6">
+          <h4 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+            📺 OBS Studio Setup
+          </h4>
+          <div className="space-y-2 text-sm">
+            <p className="text-gray-300">
+              1. Add Browser Source to your OBS scene
+            </p>
+            <p className="text-gray-300">
+              2. Use this URL: 
+              <code className="bg-black/30 px-2 py-1 rounded ml-2 text-yellow-300">
+                {typeof window !== 'undefined' ? `${window.location.origin}/chat-overlay` : '/chat-overlay'}
+              </code>
+            </p>
+            <p className="text-gray-300">
+              3. Set Width: 800, Height: 600 (or adjust as needed)
+            </p>
+            <p className="text-gray-300">
+              4. Click messages in Twitch chat to highlight them on your stream!
+            </p>
+          </div>
         </div>
       </div>
 
