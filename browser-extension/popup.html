@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitch Chat Highlighter</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="popup-container">
+        <!-- Header -->
+        <div class="popup-header">
+            <div class="header-logo">
+                <span class="logo-icon">⭐</span>
+                <h1>Chat Highlighter</h1>
+            </div>
+            <div class="status-indicator" id="status">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Checking...</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="popup-content">
+            <!-- Server Configuration -->
+            <div class="config-section">
+                <h3>Server Configuration</h3>
+                <div class="input-group">
+                    <label for="serverUrl">Server URL:</label>
+                    <input type="text" id="serverUrl" placeholder="http://localhost:3000" />
+                </div>
+                <div class="input-group">
+                    <label for="channelName">Channel:</label>
+                    <input type="text" id="channelName" placeholder="channelname" />
+                </div>
+                <button id="saveConfig" class="btn btn-primary">Save Configuration</button>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-section">
+                <h3>Session Stats</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number" id="highlightCount">0</span>
+                        <span class="stat-label">Highlights</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="sessionTime">0m</span>
+                        <span class="stat-label">Session</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Highlights -->
+            <div class="highlights-section">
+                <div class="section-header">
+                    <h3>Active Highlights</h3>
+                    <button id="clearAll" class="btn btn-secondary btn-small">Clear All</button>
+                </div>
+                <div class="highlights-list" id="highlightsList">
+                    <div class="empty-state" id="emptyState">
+                        <span>No highlights yet</span>
+                        <small>Click on Twitch chat messages to highlight them!</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls-section">
+                <button id="toggleExtension" class="btn btn-toggle">
+                    <span id="toggleText">Disable</span>
+                </button>
+                <button id="openSettings" class="btn btn-secondary">Settings</button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="popup-footer">
+            <small>Enhanced Twitch Chat Highlighter v1.0</small>
+            <div class="footer-links">
+                <a href="#" id="helpLink">Help</a>
+                <a href="#" id="aboutLink">About</a>
+            </div>
+        </div>
+
+        <!-- Settings Modal (hidden by default) -->
+        <div class="modal-overlay" id="settingsModal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Extension Settings</h3>
+                    <button class="modal-close" id="closeSettings">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="autoSave"> 
+                            Auto-save highlights to server
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="showNotifications"> 
+                            Show success notifications
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="debugMode"> 
+                            Enable debug mode
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label for="maxHighlights">Max highlights:</label>
+                        <input type="number" id="maxHighlights" min="1" max="100" value="50">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveSettings" class="btn btn-primary">Save Settings</button>
+                    <button id="resetSettings" class="btn btn-secondary">Reset to Defaults</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+            <div class="loading-spinner"></div>
+            <span>Loading...</span>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

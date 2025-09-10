@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     if (action === 'highlight') {
       // Add message to highlights
       if (messageData) {
-        highlightedMessages.set(messageId, {
+        const highlight = {
           id: messageId,
           username: messageData.username,
           displayName: messageData.displayName || messageData.username,
@@ -47,7 +47,21 @@ export async function POST(request: NextRequest) {
           timestamp: messageData.timestamp || Date.now(),
           color: messageData.color || '#ffffff',
           badges: messageData.badges || []
-        });
+        };
+        
+        highlightedMessages.set(messageId, highlight);
+        
+        // Also sync with new highlights API for channel-specific storage
+        try {
+          const channel = messageData.channel || 'general';
+          await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/highlights/${channel}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...highlight, source: 'webapp' })
+          });
+        } catch (syncError) {
+          console.warn('Failed to sync with highlights API:', syncError);
+        }
       }
       return NextResponse.json({ success: true, action: 'highlighted' });
     }

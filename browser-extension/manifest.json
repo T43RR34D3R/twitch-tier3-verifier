@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Enhanced Twitch Chat Highlighter",
+  "version": "1.0.0",
+  "description": "Click Twitch chat messages to highlight them in your OBS overlay",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://www.twitch.tv/*",
+    "*://twitch.tv/*",
+    "*://localhost:*/*",
+    "*://*.vercel.app/*",
+    "*://*.netlify.app/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://www.twitch.tv/*",
+        "*://twitch.tv/*"
+      ],
+      "js": ["content.js"],
+      "css": ["content-styles.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Twitch Chat Highlighter"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["injected-script.js"],
+      "matches": ["*://www.twitch.tv/*", "*://twitch.tv/*"]
+    }
+  ]
+}
