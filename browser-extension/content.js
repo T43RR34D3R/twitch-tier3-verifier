@@ -752,6 +752,9 @@ class TwitchChatHighlighter {
     try {
       console.log('🎭 Loading Twitch emotes...');
       
+      // Load fallback common emotes first
+      this.loadFallbackEmotes();
+      
       // Load global Twitch emotes
       await this.loadGlobalEmotes();
       
@@ -766,8 +769,38 @@ class TwitchChatHighlighter {
     }
   }
 
+  loadFallbackEmotes() {
+    // Common Twitch emotes with their known IDs and URLs
+    const commonEmotes = [
+      { name: 'Kappa', id: '25', url: 'https://static-cdn.jtvnw.net/emoticons/v2/25/default/light/1.0' },
+      { name: 'PogChamp', id: '88', url: 'https://static-cdn.jtvnw.net/emoticons/v2/88/default/light/1.0' },
+      { name: '4Head', id: '354', url: 'https://static-cdn.jtvnw.net/emoticons/v2/354/default/light/1.0' },
+      { name: 'EZ', id: '5467', url: 'https://static-cdn.jtvnw.net/emoticons/v2/5467/default/light/1.0' },
+      { name: 'LUL', id: '425618', url: 'https://static-cdn.jtvnw.net/emoticons/v2/425618/default/light/1.0' },
+      { name: 'OMEGALUL', id: '81274', url: 'https://static-cdn.jtvnw.net/emoticons/v2/81274/default/light/1.0' },
+      { name: '5Head', id: '117484', url: 'https://static-cdn.jtvnw.net/emoticons/v2/117484/default/light/1.0' },
+      { name: 'MonkaS', id: '56', url: 'https://static-cdn.jtvnw.net/emoticons/v2/56/default/light/1.0' },
+      { name: 'KEKW', id: '81273', url: 'https://static-cdn.jtvnw.net/emoticons/v2/81273/default/light/1.0' }
+    ];
+    
+    commonEmotes.forEach(emote => {
+      this.emoteCache.set(emote.name, {
+        id: emote.id,
+        name: emote.name,
+        imageUrl: emote.url,
+        imageUrl2x: emote.url.replace('/1.0', '/2.0'),
+        imageUrl4x: emote.url.replace('/1.0', '/3.0'),
+        type: 'fallback'
+      });
+    });
+    
+    console.log('🎭 Loaded', commonEmotes.length, 'fallback emotes');
+  }
+
   async loadGlobalEmotes() {
     try {
+      console.log('🌐 Attempting to load global emotes...');
+      
       // Twitch Global Emotes API (public, no auth needed)
       const response = await fetch('https://api.twitch.tv/helix/chat/emotes/global', {
         headers: {
@@ -775,22 +808,34 @@ class TwitchChatHighlighter {
         }
       });
       
+      console.log('🌐 Global emotes API response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        data.data?.forEach(emote => {
-          this.emoteCache.set(emote.name, {
-            id: emote.id,
-            name: emote.name,
-            imageUrl: emote.images.url_1x,
-            imageUrl2x: emote.images.url_2x,
-            imageUrl4x: emote.images.url_4x,
-            type: 'global'
+        console.log('🌐 Global emotes API response:', data);
+        
+        if (data.data && Array.isArray(data.data)) {
+          data.data.forEach(emote => {
+            this.emoteCache.set(emote.name, {
+              id: emote.id,
+              name: emote.name,
+              imageUrl: emote.images.url_1x,
+              imageUrl2x: emote.images.url_2x,
+              imageUrl4x: emote.images.url_4x,
+              type: 'global'
+            });
           });
-        });
-        console.log('🌐 Loaded', data.data?.length || 0, 'global emotes');
+          console.log('🌐 Loaded', data.data.length, 'global emotes');
+          console.log('🌐 First few emotes:', Array.from(this.emoteCache.keys()).slice(0, 5));
+        } else {
+          console.warn('🌐 No emote data in response or invalid format');
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('🌐 Failed to load global emotes. Status:', response.status, 'Response:', errorText);
       }
     } catch (error) {
-      console.warn('Failed to load global emotes:', error);
+      console.error('🌐 Error loading global emotes:', error);
     }
   }
 
@@ -902,19 +947,26 @@ class TwitchChatHighlighter {
   
   parseTextForEmotes(text) {
     try {
+      console.log('🎭 parseTextForEmotes called with:', text);
+      console.log('🎭 Emote cache size:', this.emoteCache.size);
+      
       if (!text || this.emoteCache.size === 0) {
+        console.log('🎭 No text or empty emote cache, returning original text');
         return text;
       }
       
       // Split text by spaces to find potential emote names
       const words = text.split(' ');
       const htmlParts = [];
+      let foundEmotes = 0;
       
       for (const word of words) {
         // Check if this word is an emote in our cache
         const emoteData = this.emoteCache.get(word);
         
         if (emoteData) {
+          console.log('🎭 Found emote:', word, emoteData);
+          foundEmotes++;
           // Replace with emote image
           htmlParts.push(
             `<img src="${emoteData.imageUrl}" alt="${emoteData.name}" title="${emoteData.name}" class="emote-image" style="height: 1.4em; width: auto; vertical-align: middle; margin: 0 1px;" />`
@@ -925,7 +977,9 @@ class TwitchChatHighlighter {
         }
       }
       
-      return htmlParts.join(' ');
+      const result = htmlParts.join(' ');
+      console.log('🎭 Found', foundEmotes, 'emotes in text. Result:', result);
+      return result;
     } catch (error) {
       console.error('Error parsing text for emotes:', error);
       return text;
