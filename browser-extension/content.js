@@ -913,9 +913,11 @@ class TwitchChatHighlighter {
       }
       
       // Try to parse text content for emotes using our cache
-      if (textContent && this.emoteCache.size > 0) {
-        console.log('🎭 Parsing message text for emotes:', textContent);
-        return this.parseTextForEmotes(textContent);
+      // Use fallbackText (corrected text) if available, otherwise use textContent
+      const textForParsing = fallbackText || textContent;
+      if (textForParsing && this.emoteCache.size > 0) {
+        console.log('🎭 Parsing message text for emotes:', textForParsing);
+        return this.parseTextForEmotes(textForParsing);
       }
       
       // For mixed text and emotes, or pure text, use the DOM content
