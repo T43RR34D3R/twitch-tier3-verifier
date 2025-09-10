@@ -18,7 +18,7 @@ export default function EnhancedChatOverlay() {
   const searchParams = useSearchParams();
   const [highlightedMessages, setHighlightedMessages] = useState<HighlightedMessage[]>([]);
   const [channel, setChannel] = useState<string>('general');
-  const [settings, setSettings] = useState({
+  const [settings] = useState({
     maxMessages: 10,
     displayDuration: 30000, // 30 seconds
     animationSpeed: 'normal' as 'slow' | 'normal' | 'fast'

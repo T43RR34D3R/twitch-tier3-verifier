@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 // Import the channelHighlights from the main highlights route
 // In a real app, this would be in a shared database/store

@@ -23,8 +23,9 @@ function getChannelHighlights(channel: string) {
 // GET /api/highlights/[channel] - Fetch highlights for a channel
 export async function GET(
   request: NextRequest,
-  { params }: { params: { channel: string } }
+  context: { params: Promise<{ channel: string }> }
 ) {
+  const params = await context.params;
   try {
     const channel = params.channel.toLowerCase();
     const highlights = getChannelHighlights(channel);
@@ -42,8 +43,9 @@ export async function GET(
 // POST /api/highlights/[channel] - Add a highlight for a channel
 export async function POST(
   request: NextRequest,
-  { params }: { params: { channel: string } }
+  context: { params: Promise<{ channel: string }> }
 ) {
+  const params = await context.params;
   try {
     const channel = params.channel.toLowerCase();
     const body = await request.json();
@@ -95,8 +97,9 @@ export async function POST(
 // DELETE /api/highlights/[channel]?id=messageId - Remove specific highlight
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { channel: string } }
+  context: { params: Promise<{ channel: string }> }
 ) {
+  const params = await context.params;
   try {
     const channel = params.channel.toLowerCase();
     const { searchParams } = new URL(request.url);
@@ -128,7 +131,7 @@ export async function DELETE(
 }
 
 // Helper endpoint to get all channels with highlights (for debugging)
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS() {
   const channels = Array.from(channelHighlights.keys());
   const stats = channels.map(channel => ({
     channel,
