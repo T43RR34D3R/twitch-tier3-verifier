@@ -223,16 +223,28 @@ class TwitchChatHighlighter {
   }
 
   async sendToTargetSite(action, messageId, messageData) {
-    try {
-      // Get server URL from extension settings
-      const result = await chrome.storage.sync.get(['serverUrl']);
-      const serverUrl = result.serverUrl || 'http://localhost:3000';
-      
-      // Extract channel from URL or use default
-      const channel = this.getChannelFromUrl() || 'general';
-      
-      console.log(`📤 Sending ${action} to: ${serverUrl}/api/highlights/${channel}`);
-      console.log(`📦 Message data:`, messageData);
+    let retries = 3;
+    
+    while (retries > 0) {
+      try {
+        // Get server URL from extension settings
+        const result = await chrome.storage.sync.get(['serverUrl', 'channelName']);
+        const serverUrl = result.serverUrl || 'http://localhost:3000';
+        const configuredChannel = result.channelName || 'general';
+        
+        // Extract channel from URL or use configured channel
+        const urlChannel = this.getChannelFromUrl();
+        const channel = urlChannel || configuredChannel || 'general';
+        
+        console.log(`🔧 Extension config:`, {
+          serverUrl,
+          configuredChannel,
+          urlChannel,
+          finalChannel: channel
+        });
+        
+        console.log(`📤 Sending ${action} to: ${serverUrl}/api/highlights/${channel} (attempt ${4 - retries})`);
+        console.log(`📦 Message data:`, messageData);
       
       if (action === 'highlight') {
         // Add highlight via new API
@@ -276,16 +288,28 @@ class TwitchChatHighlighter {
         console.log(`✅ Unhighlight response:`, responseData);
       }
 
-      console.log(`✅ ${action} sent successfully to channel ${channel}`);
-    } catch (error) {
-      console.error(`❌ Failed to send ${action}:`, error);
-      console.error(`❌ Error details:`, {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      });
-      // Show error feedback
-      this.showGlobalFeedback(`Failed to ${action}: ${error.message}`, 'error');
+        console.log(`✅ ${action} sent successfully to channel ${channel}`);
+        return; // Success, exit retry loop
+        
+      } catch (error) {
+        console.error(`❌ Failed to send ${action} (attempt ${4 - retries}):`, error);
+        console.error(`❌ Error details:`, {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        });
+        
+        retries--;
+        
+        if (retries > 0) {
+          console.log(`🔄 Retrying in 1 second... (${retries} attempts left)`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } else {
+          // All retries failed
+          console.error(`❌ All retries failed for ${action}`);
+          this.showGlobalFeedback(`Failed to ${action}: ${error.message}`, 'error');
+        }
+      }
     }
   }
 
