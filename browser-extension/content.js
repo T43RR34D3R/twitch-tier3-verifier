@@ -303,18 +303,28 @@ class TwitchChatHighlighter {
         '[class*="badge"] img'
       ].join(','));
       
-      // Extract emotes from the message
+      // Extract emotes from the message (same approach as badges)
       const emoteElements = messageTextElement.querySelectorAll([
         'img[data-a-target="emote"]',
-        'img[alt]:not([data-a-target*="badge"])',
+        'img[alt]:not([data-a-target*="badge"]):not([class*="badge"])',
         '.chat-line__message--emote img',
         '[class*="emote"] img'
       ].join(','));
       
-      const emotes = Array.from(emoteElements).map(emote => ({
-        name: emote.getAttribute('alt') || 'emote',
-        imageUrl: emote.getAttribute('src')
-      })).filter(emote => emote.imageUrl);
+      const emotes = Array.from(emoteElements).map(emote => {
+        const alt = emote.getAttribute('alt');
+        const src = emote.getAttribute('src');
+        
+        if (!src || !alt) return null;
+        
+        return {
+          name: alt,
+          imageUrl: src,
+          alt: alt
+        };
+      }).filter(emote => emote !== null);
+      
+      console.log('🎭 Extracted', emotes.length, 'emotes from DOM:', emotes.map(e => e.name));
 
       // Extract user color
       const colorElement = usernameElement || messageElement.querySelector('[style*="color"]');
@@ -895,64 +905,36 @@ class TwitchChatHighlighter {
   // Generate HTML version of message with emotes
   generateMessageHtml(messageElement, emotes, fallbackText) {
     try {
+      console.log('🎭 generateMessageHtml called with', emotes.length, 'emotes');
+      
       if (!messageElement) {
         console.log('⚠️ No message element provided for HTML generation');
         return fallbackText || '';
       }
       
-      // Check if this is an emote-only message (no text content)
-      const textContent = messageElement.textContent?.trim() || '';
-      const hasEmoteImages = messageElement.querySelector('img[alt]');
-      
-      if (!textContent && emotes.length > 0) {
-        // Pure emote-only messages - generate HTML from emote data
-        console.log('🎭 Generating HTML for emote-only message');
-        return emotes.map(emote => 
-          `<img src="${emote.imageUrl}" alt="${emote.name}" class="emote-image" style="height: 1.4em; width: auto; vertical-align: middle; margin: 0 1px;" />`
-        ).join('');
-      }
-      
-      // Try to parse text content for emotes using our cache
-      // Use fallbackText (corrected text) if available, otherwise use textContent
-      const textForParsing = fallbackText || textContent;
-      if (textForParsing && this.emoteCache.size > 0) {
-        console.log('🎭 Parsing message text for emotes:', textForParsing);
-        return this.parseTextForEmotes(textForParsing);
-      }
-      
-      // For mixed text and emotes, or pure text, use the DOM content
-      if (hasEmoteImages || textContent) {
-        console.log('📝 Processing mixed text/emote or text-only message');
-      }
-      
-      // Create a copy of the message element to work with
+      // Simple approach: Just clone the DOM and ensure emote images are properly styled
       const messageClone = messageElement.cloneNode(true);
       
-      // Find all emote images in the cloned element
-      const emoteImages = messageClone.querySelectorAll('img[alt]');
-      
-      // Replace emote images with properly styled versions
-      emoteImages.forEach(img => {
-        const emoteWrapper = document.createElement('span');
-        emoteWrapper.className = 'chat-emote';
-        emoteWrapper.style.cssText = 'display: inline-block; vertical-align: middle; margin: 0 1px;';
+      // Find all images (emotes) in the cloned element and style them
+      const images = messageClone.querySelectorAll('img[alt]');
+      images.forEach(img => {
+        // Skip badge images
+        if (img.getAttribute('data-a-target')?.includes('badge') || 
+            img.className?.includes('badge')) {
+          return;
+        }
         
-        const newImg = document.createElement('img');
-        newImg.src = img.src;
-        newImg.alt = img.alt;
-        newImg.style.cssText = 'height: 1.2em; width: auto; vertical-align: middle;';
-        newImg.className = 'emote-image';
-        
-        emoteWrapper.appendChild(newImg);
-        img.parentNode?.replaceChild(emoteWrapper, img);
+        // Style emote images
+        img.style.cssText = 'height: 1.4em; width: auto; vertical-align: middle; margin: 0 1px;';
+        img.className = 'emote-image';
       });
       
-      // Return the HTML content
-      return messageClone.innerHTML || messageElement.textContent;
+      const result = messageClone.innerHTML || messageClone.textContent || fallbackText || '';
+      console.log('🎭 Generated HTML:', result);
+      return result;
     } catch (error) {
       console.error('Error generating message HTML:', error);
-      // Fallback to plain text or provided fallback
-      return fallbackText || messageElement.textContent || '';
+      return fallbackText || messageElement?.textContent || '';
     }
   }
   
