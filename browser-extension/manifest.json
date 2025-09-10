@@ -8,8 +8,7 @@
     "storage"
   ],
   "host_permissions": [
-    "*://www.twitch.tv/*",
-    "*://twitch.tv/*",
+    "*://www.twitch.tv/popout/moderator/buckfoozle/chat*",
     "*://localhost:*/*",
     "*://*.vercel.app/*",
     "*://*.netlify.app/*"
@@ -17,8 +16,7 @@
   "content_scripts": [
     {
       "matches": [
-        "*://www.twitch.tv/*",
-        "*://twitch.tv/*"
+        "*://www.twitch.tv/popout/moderator/buckfoozle/chat*"
       ],
       "js": ["content.js"],
       "css": ["content-styles.css"],

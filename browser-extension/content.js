@@ -54,13 +54,6 @@ class TwitchChatHighlighter {
   }
 
   waitForChat() {
-    // Only activate on the specific URL
-    const targetUrl = 'https://www.twitch.tv/popout/moderator/buckfoozle/chat';
-    if (!window.location.href.startsWith(targetUrl)) {
-      console.log('🚫 Not on target URL, extension inactive');
-      return;
-    }
-
     const checkForChat = () => {
       // Look for chat containers in various Twitch layouts
       const chatSelectors = [
