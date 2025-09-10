@@ -310,6 +310,30 @@ export default function ChatOverlay() {
           vertical-align: middle;
           max-width: none;
         }
+        
+        /* Fix Twitch emote containers to display inline */
+        .chat-line__message--emote-button {
+          display: inline !important;
+        }
+        
+        .chat-line__message--emote-button * {
+          display: inline !important;
+          vertical-align: middle;
+        }
+        
+        .InjectLayout-sc-1i43xsx-0,
+        .dvtAVE,
+        .Layout-sc-1xcs6mc-0,
+        .gJnMyS,
+        .chat-image__container {
+          display: inline !important;
+          vertical-align: middle;
+        }
+        
+        /* Ensure text fragments stay inline */
+        .text-fragment {
+          display: inline;
+        }
       `}</style>
     </div>
   );
