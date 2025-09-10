@@ -17,29 +17,19 @@ export default function ChatOverlay() {
 
   useEffect(() => {
     const fetchHighlights = async () => {
-      console.log('🔄 Fetching highlights...');
       try {
         // Fetch highlights from multiple possible channels
         const channels = ['buckfoozle', 'popout'];
         const allHighlights: HighlightedMessage[] = [];
-        console.log('📋 Checking channels:', channels);
         
         for (const channel of channels) {
           try {
-            console.log(`📡 Fetching channel: ${channel}`);
             const response = await fetch(`/api/highlights/${channel}`);
-            console.log(`📋 Response for ${channel}:`, response.status, response.ok);
             if (response.ok) {
               const data = await response.json();
-              console.log(`📊 Data for ${channel}:`, data);
               if (Array.isArray(data)) {
-                console.log(`✅ Adding ${data.length} highlights from ${channel}`);
                 allHighlights.push(...data);
-              } else {
-                console.log(`⚠️ Data is not an array for ${channel}:`, typeof data);
               }
-            } else {
-              console.log(`❌ Response not ok for ${channel}:`, response.status);
             }
           } catch (channelError) {
             console.warn(`Failed to fetch highlights for channel ${channel}:`, channelError);
@@ -47,15 +37,12 @@ export default function ChatOverlay() {
         }
         
         // Remove duplicates based on message ID and sort by timestamp (newest first)
-        console.log(`🔄 Processing ${allHighlights.length} total highlights`);
         const uniqueHighlights = allHighlights
           .filter((highlight, index, arr) => 
             index === arr.findIndex(h => h.id === highlight.id)
           )
           .sort((a, b) => b.timestamp - a.timestamp);
           
-        console.log(`✨ Final unique highlights: ${uniqueHighlights.length}`);
-        console.log('📊 Final data:', uniqueHighlights);
         setHighlightedMessages(uniqueHighlights);
       } catch (error) {
         console.error('Failed to fetch highlights:', error);
@@ -75,20 +62,35 @@ export default function ChatOverlay() {
     return new Date(timestamp).toLocaleTimeString();
   };
 
-  const getBadgeIcon = (badge: string) => {
-    const badgeMap: Record<string, string> = {
-      'broadcaster': '📺',
-      'moderator': '⚔️',
-      'vip': '💎',
-      'subscriber': '⭐',
-      'premium': '👑',
-      'staff': '🛡️',
-      'admin': '🔧',
-      'global_mod': '🌍',
-      'partner': '✅',
-      'turbo': '⚡'
+  const getBadgeInfo = (badge: string) => {
+    // Clean up badge text and map to display info
+    const cleanBadge = badge.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim();
+    
+    const badgeMap: Record<string, { icon: string, color: string, label: string }> = {
+      'broadcaster': { icon: '📺', color: '#ff6b6b', label: 'Broadcaster' },
+      'moderator': { icon: '⚔️', color: '#00ff88', label: 'Moderator' },
+      'vip': { icon: '💎', color: '#ff69b4', label: 'VIP' },
+      'subscriber': { icon: '⭐', color: '#9147ff', label: 'Subscriber' },
+      'premium': { icon: '👑', color: '#ffd700', label: 'Premium' },
+      'staff': { icon: '🛡️', color: '#fa4454', label: 'Staff' },
+      'admin': { icon: '🔧', color: '#fa4454', label: 'Admin' },
+      'global_mod': { icon: '🌍', color: '#00ad03', label: 'Global Mod' },
+      'partner': { icon: '✅', color: '#9147ff', label: 'Partner' },
+      'turbo': { icon: '⚡', color: '#6441a4', label: 'Turbo' }
     };
-    return badgeMap[badge] || '🎪';
+    
+    // Check for common badge patterns
+    if (cleanBadge.includes('month') || cleanBadge.includes('subscriber')) {
+      return { icon: '⭐', color: '#9147ff', label: cleanBadge };
+    }
+    if (cleanBadge.includes('moderator') || cleanBadge.includes('mod')) {
+      return { icon: '⚔️', color: '#00ff88', label: 'Moderator' };
+    }
+    if (cleanBadge.includes('vip')) {
+      return { icon: '💎', color: '#ff69b4', label: 'VIP' };
+    }
+    
+    return badgeMap[cleanBadge] || { icon: '', color: '#64748b', label: cleanBadge };
   };
 
   if (highlightedMessages.length === 0) {
@@ -102,87 +104,116 @@ export default function ChatOverlay() {
   }
 
   return (
-    <div className="w-full h-screen bg-transparent p-4 overflow-hidden">
+    <div className="w-full h-screen bg-transparent p-6 overflow-hidden">
       <div className="space-y-4">
-        {highlightedMessages.map((msg, index) => (
-          <div
-            key={msg.id}
-            className="animate-slide-in-right bg-gradient-to-r from-purple-900/95 via-blue-900/95 to-indigo-900/95 backdrop-blur-lg rounded-xl border-2 border-yellow-400/80 shadow-2xl"
-            style={{
-              animationDelay: `${index * 100}ms`,
-              boxShadow: '0 0 30px rgba(255, 215, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-            }}
-          >
-            <div className="p-6 relative overflow-hidden">
-              {/* Highlight glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 via-orange-400/10 to-red-400/10 animate-pulse"></div>
-              
-              {/* Header */}
-              <div className="flex items-center justify-between mb-3 relative z-10">
-                <div className="flex items-center space-x-2">
-                  {/* Badges */}
-                  {msg.badges.map((badge) => (
-                    <span key={badge} className="text-sm" title={badge}>
-                      {getBadgeIcon(badge)}
+        {highlightedMessages.map((msg, index) => {
+          const badgeInfos = msg.badges
+            .filter(badge => badge && badge.trim())
+            .map(badge => getBadgeInfo(badge))
+            .filter(info => info.icon || info.label);
+            
+          return (
+            <div
+              key={msg.id}
+              className="animate-fade-in bg-slate-900/90 backdrop-blur-md rounded-lg border border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300"
+              style={{ animationDelay: `${index * 150}ms` }}
+            >
+              <div className="p-5">
+                {/* Header */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    {/* Username */}
+                    <span 
+                      className="font-semibold text-lg leading-tight"
+                      style={{ color: msg.color || '#ffffff' }}
+                    >
+                      {msg.displayName}
                     </span>
-                  ))}
+                    
+                    {/* Badges */}
+                    <div className="flex items-center space-x-2">
+                      {badgeInfos.slice(0, 3).map((badgeInfo, badgeIndex) => (
+                        <div
+                          key={badgeIndex}
+                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border"
+                          style={{ 
+                            backgroundColor: `${badgeInfo.color}20`,
+                            borderColor: `${badgeInfo.color}40`,
+                            color: badgeInfo.color
+                          }}
+                          title={badgeInfo.label}
+                        >
+                          {badgeInfo.icon && <span className="mr-1">{badgeInfo.icon}</span>}
+                          <span className="truncate max-w-20">{badgeInfo.label}</span>
+                        </div>
+                      ))}
+                      {badgeInfos.length > 3 && (
+                        <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-700/50 text-slate-300 border border-slate-600/50">
+                          +{badgeInfos.length - 3}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   
-                  {/* Username */}
-                  <span 
-                    className="font-bold text-lg"
-                    style={{ color: msg.color || '#ffffff' }}
-                  >
-                    {msg.displayName}
-                  </span>
+                  {/* Timestamp */}
+                  <div className="text-slate-400 text-sm font-mono bg-slate-800/50 px-2 py-1 rounded border border-slate-700/50">
+                    {formatTime(msg.timestamp)}
+                  </div>
                 </div>
-                
-                {/* Timestamp */}
-                <div className="text-gray-300 text-sm bg-black/20 px-2 py-1 rounded">
-                  {formatTime(msg.timestamp)}
+
+                {/* Message */}
+                <div className="bg-slate-800/40 rounded-md p-3 border-l-4 border-blue-500/60">
+                  <div className="text-white text-base leading-relaxed break-words">
+                    {msg.message}
+                  </div>
                 </div>
               </div>
-
-              {/* Message */}
-              <div className="relative z-10">
-                <div className="text-white text-xl leading-relaxed font-medium break-words">
-                  {msg.message}
-                </div>
-              </div>
-
-              {/* Animated border */}
-              <div className="absolute inset-0 rounded-xl border-2 border-yellow-400/60 animate-border-glow"></div>
+              
+              {/* Subtle highlight indicator */}
+              <div className="h-1 bg-gradient-to-r from-blue-500/60 to-purple-500/60 rounded-b-lg"></div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <style jsx>{`
-        @keyframes slide-in-right {
+        @keyframes fade-in {
           from {
             opacity: 0;
-            transform: translateX(100px) scale(0.8);
+            transform: translateY(20px);
           }
           to {
             opacity: 1;
-            transform: translateX(0) scale(1);
+            transform: translateY(0);
           }
         }
         
-        @keyframes border-glow {
-          0%, 100% {
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-          }
-          50% {
-            box-shadow: 0 0 40px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.3);
-          }
+        .animate-fade-in {
+          animation: fade-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
         
-        .animate-slide-in-right {
-          animation: slide-in-right 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        /* Smooth hover transitions */
+        .transition-all {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        .animate-border-glow {
-          animation: border-glow 2s ease-in-out infinite;
+        /* Custom scrollbar for overflow */
+        ::-webkit-scrollbar {
+          width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+          background: rgba(71, 85, 105, 0.1);
+          border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+          background: rgba(71, 85, 105, 0.5);
+          border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+          background: rgba(71, 85, 105, 0.7);
         }
       `}</style>
     </div>
