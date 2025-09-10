@@ -803,6 +803,7 @@ class TwitchChatHighlighter {
     });
     
     console.log('🎭 Loaded', commonEmotes.length, 'fallback emotes');
+    console.log('🎭 Fallback emotes in cache:', Array.from(this.emoteCache.keys()));
   }
 
   async loadGlobalEmotes() {
@@ -970,16 +971,18 @@ class TwitchChatHighlighter {
       
       for (const word of words) {
         // Check if this word is an emote in our cache
+        console.log('🎭 Checking word:', `"${word}"`, 'in cache...');
         const emoteData = this.emoteCache.get(word);
         
         if (emoteData) {
-          console.log('🎭 Found emote:', word, emoteData);
+          console.log('🎭 ✅ Found emote:', word, emoteData);
           foundEmotes++;
           // Replace with emote image
           htmlParts.push(
             `<img src="${emoteData.imageUrl}" alt="${emoteData.name}" title="${emoteData.name}" class="emote-image" style="height: 1.4em; width: auto; vertical-align: middle; margin: 0 1px;" />`
           );
         } else {
+          console.log('🎭 ❌ Not found in cache:', `"${word}"`);
           // Keep as text
           htmlParts.push(this.escapeHtml(word));
         }
