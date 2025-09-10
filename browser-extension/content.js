@@ -5,7 +5,6 @@ class TwitchChatHighlighter {
   constructor() {
     this.isEnabled = true;
     this.highlightedMessages = new Set();
-    this.targetSiteUrl = 'http://localhost:3000'; // Will be configurable
     this.init();
   }
 
@@ -21,9 +20,6 @@ class TwitchChatHighlighter {
       if (message.type === 'toggle_extension') {
         this.isEnabled = message.enabled;
         this.updateUI();
-      } else if (message.type === 'set_target_url') {
-        this.targetSiteUrl = message.url;
-        this.saveSettings();
       }
       sendResponse({ success: true });
     });
@@ -34,8 +30,7 @@ class TwitchChatHighlighter {
 
   async loadSettings() {
     try {
-      const result = await chrome.storage.sync.get(['targetUrl', 'enabled']);
-      this.targetSiteUrl = result.targetUrl || 'http://localhost:3000';
+      const result = await chrome.storage.sync.get(['enabled']);
       this.isEnabled = result.enabled !== false; // Default to enabled
     } catch (error) {
       console.log('Using default settings');
@@ -45,7 +40,6 @@ class TwitchChatHighlighter {
   async saveSettings() {
     try {
       await chrome.storage.sync.set({
-        targetUrl: this.targetSiteUrl,
         enabled: this.isEnabled
       });
     } catch (error) {
@@ -230,41 +224,68 @@ class TwitchChatHighlighter {
 
   async sendToTargetSite(action, messageId, messageData) {
     try {
+      // Get server URL from extension settings
+      const result = await chrome.storage.sync.get(['serverUrl']);
+      const serverUrl = result.serverUrl || 'http://localhost:3000';
+      
       // Extract channel from URL or use default
       const channel = this.getChannelFromUrl() || 'general';
       
+      console.log(`📤 Sending ${action} to: ${serverUrl}/api/highlights/${channel}`);
+      console.log(`📦 Message data:`, messageData);
+      
       if (action === 'highlight') {
         // Add highlight via new API
-        const response = await fetch(`${this.targetSiteUrl}/api/highlights/${channel}`, {
+        const response = await fetch(`${serverUrl}/api/highlights/${channel}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
+          mode: 'cors',
           body: JSON.stringify(messageData)
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+          const errorText = await response.text();
+          console.error(`❌ HTTP ${response.status}: ${response.statusText}`);
+          console.error(`❌ Response body:`, errorText);
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
+        
+        const responseData = await response.json();
+        console.log(`✅ Highlight response:`, responseData);
+        
       } else if (action === 'unhighlight') {
         // Remove highlight via new API
-        const response = await fetch(`${this.targetSiteUrl}/api/highlights/${channel}?id=${messageId}`, {
+        const response = await fetch(`${serverUrl}/api/highlights/${channel}?id=${messageId}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
-          }
+          },
+          mode: 'cors'
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+          const errorText = await response.text();
+          console.error(`❌ HTTP ${response.status}: ${response.statusText}`);
+          console.error(`❌ Response body:`, errorText);
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
+        
+        const responseData = await response.json();
+        console.log(`✅ Unhighlight response:`, responseData);
       }
 
       console.log(`✅ ${action} sent successfully to channel ${channel}`);
     } catch (error) {
       console.error(`❌ Failed to send ${action}:`, error);
+      console.error(`❌ Error details:`, {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       // Show error feedback
-      this.showGlobalFeedback('Connection failed! Check if your site is running.', 'error');
+      this.showGlobalFeedback(`Failed to ${action}: ${error.message}`, 'error');
     }
   }
 
