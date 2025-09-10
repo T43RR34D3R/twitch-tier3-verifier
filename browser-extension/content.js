@@ -331,17 +331,25 @@ class TwitchChatHighlighter {
       }
 
       const username = usernameElement.textContent?.trim() || '';
-      let messageText = messageTextElement.textContent?.trim() || '';
+      let messageText = '';
       
-      // If message text is empty (likely emote-only), get alt text from emotes
-      if (!messageText && messageTextElement) {
-        const emoteImages = messageTextElement.querySelectorAll('img[alt]');
-        if (emoteImages.length > 0) {
-          messageText = Array.from(emoteImages)
-            .map(img => img.getAttribute('alt') || 'emote')
-            .join(' ');
-          console.log('🎭 Extracted emote-only message text:', messageText);
-        }
+      // Better message text extraction - get both text and emote alt text
+      if (messageTextElement) {
+        // Clone the element to work with
+        const messageClone = messageTextElement.cloneNode(true);
+        
+        // Replace img elements with their alt text to get complete message
+        const images = messageClone.querySelectorAll('img[alt]');
+        images.forEach(img => {
+          const altText = img.getAttribute('alt') || img.getAttribute('data-a-target') || 'emote';
+          const textNode = document.createTextNode(altText);
+          img.parentNode?.replaceChild(textNode, img);
+        });
+        
+        messageText = messageClone.textContent?.trim() || '';
+        console.log('📝 Enhanced message extraction. Original element:', messageTextElement);
+        console.log('📝 Found images:', images.length);
+        console.log('📝 Final extracted text:', messageText);
       }
       
       console.log('📝 Extracted username:', username);
