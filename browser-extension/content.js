@@ -154,10 +154,13 @@ class TwitchChatHighlighter {
         '.chat-line__message-body'
       ].join(','));
 
-      // Extract badges
+      // Extract badges with better detection
       const badgeElements = messageElement.querySelectorAll([
         '.chat-badge',
-        '[data-a-target*="badge"]'
+        '[data-a-target*="badge"]',
+        '.chat-line__message--badges img',
+        '[class*="ChatBadge"] img',
+        '[class*="badge"] img'
       ].join(','));
 
       // Extract user color
@@ -175,9 +178,52 @@ class TwitchChatHighlighter {
 
       const username = usernameElement.textContent.trim();
       const messageText = messageTextElement.textContent.trim();
-      const badges = Array.from(badgeElements).map(badge => 
-        badge.getAttribute('alt') || badge.getAttribute('title') || 'badge'
-      );
+      
+      // Enhanced badge extraction
+      const badges = Array.from(badgeElements).map(badge => {
+        // Try multiple methods to get badge info
+        const alt = badge.getAttribute('alt');
+        const title = badge.getAttribute('title');
+        const src = badge.getAttribute('src');
+        
+        // Parse badge type from image src if available
+        if (src) {
+          if (src.includes('subscriber')) {
+            const monthMatch = src.match(/([0-9]+)/g);
+            if (monthMatch) {
+              const months = parseInt(monthMatch[monthMatch.length - 1]);
+              if (months >= 36) return `Subscriber 3-Year`;
+              if (months >= 30) return `Subscriber 2.5-Year`;
+              if (months >= 24) return `Subscriber 2-Year`;
+              if (months >= 18) return `Subscriber 1.5-Year`;
+              if (months >= 12) return `Subscriber 1-Year`;
+              if (months >= 9) return `Subscriber 9-Month`;
+              if (months >= 6) return `Subscriber 6-Month`;
+              if (months >= 3) return `Subscriber 3-Month`;
+              if (months >= 2) return `Subscriber 2-Month`;
+              return 'Subscriber';
+            }
+          }
+          if (src.includes('moderator')) return 'Moderator';
+          if (src.includes('broadcaster')) return 'Broadcaster';
+          if (src.includes('vip')) return 'VIP';
+          if (src.includes('partner')) return 'Partner';
+          if (src.includes('staff')) return 'Staff';
+          if (src.includes('admin')) return 'Admin';
+          if (src.includes('global_mod')) return 'Global Mod';
+          if (src.includes('turbo')) return 'Turbo';
+          if (src.includes('premium') || src.includes('prime')) return 'Premium';
+          if (src.includes('founder')) return 'Founder';
+          if (src.includes('bits') || src.includes('cheer')) {
+            const bitsMatch = src.match(/([0-9]+)/g);
+            if (bitsMatch) {
+              return `Cheer ${bitsMatch[bitsMatch.length - 1]}`;
+            }
+          }
+        }
+        
+        return alt || title || 'badge';
+      }).filter(badge => badge && badge !== 'badge');
 
       // Create a consistent ID based on message content and username
       const messageHash = this.hashString(`${username}-${messageText}`);
