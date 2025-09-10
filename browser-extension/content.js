@@ -310,7 +310,7 @@ class TwitchChatHighlighter {
       })).filter(emote => emote.imageUrl);
       
       // Generate HTML version of message with emotes
-      const messageHtml = this.generateMessageHtml(messageTextElement, emotes);
+      const messageHtml = this.generateMessageHtml(messageTextElement, emotes, messageText);
 
       // Extract user color
       const colorElement = usernameElement || messageElement.querySelector('[style*="color"]');
@@ -727,11 +727,28 @@ class TwitchChatHighlighter {
   }
   
   // Generate HTML version of message with emotes
-  generateMessageHtml(messageElement, emotes) {
+  generateMessageHtml(messageElement, emotes, fallbackText) {
     try {
       if (!messageElement) {
         console.log('⚠️ No message element provided for HTML generation');
-        return '';
+        return fallbackText || '';
+      }
+      
+      // Check if this is an emote-only message (no text content)
+      const textContent = messageElement.textContent?.trim() || '';
+      const hasEmoteImages = messageElement.querySelector('img[alt]');
+      
+      if (!textContent && emotes.length > 0) {
+        // Pure emote-only messages - generate HTML from emote data
+        console.log('🎭 Generating HTML for emote-only message');
+        return emotes.map(emote => 
+          `<img src="${emote.imageUrl}" alt="${emote.name}" class="emote-image" style="height: 1.4em; width: auto; vertical-align: middle; margin: 0 1px;" />`
+        ).join('');
+      }
+      
+      // For mixed text and emotes, or pure text, use the DOM content
+      if (hasEmoteImages || textContent) {
+        console.log('📝 Processing mixed text/emote or text-only message');
       }
       
       // Create a copy of the message element to work with
@@ -760,8 +777,8 @@ class TwitchChatHighlighter {
       return messageClone.innerHTML || messageElement.textContent;
     } catch (error) {
       console.error('Error generating message HTML:', error);
-      // Fallback to plain text
-      return messageElement.textContent || '';
+      // Fallback to plain text or provided fallback
+      return fallbackText || messageElement.textContent || '';
     }
   }
 }
