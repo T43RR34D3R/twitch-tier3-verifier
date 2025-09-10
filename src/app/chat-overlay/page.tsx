@@ -75,36 +75,51 @@ export default function ChatOverlay() {
 
   return (
     <div className="w-full h-screen bg-transparent p-4 overflow-hidden">
-      <div className="space-y-3">
+      <div className="space-y-4">
         {highlightedMessages.map((msg, index) => (
           <div
             key={msg.id}
-            className="animate-fade-in bg-black/95 border border-gray-800 shadow-xl"
+            className="animate-fade-in group relative"
             style={{ animationDelay: `${index * 100}ms` }}
           >
-            <div className="px-4 py-3">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-3">
-                  {/* Username */}
-                  <span 
-                    className="font-bold text-sm uppercase tracking-wide"
-                    style={{ color: msg.color || '#ffffff' }}
-                  >
-                    {msg.displayName}
-                  </span>
+            {/* Outer glow container */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-lg blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-500"></div>
+            
+            {/* Main content */}
+            <div className="relative bg-black/95 border border-gray-700/50 rounded-lg backdrop-blur-sm shadow-2xl group-hover:shadow-blue-500/25 transition-all duration-500">
+              {/* Inner subtle glow */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent rounded-lg"></div>
+              
+              <div className="relative px-5 py-4">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    {/* Username with text glow */}
+                    <span 
+                      className="font-bold text-base uppercase tracking-wide drop-shadow-lg"
+                      style={{ 
+                        color: msg.color || '#ffffff',
+                        textShadow: `0 0 10px ${msg.color || '#ffffff'}40, 0 0 20px ${msg.color || '#ffffff'}20`
+                      }}
+                    >
+                      {msg.displayName}
+                    </span>
+                  </div>
+                  
+                  {/* Timestamp with subtle glow */}
+                  <div className="text-gray-300 text-xs font-mono uppercase tracking-wider bg-gray-900/50 px-2 py-1 rounded border border-gray-700/50 shadow-lg">
+                    {formatTime(msg.timestamp)}
+                  </div>
                 </div>
-                
-                {/* Timestamp */}
-                <div className="text-gray-400 text-xs font-mono uppercase tracking-wider">
-                  {formatTime(msg.timestamp)}
-                </div>
-              </div>
 
-              {/* Message */}
-              <div className="text-white text-sm font-medium">
-                {msg.message}
+                {/* Message with soft shadow */}
+                <div className="text-white text-sm font-medium leading-relaxed drop-shadow-md">
+                  {msg.message}
+                </div>
               </div>
+              
+              {/* Bottom highlight bar with animated glow */}
+              <div className="h-0.5 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-b-lg shadow-lg animate-pulse-glow"></div>
             </div>
           </div>
         ))}
@@ -114,33 +129,88 @@ export default function ChatOverlay() {
         @keyframes fade-in {
           from {
             opacity: 0;
-            transform: translateY(-10px);
+            transform: translateY(-20px) scale(0.95);
+            filter: blur(4px);
           }
           to {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+          }
+        }
+        
+        @keyframes pulse-glow {
+          0%, 100% {
+            opacity: 0.8;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5), 0 0 30px rgba(168, 85, 247, 0.3), 0 0 45px rgba(236, 72, 153, 0.2);
+          }
+          50% {
+            opacity: 1;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.7), 0 0 40px rgba(168, 85, 247, 0.5), 0 0 60px rgba(236, 72, 153, 0.3);
+          }
+        }
+        
+        @keyframes floating {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-2px);
           }
         }
         
         .animate-fade-in {
-          animation: fade-in 0.3s ease-out forwards;
+          animation: fade-in 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
         
-        /* Custom scrollbar */
+        .animate-pulse-glow {
+          animation: pulse-glow 3s ease-in-out infinite;
+        }
+        
+        .group:hover .animate-floating {
+          animation: floating 2s ease-in-out infinite;
+        }
+        
+        /* Enhanced shadows and glows */
+        .shadow-glow {
+          box-shadow: 
+            0 4px 15px -3px rgba(0, 0, 0, 0.5),
+            0 2px 6px -2px rgba(0, 0, 0, 0.3),
+            0 0 25px rgba(59, 130, 246, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .text-glow {
+          text-shadow: 
+            0 0 10px currentColor,
+            0 0 20px currentColor,
+            0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* Custom scrollbar with glow */
         ::-webkit-scrollbar {
-          width: 4px;
+          width: 6px;
         }
         
         ::-webkit-scrollbar-track {
-          background: transparent;
+          background: rgba(0, 0, 0, 0.2);
+          border-radius: 3px;
         }
         
         ::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
+          background: linear-gradient(180deg, #3b82f6, #8b5cf6, #ec4899);
+          border-radius: 3px;
+          box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
         }
         
         ::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.3);
+          background: linear-gradient(180deg, #2563eb, #7c3aed, #db2777);
+          box-shadow: 0 0 15px rgba(59, 130, 246, 0.7);
+        }
+        
+        /* Backdrop blur enhancement */
+        .backdrop-blur-enhanced {
+          backdrop-filter: blur(12px) saturate(180%);
         }
       `}</style>
     </div>
