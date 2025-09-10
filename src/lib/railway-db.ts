@@ -42,6 +42,7 @@ export interface ChatHighlight {
   username: string;
   display_name: string;
   message: string;
+  message_html?: string; // HTML version with emote images
   timestamp: number;
   color: string;
   badges: string[];
@@ -56,7 +57,7 @@ export class HighlightsDB {
   static async getChannelHighlights(channel: string, limit = 50): Promise<ChatHighlight[]> {
     const result = await query(`
       SELECT 
-        id, message_id, channel, username, display_name, message, 
+        id, message_id, channel, username, display_name, message, message_html,
         timestamp, color, badges, source, created_at, updated_at
       FROM chat_highlights 
       WHERE channel = $1 
@@ -98,9 +99,9 @@ export class HighlightsDB {
       // Add new highlight
       const result = await query(`
         INSERT INTO chat_highlights (
-          message_id, channel, username, display_name, message, 
+          message_id, channel, username, display_name, message, message_html,
           timestamp, color, badges, source
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
       `, [
         highlight.message_id,
@@ -108,6 +109,7 @@ export class HighlightsDB {
         highlight.username.toLowerCase(),
         highlight.display_name,
         highlight.message,
+        highlight.message_html || null,
         highlight.timestamp,
         highlight.color,
         JSON.stringify(highlight.badges),
