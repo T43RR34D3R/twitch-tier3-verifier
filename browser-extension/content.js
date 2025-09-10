@@ -118,10 +118,13 @@ class TwitchChatHighlighter {
     try {
       const messageData = this.extractMessageData(messageElement);
       if (messageData) {
-        const messageId = messageData.id || `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const messageId = messageData.id;
         
-        // Check if already highlighted
-        if (this.highlightedMessages.has(messageId)) {
+        // Check if already highlighted by looking for visual indicator
+        const isHighlighted = messageElement.classList.contains('chat-highlighter-selected') || 
+                             this.highlightedMessages.has(messageId);
+        
+        if (isHighlighted) {
           this.unhighlightMessage(messageElement, messageId, messageData);
         } else {
           this.highlightMessage(messageElement, messageId, messageData);
@@ -176,8 +179,12 @@ class TwitchChatHighlighter {
         badge.getAttribute('alt') || badge.getAttribute('title') || 'badge'
       );
 
+      // Create a consistent ID based on message content and username
+      const messageHash = this.hashString(`${username}-${messageText}`);
+      const messageId = `twitch_${messageHash}_${username}`;
+      
       return {
-        id: `twitch_${Date.now()}_${username}`,
+        id: messageId,
         username: username.toLowerCase(),
         displayName: username,
         message: messageText,
@@ -200,8 +207,8 @@ class TwitchChatHighlighter {
     // Add to our tracking
     this.highlightedMessages.add(messageId);
 
-    // Send to target site
-    this.sendToTargetSite('highlight', messageId, messageData);
+    // Send to target site (toggle API will add it)
+    this.sendToTargetSite('toggle', messageId, messageData);
 
     // Show feedback
     this.showFeedback(element, 'Highlighted! ⭐', 'success');
@@ -215,8 +222,8 @@ class TwitchChatHighlighter {
     // Remove from tracking
     this.highlightedMessages.delete(messageId);
 
-    // Send unhighlight to target site
-    this.sendToTargetSite('unhighlight', messageId, messageData);
+    // Send to target site (toggle API will remove it)
+    this.sendToTargetSite('toggle', messageId, messageData);
 
     // Show feedback
     this.showFeedback(element, 'Removed ❌', 'remove');
@@ -246,46 +253,31 @@ class TwitchChatHighlighter {
         console.log(`📤 Sending ${action} to: ${serverUrl}/api/highlights/${channel} (attempt ${4 - retries})`);
         console.log(`📦 Message data:`, messageData);
       
-      if (action === 'highlight') {
-        // Add highlight via new API
-        const response = await fetch(`${serverUrl}/api/highlights/${channel}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          mode: 'cors',
-          body: JSON.stringify(messageData)
-        });
+      // Use toggle API - single POST call that handles both add and remove
+      const response = await fetch(`${serverUrl}/api/highlights/${channel}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        mode: 'cors',
+        body: JSON.stringify(messageData)
+      });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`❌ HTTP ${response.status}: ${response.statusText}`);
-          console.error(`❌ Response body:`, errorText);
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const responseData = await response.json();
-        console.log(`✅ Highlight response:`, responseData);
-        
-      } else if (action === 'unhighlight') {
-        // Remove highlight via new API
-        const response = await fetch(`${serverUrl}/api/highlights/${channel}?id=${messageId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          mode: 'cors'
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`❌ HTTP ${response.status}: ${response.statusText}`);
-          console.error(`❌ Response body:`, errorText);
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const responseData = await response.json();
-        console.log(`✅ Unhighlight response:`, responseData);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ HTTP ${response.status}: ${response.statusText}`);
+        console.error(`❌ Response body:`, errorText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const responseData = await response.json();
+      console.log(`✅ Toggle response:`, responseData);
+      
+      // Update local state based on server response
+      if (responseData.action === 'added') {
+        console.log('🌟 Message was added to highlights');
+      } else if (responseData.action === 'removed') {
+        console.log('🗑️ Message was removed from highlights');
       }
 
         console.log(`✅ ${action} sent successfully to channel ${channel}`);
@@ -479,6 +471,18 @@ class TwitchChatHighlighter {
     if (rgb.startsWith('#')) return rgb;
     
     return '#9146FF'; // Default Twitch purple
+  }
+  
+  // Simple hash function for consistent message IDs
+  hashString(str) {
+    let hash = 0;
+    if (str.length === 0) return hash.toString();
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(36);
   }
 }
 

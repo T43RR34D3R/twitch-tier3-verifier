@@ -14,7 +14,6 @@ interface HighlightedMessage {
 
 export default function ChatOverlay() {
   const [highlightedMessages, setHighlightedMessages] = useState<HighlightedMessage[]>([]);
-  const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchHighlights = async () => {
@@ -63,50 +62,6 @@ export default function ChatOverlay() {
     return new Date(timestamp).toLocaleTimeString();
   };
 
-  const handleRemoveHighlight = async (messageId: string) => {
-    if (removingIds.has(messageId)) return; // Prevent double-clicks
-    
-    setRemovingIds(prev => new Set(prev).add(messageId));
-    
-    try {
-      // Extract channel from the first available highlight or default to 'buckfoozle'
-      const channel = 'buckfoozle'; // We know highlights are stored in buckfoozle or popout
-      
-      const response = await fetch(`/api/highlights/${channel}?id=${messageId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (response.ok) {
-        // Remove from local state immediately for better UX
-        setHighlightedMessages(prev => prev.filter(msg => msg.id !== messageId));
-      } else {
-        console.error('Failed to remove highlight:', response.status);
-        // Try the popout channel as backup
-        const backupResponse = await fetch(`/api/highlights/popout?id=${messageId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (backupResponse.ok) {
-          setHighlightedMessages(prev => prev.filter(msg => msg.id !== messageId));
-        }
-      }
-    } catch (error) {
-      console.error('Error removing highlight:', error);
-    } finally {
-      setRemovingIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(messageId);
-        return newSet;
-      });
-    }
-  };
-
 
   if (highlightedMessages.length === 0) {
     return (
@@ -121,19 +76,12 @@ export default function ChatOverlay() {
   return (
     <div className="w-full h-screen bg-transparent p-4 overflow-hidden">
       <div className="space-y-4">
-        {highlightedMessages.map((msg, index) => {
-          const isRemoving = removingIds.has(msg.id);
-          
-          return (
-            <div
-              key={msg.id}
-              className={`animate-fade-in group relative cursor-pointer transition-all duration-300 ${
-                isRemoving ? 'animate-fade-out pointer-events-none' : 'hover:scale-[1.02]'
-              }`}
-              style={{ animationDelay: `${index * 100}ms` }}
-              onClick={() => handleRemoveHighlight(msg.id)}
-              title="Click to remove highlight"
-            >
+        {highlightedMessages.map((msg, index) => (
+          <div
+            key={msg.id}
+            className="animate-fade-in group relative"
+            style={{ animationDelay: `${index * 100}ms` }}
+          >
             {/* Outer glow container */}
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-lg blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-500"></div>
             
@@ -173,16 +121,8 @@ export default function ChatOverlay() {
               {/* Bottom highlight bar with animated glow */}
               <div className="h-0.5 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-b-lg shadow-lg animate-pulse-glow"></div>
             </div>
-            
-            {/* Remove button overlay (visible on hover) */}
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <div className="bg-red-500/80 hover:bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold backdrop-blur-sm border border-red-400/50 shadow-lg">
-                ×
-              </div>
-            </div>
           </div>
-          );
-        })}
+        ))}
       </div>
 
       <style jsx>{`
@@ -196,19 +136,6 @@ export default function ChatOverlay() {
             opacity: 1;
             transform: translateY(0) scale(1);
             filter: blur(0);
-          }
-        }
-        
-        @keyframes fade-out {
-          from {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            filter: blur(0);
-          }
-          to {
-            opacity: 0;
-            transform: translateY(-10px) scale(0.9);
-            filter: blur(2px);
           }
         }
         
@@ -234,10 +161,6 @@ export default function ChatOverlay() {
         
         .animate-fade-in {
           animation: fade-in 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-        
-        .animate-fade-out {
-          animation: fade-out 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
         
         .animate-pulse-glow {
