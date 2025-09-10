@@ -87,6 +87,50 @@ export default function TwitchChatPage() {
     }
   };
 
+  const addManualHighlight = async () => {
+    const usernameInput = document.getElementById('highlight-username') as HTMLInputElement;
+    const colorInput = document.getElementById('highlight-color') as HTMLInputElement;
+    const messageInput = document.getElementById('highlight-message') as HTMLTextAreaElement;
+    
+    const username = usernameInput?.value.trim();
+    const color = colorInput?.value || '#9146FF';
+    const message = messageInput?.value.trim();
+    
+    if (!username || !message) {
+      alert('Please enter both username and message');
+      return;
+    }
+    
+    const messageId = `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    try {
+      await fetch('/api/twitch/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'highlight',
+          messageId,
+          messageData: {
+            username: username.toLowerCase(),
+            displayName: username,
+            message: message,
+            timestamp: Date.now(),
+            color: color,
+            badges: ['manual'] // Special badge for manual highlights
+          }
+        })
+      });
+      
+      // Clear the form
+      usernameInput.value = '';
+      messageInput.value = '';
+      
+    } catch (error) {
+      console.error('Error adding manual highlight:', error);
+      alert('Failed to add highlight. Please try again.');
+    }
+  };
+
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
@@ -99,18 +143,14 @@ export default function TwitchChatPage() {
   const isUserMod = session?.user?.name && (['TearReader', 'BuckFoozle'].includes(session.user.name) || session.user.id === '269187200');
 
   const openTwitchChat = () => {
-    // Use correct Twitch popout URLs
-    const url = isUserMod 
-      ? `https://www.twitch.tv/popout/moderator/${channelName}/chat?id=4`
-      : `https://www.twitch.tv/popout/${channelName}/chat?popout=`;
+    // Use correct Twitch popout URLs - both use moderator format
+    const url = `https://www.twitch.tv/popout/moderator/${channelName}/chat?popout=`;
     
     window.open(url, 'twitchChat', 'width=400,height=600,scrollbars=yes,resizable=yes');
   };
 
   const openTwitchChatNewTab = () => {
-    const url = isUserMod 
-      ? `https://www.twitch.tv/popout/moderator/${channelName}/chat?id=4`
-      : `https://www.twitch.tv/popout/${channelName}/chat?popout=`;
+    const url = `https://www.twitch.tv/popout/moderator/${channelName}/chat?popout=`;
     
     window.open(url, '_blank');
   };
@@ -242,6 +282,54 @@ export default function TwitchChatPage() {
           <div className="mt-4 text-sm text-gray-400">
             Channel: <span className="text-white font-mono">{channelName}</span>
           </div>
+        </div>
+
+        {/* Manual Highlight Input */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6 mb-6">
+          <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            ✨ Add Message Highlight
+          </h3>
+          <p className="text-gray-300 mb-4">
+            Manually add a message to highlight while we work on automatic detection
+          </p>
+          
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Username</label>
+              <input
+                type="text"
+                placeholder="BuckFoozle"
+                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
+                id="highlight-username"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">User Color</label>
+              <input
+                type="color"
+                defaultValue="#9146FF"
+                className="w-full h-10 bg-white/10 border border-white/20 rounded"
+                id="highlight-color"
+              />
+            </div>
+          </div>
+          
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Message</label>
+            <textarea
+              placeholder="Type the message you want to highlight..."
+              className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded text-white placeholder-gray-400"
+              rows={3}
+              id="highlight-message"
+            />
+          </div>
+          
+          <button
+            onClick={addManualHighlight}
+            className="mt-4 px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold rounded-xl transition-all duration-300 hover:scale-105"
+          >
+            ⭐ Add Highlight
+          </button>
         </div>
 
         {/* Highlighted Messages Display */}
