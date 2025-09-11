@@ -314,17 +314,59 @@ class TwitchChatHighlighter {
       const emotes = Array.from(emoteElements).map(emote => {
         const alt = emote.getAttribute('alt');
         const src = emote.getAttribute('src');
+        const srcSet = emote.getAttribute('srcset');
         
         if (!src || !alt) return null;
         
+        // Skip badges and invalid emotes
+        if (alt.includes('badge') || src.includes('badge') || alt.length < 2 || alt.length > 25) {
+          return null;
+        }
+        
+        // Only include Twitch emote URLs
+        if (!src.includes('static-cdn.jtvnw.net/emoticons') && !src.includes('emoticons.twitch.tv')) {
+          return null;
+        }
+        
+        // Extract different resolution URLs from srcset if available
+        let imageUrl2x = src.replace('/1.0', '/2.0');
+        let imageUrl4x = src.replace('/1.0', '/3.0');
+        
+        if (srcSet) {
+          const srcSet2xMatch = srcSet.match(/(https:\/\/[^\s]+\/2\.0)\s+2x/);
+          const srcSet4xMatch = srcSet.match(/(https:\/\/[^\s]+\/(3|4)\.0)\s+[34]x/);
+          if (srcSet2xMatch) imageUrl2x = srcSet2xMatch[1];
+          if (srcSet4xMatch) imageUrl4x = srcSet4xMatch[1];
+        }
+        
+        // Extract emote ID from URL
+        const idMatch = src.match(/\/emoticons\/v2\/(\d+)\//); 
+        const emoteId = idMatch ? idMatch[1] : alt;
+        
         return {
           name: alt,
+          id: emoteId,
           imageUrl: src,
+          imageUrl2x: imageUrl2x,
+          imageUrl4x: imageUrl4x,
           alt: alt
         };
       }).filter(emote => emote !== null);
       
-      console.log('🎭 Extracted', emotes.length, 'emotes from DOM:', emotes.map(e => e.name));
+      console.log('🎭 Extracted', emotes.length, 'emotes from message DOM:', emotes.map(e => e.name));
+      
+      // Immediately add these emotes to cache for use in this message
+      emotes.forEach(emote => {
+        this.emoteCache.set(emote.name, {
+          id: emote.id,
+          name: emote.name,
+          imageUrl: emote.imageUrl,
+          imageUrl2x: emote.imageUrl2x,
+          imageUrl4x: emote.imageUrl4x,
+          type: 'message-extracted'
+        });
+        console.log('🎭 ✨ Added fresh emote to cache:', emote.name, '->', emote.imageUrl);
+      });
 
       // Extract user color
       const colorElement = usernameElement || messageElement.querySelector('[style*="color"]');
