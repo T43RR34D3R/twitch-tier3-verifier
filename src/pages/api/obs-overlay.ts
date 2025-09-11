@@ -273,10 +273,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   </div>
   
   <script>
-    // Auto-refresh every 2 seconds
-    setInterval(() => {
-      window.location.reload();
-    }, 2000);
+    // Auto-update content every 2 seconds without page refresh
+    let isUpdating = false;
+    
+    async function updateContent() {
+      if (isUpdating) return;
+      isUpdating = true;
+      
+      try {
+        const response = await fetch('/api/obs-overlay-data');
+        const data = await response.json();
+        
+        const container = document.querySelector('.overlay-container');
+        if (container && data.html) {
+          container.innerHTML = data.html;
+        }
+      } catch (error) {
+        console.error('Update failed:', error);
+      } finally {
+        isUpdating = false;
+      }
+    }
+    
+    // Update every 2 seconds
+    setInterval(updateContent, 2000);
   </script>
 </body>
 </html>`;
