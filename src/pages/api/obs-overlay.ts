@@ -46,6 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message?: string;
         color?: string;
         displayName?: string;
+        timestamp?: number;
       };
       const badgeInfos = (msg.badges || [])
         .filter((badge: unknown) => badge && typeof badge === 'object' && badge !== null && 'imageUrl' in badge)
@@ -58,7 +59,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       const messageContent = msg.messageHtml || msg.message || '';
       
-      const currentTime = new Date().toLocaleTimeString();
+      // Use message timestamp instead of current time to prevent constant hash changes
+      const messageTime = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
       
       return `
         <div class="message">
@@ -68,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 ${badgesHtml}
               </div>
               <span class="username" style="color: ${msg.color || '#ffffff'}">${msg.displayName}</span>
-              <span class="timestamp">${currentTime}</span>
+              <span class="timestamp">${messageTime}</span>
             </div>
             <div class="message-text">${messageContent}</div>
             <div class="highlight-bar"></div>
