@@ -82,50 +82,48 @@ style.textContent = `
   
   .chat-highlighter-button {
     position: absolute;
-    right: 64px;
+    right: 32px;
     top: 50%;
     transform: translateY(-50%);
-    background: rgba(59, 130, 246, 0.9);
-    border: 1px solid rgba(59, 130, 246, 0.7);
-    border-radius: 6px;
-    color: white;
-    padding: 6px 8px;
-    font-size: 12px;
-    font-weight: bold;
+    background: transparent;
+    border: none;
+    color: #ffcc00;
+    padding: 4px;
+    font-size: 16px;
+    font-weight: normal;
     cursor: pointer;
     opacity: 0;
     visibility: hidden;
     transition: all 0.2s ease;
-    z-index: 1000;
+    z-index: 10000;
     user-select: none;
     pointer-events: none;
-    margin-left: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    line-height: 1;
   }
   
   [data-a-target="chat-line-message"]:hover .chat-highlighter-button,
   .chat-line__message:hover .chat-highlighter-button,
   [data-test-selector="chat-line-message"]:hover .chat-highlighter-button,
   [class*="Layout-sc-"]:hover .chat-highlighter-button {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
   }
   
   .chat-highlighter-button:hover {
-    background: rgba(59, 130, 246, 1);
-    border-color: rgba(59, 130, 246, 1);
-    transform: translateY(-50%) scale(1.05);
+    color: #ffffff;
+    text-shadow: 0 0 8px #ffcc00;
+    transform: translateY(-50%) scale(1.1);
   }
   
   .chat-highlighter-button--highlighted {
-    background: rgba(239, 68, 68, 0.9);
-    border-color: rgba(239, 68, 68, 0.7);
+    color: #ff4444;
   }
   
   .chat-highlighter-button--highlighted:hover {
-    background: rgba(239, 68, 68, 1);
-    border-color: rgba(239, 68, 68, 1);
+    color: #ff0000;
+    text-shadow: 0 0 8px #ff4444;
+    transform: translateY(-50%) scale(1.1);
   }
   
   .indicator-content {
