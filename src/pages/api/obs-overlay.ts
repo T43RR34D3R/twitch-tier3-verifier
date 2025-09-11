@@ -112,7 +112,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       align-items: center;
       justify-content: flex-start;
       gap: 24px;
-      transform: scale(1.5);
+      transform: scale(1.2);
       transform-origin: center;
     }
     
@@ -206,7 +206,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     .username {
       font-weight: bold;
-      font-size: 24px;
+      font-size: 20px;
       text-transform: uppercase;
       letter-spacing: 1px;
       text-shadow: 0 0 15px currentColor;
@@ -214,7 +214,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     
     .message-text {
-      font-size: 20px;
+      font-size: 18px;
       color: white;
       font-weight: 500;
       line-height: 1.6;

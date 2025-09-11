@@ -114,8 +114,21 @@ style.textContent = `
   button[aria-label*="actions"],
   button[aria-label*="Actions"],
   button[data-a-target*="pin"],
-  button[data-a-target*="timestamp"] {
+  button[data-a-target*="timestamp"],
+  /* Hide any stars or elements on the far right */
+  [data-a-target="chat-line-message"] *:contains("⭐"):not([data-highlighter-button="true"]),
+  [data-a-target="chat-line-message"] *:contains("★"):not([data-highlighter-button="true"]),
+  [data-a-target="chat-line-message"] [class*="star"]:not([data-highlighter-button="true"]),
+  [data-a-target="chat-line-message"] [aria-label*="star"]:not([data-highlighter-button="true"]),
+  /* Hide Twitch's native hover elements */
+  [data-a-target="chat-line-message"] [style*="position: absolute"]:not([data-highlighter-button="true"]),
+  .chat-line__message [style*="position: absolute"]:not([data-highlighter-button="true"]),
+  /* Hide any button-like elements on hover */
+  [data-a-target="chat-line-message"]:hover > *:last-child:not([data-highlighter-button="true"]),
+  .chat-line__message:hover > *:last-child:not([data-highlighter-button="true"]) {
     display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
   }
   
   .chat-highlighter-global-feedback {
@@ -228,94 +241,40 @@ class TwitchChatHighlighter {
   }
 
   setupChatClickDetection(chatContainer) {
-    console.log('📺 Setting up hover button system for chat messages...');
+    console.log('📺 Setting up click detection for star buttons...');
     
-    // Also setup observer for new messages to add buttons
-    this.observeNewMessages(chatContainer);
-    
-    // Add buttons to existing messages
-    this.addButtonsToExistingMessages(chatContainer);
-  }
-  
-  addButtonsToExistingMessages(chatContainer) {
-    // Find all existing chat messages and add buttons
-    const existingMessages = chatContainer.querySelectorAll([
-      '[data-a-target="chat-line-message"]',
-      '.chat-line__message', 
-      '[data-test-selector="chat-line-message"]',
-      '[class*="Layout-sc-"]:has([data-a-target="chat-line-message-body"])'
-    ].join(','));
-    
-    console.log('🎯 Found', existingMessages.length, 'existing messages to add buttons to');
-    
-    existingMessages.forEach(messageElement => {
-      this.addHighlightButton(messageElement);
-    });
-  }
-  
-  addHighlightButton(messageElement) {
-    // Skip if button already exists or element is invalid
-    if (!messageElement || messageElement.querySelector('.chat-highlighter-button')) {
-      return;
-    }
-    
-    // Remove any existing highlight buttons to prevent duplicates
-    const existingButtons = messageElement.querySelectorAll('.chat-highlighter-button');
-    existingButtons.forEach(btn => btn.remove());
-    
-    // Hide any conflicting Twitch buttons that might be showing
-    const twitchButtons = messageElement.querySelectorAll('button[aria-label*="More"], button[data-a-target*="more"]');
-    twitchButtons.forEach(btn => {
-      btn.style.display = 'none';
-    });
-    
-    // Make sure the message element has relative positioning
-    const computedStyle = window.getComputedStyle(messageElement);
-    if (computedStyle.position === 'static') {
-      messageElement.style.position = 'relative';
-    }
-    
-    // Create the highlight button
-    const button = document.createElement('button');
-    button.className = 'chat-highlighter-button';
-    button.innerHTML = '⭐';
-    button.title = 'Highlight message';
-    button.setAttribute('data-highlighter-button', 'true'); // Mark as our button
-    
-    // Check if message is already highlighted
-    const messageData = this.extractMessageData(messageElement);
-    if (messageData && this.highlightedMessages.has(messageData.id)) {
-      button.classList.add('chat-highlighter-button--highlighted');
-      button.innerHTML = '✖';
-      button.title = 'Remove highlight';
-    }
-    
-    // Add click handler
-    button.addEventListener('click', (event) => {
+    // Use event delegation to catch clicks on chat messages (for pseudo-element stars)
+    chatContainer.addEventListener('click', (event) => {
       if (!this.isEnabled) return;
+
+      // Find the closest chat message element
+      let messageElement = event.target.closest([
+        '[data-a-target="chat-line-message"]',
+        '.chat-line__message', 
+        '[data-test-selector="chat-line-message"]'
+      ].join(','));
       
-      event.preventDefault();
-      event.stopPropagation();
-      
-      console.log('🎯 Highlight button clicked for message:', messageElement);
-      this.handleMessageClick(messageElement);
-      
-      // Update button appearance
-      const isHighlighted = button.classList.contains('chat-highlighter-button--highlighted');
-      if (isHighlighted) {
-        button.classList.remove('chat-highlighter-button--highlighted');
-        button.innerHTML = '⭐';
-        button.title = 'Highlight message';
-      } else {
-        button.classList.add('chat-highlighter-button--highlighted');
-        button.innerHTML = '✖';
-        button.title = 'Remove highlight';
+      if (messageElement) {
+        // Check if click was in the star area (right side of message)
+        const rect = messageElement.getBoundingClientRect();
+        const clickX = event.clientX;
+        const messageRight = rect.right;
+        
+        // If click was within 60px of the right edge (star area)
+        if (clickX >= messageRight - 60) {
+          console.log('🎯 Star area clicked for message:', messageElement);
+          event.preventDefault();
+          event.stopPropagation();
+          this.handleMessageClick(messageElement);
+        }
       }
-    });
-    
-    // Add button to message
-    messageElement.appendChild(button);
+    }, true);
+
+    // Setup observer for new messages
+    this.observeNewMessages(chatContainer);
   }
+  
+  // Button creation functions removed - using CSS pseudo-elements instead
 
   handleMessageClick(messageElement) {
     try {
@@ -737,22 +696,9 @@ class TwitchChatHighlighter {
               '[data-test-selector="chat-line-message"]',
               '.Layout-sc-1xcs6mc-0:has([data-a-target="chat-line-message-body"])'
             ].join(','))) {
-              // New message added, add highlight button
-              console.log('🎯 New message detected, adding highlight button');
-              this.addHighlightButton(node);
+              // New message detected - CSS pseudo-elements will handle star display
+              console.log('🎯 New message detected');
             }
-            
-            // Also check if any child elements are chat messages
-            const childMessages = node.querySelectorAll([
-              '[data-a-target="chat-line-message"]',
-              '.chat-line__message',
-              '[data-test-selector="chat-line-message"]'
-            ].join(','));
-            
-            childMessages.forEach(messageElement => {
-              console.log('🎯 Child message detected, adding highlight button');
-              this.addHighlightButton(messageElement);
-            });
           }
         });
       });
