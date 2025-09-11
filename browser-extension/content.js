@@ -80,6 +80,52 @@ style.textContent = `
     height: auto;
   }
   
+  .chat-highlighter-button {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(59, 130, 246, 0.9);
+    border: 1px solid rgba(59, 130, 246, 0.7);
+    border-radius: 6px;
+    color: white;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s ease;
+    z-index: 1000;
+    user-select: none;
+    pointer-events: none;
+    margin-left: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  [data-a-target="chat-line-message"]:hover .chat-highlighter-button,
+  .chat-line__message:hover .chat-highlighter-button,
+  [data-test-selector="chat-line-message"]:hover .chat-highlighter-button,
+  [class*="Layout-sc-"]:hover .chat-highlighter-button {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  
+  .chat-highlighter-button:hover {
+    background: rgba(59, 130, 246, 1);
+    border-color: rgba(59, 130, 246, 1);
+    transform: translateY(-50%) scale(1.05);
+  }
+  
+  .chat-highlighter-button--highlighted {
+    background: rgba(239, 68, 68, 0.9);
+    border-color: rgba(239, 68, 68, 0.7);
+  }
+  
+  .chat-highlighter-button--highlighted:hover {
+    background: rgba(239, 68, 68, 1);
+    border-color: rgba(239, 68, 68, 1);
+  }
+  
   .indicator-content {
     display: flex;
     align-items: center;
@@ -214,38 +260,82 @@ class TwitchChatHighlighter {
   }
 
   setupChatClickDetection(chatContainer) {
-    // Use event delegation to catch clicks on chat messages
-    chatContainer.addEventListener('click', (event) => {
-      if (!this.isEnabled) return;
-
-      // Find the closest chat message element - robust approach for Twitch's dynamic DOM
-      let messageElement = event.target.closest([
-        '[data-a-target="chat-line-message"]',
-        '.chat-line__message', 
-        '[data-test-selector="chat-line-message"]'
-      ].join(','));
-      
-      // Fallback: look for elements containing message body or username
-      if (!messageElement) {
-        messageElement = event.target.closest('[class*="Layout-sc-"]');
-        // Verify it contains a message by checking for message body
-        if (messageElement && !messageElement.querySelector('[data-a-target*="message"], .text-fragment')) {
-          messageElement = null;
-        }
-      }
-
-      if (messageElement) {
-        console.log('🎯 Message element found:', messageElement);
-        event.preventDefault();
-        event.stopPropagation();
-        this.handleMessageClick(messageElement);
-      } else {
-        console.log('❌ No message element found for click target:', event.target);
-      }
-    }, true);
-
-    // Also setup observer for new messages
+    console.log('📺 Setting up hover button system for chat messages...');
+    
+    // Also setup observer for new messages to add buttons
     this.observeNewMessages(chatContainer);
+    
+    // Add buttons to existing messages
+    this.addButtonsToExistingMessages(chatContainer);
+  }
+  
+  addButtonsToExistingMessages(chatContainer) {
+    // Find all existing chat messages and add buttons
+    const existingMessages = chatContainer.querySelectorAll([
+      '[data-a-target="chat-line-message"]',
+      '.chat-line__message', 
+      '[data-test-selector="chat-line-message"]',
+      '[class*="Layout-sc-"]:has([data-a-target="chat-line-message-body"])'
+    ].join(','));
+    
+    console.log('🎯 Found', existingMessages.length, 'existing messages to add buttons to');
+    
+    existingMessages.forEach(messageElement => {
+      this.addHighlightButton(messageElement);
+    });
+  }
+  
+  addHighlightButton(messageElement) {
+    // Skip if button already exists or element is invalid
+    if (!messageElement || messageElement.querySelector('.chat-highlighter-button')) {
+      return;
+    }
+    
+    // Make sure the message element has relative positioning
+    const computedStyle = window.getComputedStyle(messageElement);
+    if (computedStyle.position === 'static') {
+      messageElement.style.position = 'relative';
+    }
+    
+    // Create the highlight button
+    const button = document.createElement('button');
+    button.className = 'chat-highlighter-button';
+    button.innerHTML = '⭐';
+    button.title = 'Highlight message';
+    
+    // Check if message is already highlighted
+    const messageData = this.extractMessageData(messageElement);
+    if (messageData && this.highlightedMessages.has(messageData.id)) {
+      button.classList.add('chat-highlighter-button--highlighted');
+      button.innerHTML = '✖';
+      button.title = 'Remove highlight';
+    }
+    
+    // Add click handler
+    button.addEventListener('click', (event) => {
+      if (!this.isEnabled) return;
+      
+      event.preventDefault();
+      event.stopPropagation();
+      
+      console.log('🎯 Highlight button clicked for message:', messageElement);
+      this.handleMessageClick(messageElement);
+      
+      // Update button appearance
+      const isHighlighted = button.classList.contains('chat-highlighter-button--highlighted');
+      if (isHighlighted) {
+        button.classList.remove('chat-highlighter-button--highlighted');
+        button.innerHTML = '⭐';
+        button.title = 'Highlight message';
+      } else {
+        button.classList.add('chat-highlighter-button--highlighted');
+        button.innerHTML = '✖';
+        button.title = 'Remove highlight';
+      }
+    });
+    
+    // Add button to message
+    messageElement.appendChild(button);
   }
 
   handleMessageClick(messageElement) {
@@ -662,7 +752,7 @@ class TwitchChatHighlighter {
         <button class="indicator-minimize" title="Minimize">−</button>
       </span>
     `;
-    indicator.title = 'Click any chat message to highlight it. Click - to minimize this indicator.';
+    indicator.title = 'Hover over chat messages to see highlight button. Click - to minimize this indicator.';
     
     // Add click handler for minimize button
     const minimizeBtn = indicator.querySelector('.indicator-minimize');
@@ -725,8 +815,22 @@ class TwitchChatHighlighter {
               '[data-test-selector="chat-line-message"]',
               '.Layout-sc-1xcs6mc-0:has([data-a-target="chat-line-message-body"])'
             ].join(','))) {
-              // New message added, could add hover effects etc.
+              // New message added, add highlight button
+              console.log('🎯 New message detected, adding highlight button');
+              this.addHighlightButton(node);
             }
+            
+            // Also check if any child elements are chat messages
+            const childMessages = node.querySelectorAll([
+              '[data-a-target="chat-line-message"]',
+              '.chat-line__message',
+              '[data-test-selector="chat-line-message"]'
+            ].join(','));
+            
+            childMessages.forEach(messageElement => {
+              console.log('🎯 Child message detected, adding highlight button');
+              this.addHighlightButton(messageElement);
+            });
           }
         });
       });
