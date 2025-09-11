@@ -180,7 +180,7 @@
   content: '⭐';
   position: absolute;
   right: 40px;
-  top: 50%;
+  top: 30%;
   transform: translateY(-50%);
   opacity: 0;
   font-size: 16px;

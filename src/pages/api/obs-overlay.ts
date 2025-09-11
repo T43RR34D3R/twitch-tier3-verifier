@@ -110,7 +110,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       display: flex;
       flex-direction: column-reverse;
       align-items: center;
-      justify-content: flex-start;
+      justify-content: center;
       gap: 24px;
       transform: scale(1.2);
       transform-origin: center;
