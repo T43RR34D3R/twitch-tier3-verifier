@@ -275,6 +275,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   <script>
     // Auto-update content every 2 seconds without page refresh
     let isUpdating = false;
+    let lastContentHash = '';
+    
+    // Simple hash function for content comparison
+    function simpleHash(str) {
+      let hash = 0;
+      if (str.length === 0) return hash;
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+      }
+      return hash;
+    }
     
     async function updateContent() {
       if (isUpdating) return;
@@ -284,15 +297,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const response = await fetch('/api/obs-overlay-data');
         const data = await response.json();
         
-        const container = document.querySelector('.overlay-container');
-        if (container && data.html) {
-          container.innerHTML = data.html;
+        // Create hash of new content
+        const newContentHash = simpleHash(data.html || '');
+        
+        // Only update if content has actually changed
+        if (newContentHash !== lastContentHash) {
+          const container = document.querySelector('.overlay-container');
+          if (container) {
+            container.innerHTML = data.html || '';
+            lastContentHash = newContentHash;
+            console.log('Content updated');
+          }
         }
       } catch (error) {
         console.error('Update failed:', error);
       } finally {
         isUpdating = false;
       }
+    }
+    
+    // Calculate initial hash to prevent immediate update
+    const initialContainer = document.querySelector('.overlay-container');
+    if (initialContainer) {
+      lastContentHash = simpleHash(initialContainer.innerHTML);
     }
     
     // Update every 2 seconds
