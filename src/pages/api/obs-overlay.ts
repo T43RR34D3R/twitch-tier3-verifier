@@ -58,11 +58,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       const messageContent = msg.messageHtml || msg.message || '';
       
+      const currentTime = new Date().toLocaleTimeString();
+      
       return `
         <div class="message">
-          ${badgesHtml}
-          <span class="username" style="color: ${msg.color || '#ffffff'}">${msg.displayName}:</span>
-          <span class="message-text">${messageContent}</span>
+          <div class="message-content">
+            <div class="message-header">
+              <div class="badges">
+                ${badgesHtml}
+              </div>
+              <span class="username" style="color: ${msg.color || '#ffffff'}">${msg.displayName}</span>
+              <span class="timestamp">${currentTime}</span>
+            </div>
+            <div class="message-text">${messageContent}</div>
+            <div class="highlight-bar"></div>
+          </div>
         </div>
       `;
     }).join('');
@@ -91,35 +101,119 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     .overlay-container {
       background: transparent;
-      padding: 10px;
+      padding: 20px;
       width: 100vw;
       height: 100vh;
     }
     
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+        filter: blur(4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+      }
+    }
+    
+    @keyframes pulse-glow {
+      0%, 100% {
+        opacity: 0.8;
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.5), 0 0 30px rgba(168, 85, 247, 0.3), 0 0 45px rgba(236, 72, 153, 0.2);
+      }
+      50% {
+        opacity: 1;
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.7), 0 0 40px rgba(168, 85, 247, 0.5), 0 0 60px rgba(236, 72, 153, 0.3);
+      }
+    }
+    
     .message {
+      animation: fade-in 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    
+    /* Outer glow container */
+    .message::before {
+      content: '';
+      position: absolute;
+      inset: -10px;
+      background: linear-gradient(45deg, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2));
+      border-radius: 12px;
+      filter: blur(15px);
+      opacity: 0.75;
+      z-index: -2;
+    }
+    
+    /* Main content */
+    .message-content {
+      background: rgba(0, 0, 0, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      position: relative;
+      padding: 16px 20px;
+    }
+    
+    /* Inner subtle glow */
+    .message-content::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent, transparent);
+      border-radius: 8px;
+      pointer-events: none;
+    }
+    
+    .message-header {
       display: flex;
       align-items: center;
-      margin-bottom: 5px;
-      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    
+    .badges {
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
     
     .badge {
-      width: 16px;
-      height: 16px;
-      margin-right: 4px;
+      width: 18px;
+      height: 18px;
       border: none;
       border-radius: 2px;
+      display: block;
     }
     
     .username {
       font-weight: bold;
-      font-size: 14px;
-      margin-right: 4px;
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-shadow: 0 0 10px currentColor;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    }
+    
+    .timestamp {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-left: auto;
     }
     
     .message-text {
-      font-size: 14px;
+      font-size: 15px;
       color: white;
+      font-weight: 500;
+      line-height: 1.5;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
     }
     
     .emote-image {
@@ -149,6 +243,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .message-text div,
     .message-text span div {
       display: inline !important;
+    }
+    
+    /* Bottom highlight bar with animated glow */
+    .highlight-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+      border-radius: 0 0 8px 8px;
+      animation: pulse-glow 3s ease-in-out infinite;
     }
     
     /* Hide scrollbars */
