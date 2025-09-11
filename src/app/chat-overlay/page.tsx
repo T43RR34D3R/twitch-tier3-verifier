@@ -74,18 +74,6 @@ export default function ChatOverlay() {
     return () => clearInterval(interval);
   }, []);
 
-  const formatTime = (timestamp: number | string) => {
-    // Handle both number and string timestamps
-    const ts = typeof timestamp === 'string' ? parseInt(timestamp) : timestamp;
-    const date = new Date(ts);
-    
-    // Check if date is valid
-    if (isNaN(date.getTime())) {
-      return new Date().toLocaleTimeString(); // Fallback to current time
-    }
-    
-    return date.toLocaleTimeString();
-  };
 
 
   if (highlightedMessages.length === 0) {
@@ -99,9 +87,9 @@ export default function ChatOverlay() {
   }
 
   return (
-    <div className="w-full h-screen bg-transparent p-4 overflow-hidden">
-      <div className="space-y-4">
-        {highlightedMessages.map((msg, index) => {
+    <div className="w-full h-screen bg-transparent p-0 overflow-hidden">
+      <div className="space-y-2">
+        {highlightedMessages.map((msg) => {
           const badgeInfos = msg.badges
             .filter((badge): badge is BadgeInfo => {
               return badge !== null && badge !== undefined && 
@@ -111,204 +99,82 @@ export default function ChatOverlay() {
             .filter(info => info.imageUrl || info.label);
             
           return (
-            <div
-              key={msg.id}
-              className="animate-fade-in group relative"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-            {/* Outer glow container */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-lg blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-500"></div>
-            
-            {/* Main content */}
-            <div className="relative bg-black/95 border border-gray-700/50 rounded-lg backdrop-blur-sm shadow-2xl group-hover:shadow-blue-500/25 transition-all duration-500">
-              {/* Inner subtle glow */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent rounded-lg"></div>
-              
-              <div className="relative px-5 py-4">
+            <div key={msg.id}>
+              <div className="px-3 py-2">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    {/* Badges */}
-                    {badgeInfos.length > 0 && (
-                      <div className="flex items-center space-x-1.5">
-                        {badgeInfos.slice(0, 4).map((badgeInfo, badgeIndex) => (
-                          <div
-                            key={badgeIndex}
-                            className="inline-flex items-center justify-center"
-                            title={badgeInfo.alt || badgeInfo.label}
-                            style={{ marginRight: '4px' }}
-                          >
-                            {badgeInfo.imageUrl ? (
-                              <img 
-                                src={badgeInfo.imageUrl} 
-                                alt={badgeInfo.alt || badgeInfo.label}
-                                className="w-5 h-5"
-                                style={{ 
-                                  border: 'none',
-                                  borderRadius: '2px',
-                                  display: 'block'
-                                }}
-                                onError={(e) => {
-                                  // Fallback to text if image fails
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  const span = document.createElement('span');
-                                  span.textContent = badgeInfo.label || 'Badge';
-                                  span.className = 'text-xs text-gray-400 px-1 py-0.5 bg-gray-700 rounded';
-                                  target.parentNode?.insertBefore(span, target);
-                                }}
-                              />
-                            ) : (
-                              <span className="text-xs text-gray-400 px-1 py-0.5 bg-gray-700 rounded">
-                                {badgeInfo.label}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                        {badgeInfos.length > 4 && (
-                          <div className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-gray-800/50 text-gray-300 border border-gray-600/50">
-                            +{badgeInfos.length - 4}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
-                    {/* Username with text glow */}
-                    <span 
-                      className="font-bold text-base uppercase tracking-wide drop-shadow-lg"
-                      style={{ 
-                        color: msg.color || '#ffffff',
-                        textShadow: `0 0 10px ${msg.color || '#ffffff'}40, 0 0 20px ${msg.color || '#ffffff'}20`
-                      }}
-                    >
-                      {msg.displayName}
-                    </span>
-                  </div>
-                  
-                  {/* Timestamp */}
-                  <div className="text-gray-300 text-xs font-mono uppercase tracking-wider">
-                    {formatTime(msg.timestamp)}
-                  </div>
-                </div>
-
-                {/* Message with emotes and soft shadow */}
-                <div className="text-white text-sm font-medium leading-relaxed drop-shadow-md">
-                  {msg.messageHtml ? (
-                    <span dangerouslySetInnerHTML={{ __html: msg.messageHtml }} />
-                  ) : (
-                    msg.message
+                <div className="flex items-center space-x-2 mb-1">
+                  {/* Badges */}
+                  {badgeInfos.length > 0 && (
+                    <div className="flex items-center space-x-1">
+                      {badgeInfos.slice(0, 4).map((badgeInfo, badgeIndex) => (
+                        <div
+                          key={badgeIndex}
+                          className="inline-flex items-center justify-center"
+                          title={badgeInfo.alt || badgeInfo.label}
+                        >
+                          {badgeInfo.imageUrl ? (
+                            <img 
+                              src={badgeInfo.imageUrl} 
+                              alt={badgeInfo.alt || badgeInfo.label}
+                              className="w-4 h-4"
+                              style={{ 
+                                border: 'none',
+                                borderRadius: '2px',
+                                display: 'block'
+                              }}
+                            />
+                          ) : (
+                            <span className="text-xs text-white bg-transparent">
+                              {badgeInfo.label}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   )}
+                  
+                  {/* Username */}
+                  <span 
+                    className="font-bold text-sm"
+                    style={{ 
+                      color: msg.color || '#ffffff'
+                    }}
+                  >
+                    {msg.displayName}:
+                  </span>
+                  
+                  {/* Message with emotes */}
+                  <span className="text-white text-sm">
+                    {msg.messageHtml ? (
+                      <span dangerouslySetInnerHTML={{ __html: msg.messageHtml }} />
+                    ) : (
+                      msg.message
+                    )}
+                  </span>
                 </div>
               </div>
-              
-              {/* Bottom highlight bar with animated glow */}
-              <div className="h-0.5 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-b-lg shadow-lg animate-pulse-glow"></div>
             </div>
-          </div>
           );
         })}
       </div>
 
       <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(-20px) scale(0.95);
-            filter: blur(4px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            filter: blur(0);
-          }
-        }
-        
-        @keyframes pulse-glow {
-          0%, 100% {
-            opacity: 0.8;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5), 0 0 30px rgba(168, 85, 247, 0.3), 0 0 45px rgba(236, 72, 153, 0.2);
-          }
-          50% {
-            opacity: 1;
-            box-shadow: 0 0 20px rgba(59, 130, 246, 0.7), 0 0 40px rgba(168, 85, 247, 0.5), 0 0 60px rgba(236, 72, 153, 0.3);
-          }
-        }
-        
-        @keyframes floating {
-          0%, 100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-2px);
-          }
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-        
-        .animate-pulse-glow {
-          animation: pulse-glow 3s ease-in-out infinite;
-        }
-        
-        .group:hover .animate-floating {
-          animation: floating 2s ease-in-out infinite;
-        }
-        
-        /* Enhanced shadows and glows */
-        .shadow-glow {
-          box-shadow: 
-            0 4px 15px -3px rgba(0, 0, 0, 0.5),
-            0 2px 6px -2px rgba(0, 0, 0, 0.3),
-            0 0 25px rgba(59, 130, 246, 0.15),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        }
-        
-        .text-glow {
-          text-shadow: 
-            0 0 10px currentColor,
-            0 0 20px currentColor,
-            0 2px 4px rgba(0, 0, 0, 0.5);
-        }
-        
-        /* Custom scrollbar with glow */
+        /* Hide scrollbars */
         ::-webkit-scrollbar {
-          width: 6px;
+          display: none;
         }
         
-        ::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.2);
-          border-radius: 3px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-          background: linear-gradient(180deg, #3b82f6, #8b5cf6, #ec4899);
-          border-radius: 3px;
-          box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(180deg, #2563eb, #7c3aed, #db2777);
-          box-shadow: 0 0 15px rgba(59, 130, 246, 0.7);
-        }
-        
-        /* Backdrop blur enhancement */
-        .backdrop-blur-enhanced {
-          backdrop-filter: blur(12px) saturate(180%);
+        body {
+          scrollbar-width: none;
         }
         
         /* Emote styling */
-        .chat-emote {
-          display: inline-block;
-          vertical-align: middle;
-          margin: 0 1px;
-        }
-        
         .emote-image {
           height: 1.4em;
           width: auto;
           vertical-align: middle;
           max-width: none;
+          display: inline;
         }
         
         /* Fix Twitch emote containers to display inline */
