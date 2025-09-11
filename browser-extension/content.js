@@ -101,10 +101,10 @@ style.textContent = `
     line-height: 1;
   }
   
-  [data-a-target="chat-line-message"]:hover .chat-highlighter-button,
-  .chat-line__message:hover .chat-highlighter-button,
-  [data-test-selector="chat-line-message"]:hover .chat-highlighter-button,
-  [class*="Layout-sc-"]:hover .chat-highlighter-button {
+  [data-a-target="chat-line-message"]:hover .chat-highlighter-button[data-highlighter-button="true"],
+  .chat-line__message:hover .chat-highlighter-button[data-highlighter-button="true"],
+  [data-test-selector="chat-line-message"]:hover .chat-highlighter-button[data-highlighter-button="true"],
+  [class*="Layout-sc-"]:hover .chat-highlighter-button[data-highlighter-button="true"] {
     opacity: 1 !important;
     visibility: visible !important;
     pointer-events: auto !important;
@@ -124,6 +124,14 @@ style.textContent = `
     color: #ff0000;
     text-shadow: 0 0 8px #ff4444;
     transform: translateY(-50%) scale(1.1);
+  }
+  
+  /* Hide conflicting Twitch buttons */
+  [data-a-target="chat-line-message"] button[aria-label*="More"],
+  [data-a-target="chat-line-message"] button[data-a-target*="more"],
+  .chat-line__message button[aria-label*="More"],
+  .chat-line__message button[data-a-target*="more"] {
+    display: none !important;
   }
   
   .indicator-content {
@@ -291,6 +299,16 @@ class TwitchChatHighlighter {
       return;
     }
     
+    // Remove any existing highlight buttons to prevent duplicates
+    const existingButtons = messageElement.querySelectorAll('.chat-highlighter-button');
+    existingButtons.forEach(btn => btn.remove());
+    
+    // Hide any conflicting Twitch buttons that might be showing
+    const twitchButtons = messageElement.querySelectorAll('button[aria-label*="More"], button[data-a-target*="more"]');
+    twitchButtons.forEach(btn => {
+      btn.style.display = 'none';
+    });
+    
     // Make sure the message element has relative positioning
     const computedStyle = window.getComputedStyle(messageElement);
     if (computedStyle.position === 'static') {
@@ -302,6 +320,7 @@ class TwitchChatHighlighter {
     button.className = 'chat-highlighter-button';
     button.innerHTML = '⭐';
     button.title = 'Highlight message';
+    button.setAttribute('data-highlighter-button', 'true'); // Mark as our button
     
     // Check if message is already highlighted
     const messageData = this.extractMessageData(messageElement);
