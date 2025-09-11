@@ -104,7 +104,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     .overlay-container {
       background: transparent;
-      padding: 40px;
+      padding: 20px;
       padding-bottom: 60px;
       width: 100vw;
       height: 100vh;
@@ -113,8 +113,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       align-items: center;
       justify-content: flex-start;
       gap: 24px;
-      transform: scale(1.2);
-      transform-origin: center;
       box-sizing: border-box;
       max-height: 100vh;
       overflow: hidden;
@@ -147,9 +145,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .message {
       animation: fade-in 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
       position: relative;
-      max-width: 1200px;
+      max-width: calc(100vw - 40px);
       width: auto;
-      display: inline-block;
+      display: block;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
     
     /* Outer glow container */
@@ -173,8 +173,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
       position: relative;
       padding: 24px 32px;
-      width: auto;
+      width: 100%;
+      max-width: 100%;
       display: block;
+      overflow: hidden;
+      box-sizing: border-box;
     }
     
     /* Inner subtle glow */
@@ -223,6 +226,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       font-weight: 500;
       line-height: 1.6;
       filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      hyphens: auto;
+      white-space: pre-wrap;
+      max-width: 100%;
     }
     
     .emote-image {
