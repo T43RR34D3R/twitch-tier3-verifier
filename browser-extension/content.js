@@ -774,7 +774,10 @@ class TwitchChatHighlighter {
       // Load fallback common emotes first
       this.loadFallbackEmotes();
       
-      // Load global Twitch emotes
+      // Extract all emotes currently loaded on the page
+      await this.extractEmotesFromDOM();
+      
+      // Load official Twitch emotes from API (may fail, that's ok)
       await this.loadGlobalEmotes();
       
       // Load channel-specific emotes if we have a channel
@@ -782,7 +785,8 @@ class TwitchChatHighlighter {
         await this.loadChannelEmotes(this.channelName);
       }
       
-      console.log('✅ Emote cache loaded with', this.emoteCache.size, 'emotes');
+      console.log('✅ Total emote cache loaded with', this.emoteCache.size, 'emotes');
+      console.log('🎭 Available emotes:', Array.from(this.emoteCache.keys()).slice(0, 20));
     } catch (error) {
       console.error('Error loading emotes:', error);
     }
@@ -816,44 +820,141 @@ class TwitchChatHighlighter {
     console.log('🎭 Loaded', commonEmotes.length, 'fallback emotes');
     console.log('🎭 Fallback emotes in cache:', Array.from(this.emoteCache.keys()));
   }
+  
+  async extractEmotesFromDOM() {
+    try {
+      console.log('🔍 Extracting emotes from DOM...');
+      
+      // Find all emote images in the chat
+      const emoteImages = document.querySelectorAll('img[alt]:not([class*="badge"])');
+      let extractedCount = 0;
+      
+      emoteImages.forEach(img => {
+        const alt = img.getAttribute('alt');
+        const src = img.getAttribute('src');
+        
+        // Skip badges and non-emote images
+        if (!alt || !src || 
+            alt.includes('badge') || 
+            src.includes('badge') ||
+            alt.length < 2 || 
+            alt.length > 25) {
+          return;
+        }
+        
+        // Check if it looks like a Twitch emote URL
+        if (src.includes('static-cdn.jtvnw.net/emoticons') || 
+            src.includes('emoticons.twitch.tv')) {
+          
+          // Extract emote ID from URL if possible
+          const idMatch = src.match(/\/([0-9]+)\//); 
+          const emoteId = idMatch ? idMatch[1] : alt;
+          
+          // Don't overwrite if we already have this emote
+          if (!this.emoteCache.has(alt)) {
+            this.emoteCache.set(alt, {
+              id: emoteId,
+              name: alt,
+              imageUrl: src,
+              imageUrl2x: src.replace('/1.0', '/2.0'),
+              imageUrl4x: src.replace('/1.0', '/3.0'),
+              type: 'dom-extracted'
+            });
+            extractedCount++;
+          }
+        }
+      });
+      
+      console.log('🔍 Extracted', extractedCount, 'emotes from DOM');
+      
+      // Also check for emotes in the emote picker if it exists
+      const emoteButtons = document.querySelectorAll('[data-a-target*="emote"] img, [class*="emote"] img');
+      let pickerCount = 0;
+      
+      emoteButtons.forEach(img => {
+        const alt = img.getAttribute('alt') || img.getAttribute('data-a-target');
+        const src = img.getAttribute('src');
+        
+        if (alt && src && !this.emoteCache.has(alt) && 
+            (src.includes('static-cdn.jtvnw.net/emoticons') || src.includes('emoticons.twitch.tv'))) {
+          
+          const idMatch = src.match(/\/([0-9]+)\//); 
+          const emoteId = idMatch ? idMatch[1] : alt;
+          
+          this.emoteCache.set(alt, {
+            id: emoteId,
+            name: alt,
+            imageUrl: src,
+            imageUrl2x: src.replace('/1.0', '/2.0'),
+            imageUrl4x: src.replace('/1.0', '/3.0'),
+            type: 'picker-extracted'
+          });
+          pickerCount++;
+        }
+      });
+      
+      console.log('🔍 Found', pickerCount, 'additional emotes from emote picker');
+      console.log('🔍 Total DOM extraction:', extractedCount + pickerCount, 'new emotes');
+      
+    } catch (error) {
+      console.error('Error extracting emotes from DOM:', error);
+    }
+  }
 
   async loadGlobalEmotes() {
     try {
       console.log('🌐 Attempting to load global emotes...');
       
-      // Twitch Global Emotes API (public, no auth needed)
-      const response = await fetch('https://api.twitch.tv/helix/chat/emotes/global', {
-        headers: {
-          'Client-ID': 'kimne78kx3ncx6brgo4mv6wki5h1ko' // Public Twitch client ID
-        }
-      });
+      // Try multiple client IDs and approaches
+      const clientIds = [
+        'kimne78kx3ncx6brgo4mv6wki5h1ko', // Twitch web client
+        'kd1unb4b3q4t58fwlpcbzcbnm76a8fp', // Another known client
+        'jzkbprff40iqj646a697cyrvl0zt2m6', // Third option
+      ];
       
-      console.log('🌐 Global emotes API response status:', response.status);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('🌐 Global emotes API response:', data);
-        
-        if (data.data && Array.isArray(data.data)) {
-          data.data.forEach(emote => {
-            this.emoteCache.set(emote.name, {
-              id: emote.id,
-              name: emote.name,
-              imageUrl: emote.images.url_1x,
-              imageUrl2x: emote.images.url_2x,
-              imageUrl4x: emote.images.url_4x,
-              type: 'global'
-            });
+      for (const clientId of clientIds) {
+        try {
+          const response = await fetch('https://api.twitch.tv/helix/chat/emotes/global', {
+            headers: {
+              'Client-ID': clientId
+            }
           });
-          console.log('🌐 Loaded', data.data.length, 'global emotes');
-          console.log('🌐 First few emotes:', Array.from(this.emoteCache.keys()).slice(0, 5));
-        } else {
-          console.warn('🌐 No emote data in response or invalid format');
+          
+          console.log('🌐 Global emotes API response status:', response.status, 'with client:', clientId.substring(0, 8) + '...');
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('🌐 Global emotes API response:', data);
+            
+            if (data.data && Array.isArray(data.data)) {
+              let loadedCount = 0;
+              data.data.forEach(emote => {
+                if (emote.name && emote.images && emote.images.url_1x) {
+                  this.emoteCache.set(emote.name, {
+                    id: emote.id,
+                    name: emote.name,
+                    imageUrl: emote.images.url_1x,
+                    imageUrl2x: emote.images.url_2x || emote.images.url_1x,
+                    imageUrl4x: emote.images.url_4x || emote.images.url_1x,
+                    type: 'global'
+                  });
+                  loadedCount++;
+                }
+              });
+              console.log('🌐 Successfully loaded', loadedCount, 'global emotes with client:', clientId.substring(0, 8) + '...');
+              return; // Success, exit the loop
+            }
+          } else {
+            const errorText = await response.text();
+            console.warn('🌐 Failed with client', clientId.substring(0, 8) + '... Status:', response.status, 'Response:', errorText);
+          }
+        } catch (clientError) {
+          console.warn('🌐 Error with client', clientId.substring(0, 8) + '...:', clientError);
         }
-      } else {
-        const errorText = await response.text();
-        console.error('🌐 Failed to load global emotes. Status:', response.status, 'Response:', errorText);
       }
+      
+      console.warn('🌐 All client IDs failed for global emotes');
+      
     } catch (error) {
       console.error('🌐 Error loading global emotes:', error);
     }
