@@ -82,7 +82,7 @@ style.textContent = `
   
   .chat-highlighter-button {
     position: absolute;
-    right: 16px;
+    right: 64px;
     top: 50%;
     transform: translateY(-50%);
     background: rgba(59, 130, 246, 0.9);
@@ -94,6 +94,7 @@ style.textContent = `
     font-weight: bold;
     cursor: pointer;
     opacity: 0;
+    visibility: hidden;
     transition: all 0.2s ease;
     z-index: 1000;
     user-select: none;
@@ -107,6 +108,7 @@ style.textContent = `
   [data-test-selector="chat-line-message"]:hover .chat-highlighter-button,
   [class*="Layout-sc-"]:hover .chat-highlighter-button {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
   }
   
