@@ -71,131 +71,49 @@ export default function OBSOverlay() {
   }
 
   return (
-    <html lang="en">
-      <head>
-        <title>OBS Chat Overlay</title>
-        <style>{`
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
+    <div className="overlay-container">
+      {highlightedMessages.map((msg) => {
+        const badgeInfos = msg.badges
+          .filter((badge): badge is BadgeInfo => {
+            return badge !== null && badge !== undefined && 
+              (typeof badge === 'object' ? Boolean(badge.label) : Boolean(badge));
+          })
+          .map(badge => badge)
+          .filter(info => info.imageUrl || info.label);
           
-          html, body {
-            background: transparent !important;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-          }
-          
-          .overlay-container {
-            background: transparent;
-            padding: 10px;
-            width: 100vw;
-            height: 100vh;
-          }
-          
-          .message {
-            display: flex;
-            align-items: center;
-            margin-bottom: 5px;
-            flex-wrap: wrap;
-          }
-          
-          .badge {
-            width: 16px;
-            height: 16px;
-            margin-right: 4px;
-            border: none;
-            border-radius: 2px;
-          }
-          
-          .username {
-            font-weight: bold;
-            font-size: 14px;
-            margin-right: 4px;
-          }
-          
-          .message-text {
-            font-size: 14px;
-            color: white;
-          }
-          
-          .emote-image {
-            height: 1.4em;
-            width: auto;
-            vertical-align: middle;
-            margin: 0 1px;
-            display: inline;
-            max-width: none;
-          }
-          
-          /* Fix Twitch emote containers */
-          .chat-line__message--emote-button,
-          .InjectLayout-sc-1i43xsx-0,
-          .dvtAVE,
-          .Layout-sc-1xcs6mc-0,
-          .gJnMyS,
-          .chat-image__container {
-            display: inline !important;
-            vertical-align: middle;
-          }
-          
-          .text-fragment {
-            display: inline;
-          }
-          
-          .message-text div,
-          .message-text span[dangerouslySetInnerHTML] div {
-            display: inline !important;
-          }
-        `}</style>
-      </head>
-      <body>
-        <div className="overlay-container">
-          {highlightedMessages.map((msg) => {
-            const badgeInfos = msg.badges
-              .filter((badge): badge is BadgeInfo => {
-                return badge !== null && badge !== undefined && 
-                  (typeof badge === 'object' ? Boolean(badge.label) : Boolean(badge));
-              })
-              .map(badge => badge)
-              .filter(info => info.imageUrl || info.label);
-              
-            return (
-              <div key={msg.id} className="message">
-                {/* Badges */}
-                {badgeInfos.length > 0 && badgeInfos.slice(0, 4).map((badgeInfo, badgeIndex) => (
-                  badgeInfo.imageUrl ? (
-                    <img
-                      key={badgeIndex}
-                      src={badgeInfo.imageUrl}
-                      alt={badgeInfo.alt || badgeInfo.label}
-                      className="badge"
-                    />
-                  ) : null
-                ))}
-                
-                {/* Username */}
-                <span 
-                  className="username"
-                  style={{ color: msg.color || '#ffffff' }}
-                >
-                  {msg.displayName}:
-                </span>
-                
-                {/* Message with emotes */}
-                <span className="message-text">
-                  {msg.messageHtml ? (
-                    <span dangerouslySetInnerHTML={{ __html: msg.messageHtml }} />
-                  ) : (
-                    msg.message
-                  )}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </body>
-    </html>
+        return (
+          <div key={msg.id} className="message">
+            {/* Badges */}
+            {badgeInfos.length > 0 && badgeInfos.slice(0, 4).map((badgeInfo, badgeIndex) => (
+              badgeInfo.imageUrl ? (
+                <img
+                  key={badgeIndex}
+                  src={badgeInfo.imageUrl}
+                  alt={badgeInfo.alt || badgeInfo.label}
+                  className="badge"
+                />
+              ) : null
+            ))}
+            
+            {/* Username */}
+            <span 
+              className="username"
+              style={{ color: msg.color || '#ffffff' }}
+            >
+              {msg.displayName}:
+            </span>
+            
+            {/* Message with emotes */}
+            <span className="message-text">
+              {msg.messageHtml ? (
+                <span dangerouslySetInnerHTML={{ __html: msg.messageHtml }} />
+              ) : (
+                msg.message
+              )}
+            </span>
+          </div>
+        );
+      })}
+    </div>
   );
 }
