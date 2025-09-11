@@ -308,8 +308,7 @@ class TwitchChatHighlighter {
         }
       });
     }, 10000); // Check every 10 seconds
-  
-  // Button creation functions removed - using CSS pseudo-elements instead
+  }
 
   handleMessageClick(messageElement) {
     try {

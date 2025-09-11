@@ -105,16 +105,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .overlay-container {
       background: transparent;
       padding: 40px;
+      padding-bottom: 60px;
       width: 100vw;
       height: 100vh;
       display: flex;
       flex-direction: column-reverse;
       align-items: center;
       justify-content: flex-start;
-      padding-top: 40vh;
       gap: 24px;
       transform: scale(1.2);
       transform-origin: center;
+      box-sizing: border-box;
+      max-height: 100vh;
+      overflow: hidden;
     }
     
     @keyframes fade-in {

@@ -87,9 +87,11 @@ export default function ChatOverlay() {
   }
 
   return (
-    <div className="w-full h-screen bg-transparent p-0 overflow-hidden">
-      <div className="space-y-2">
-        {highlightedMessages.map((msg) => {
+    <div className="w-full h-screen bg-transparent flex flex-col overflow-hidden">
+      {/* Messages container positioned from bottom up with proper padding */}
+      <div className="flex-1 flex flex-col justify-end p-4 pb-8 max-h-screen overflow-hidden">
+        <div className="space-y-2 max-h-full overflow-y-auto flex flex-col justify-end">
+          {highlightedMessages.map((msg) => {
           const badgeInfos = msg.badges
             .filter((badge): badge is BadgeInfo => {
               return badge !== null && badge !== undefined && 
@@ -155,7 +157,8 @@ export default function ChatOverlay() {
               </div>
             </div>
           );
-        })}
+          })}
+        </div>
       </div>
 
       <style jsx>{`

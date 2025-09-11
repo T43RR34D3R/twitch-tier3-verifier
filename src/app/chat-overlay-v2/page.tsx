@@ -110,14 +110,16 @@ function ChatOverlayContent() {
   }
 
   return (
-    <div className="w-full h-screen bg-transparent p-6 overflow-hidden">
+    <div className="w-full h-screen bg-transparent flex flex-col overflow-hidden">
       {/* Channel indicator (optional, can be hidden) */}
-      <div className="fixed top-4 left-4 bg-black/30 backdrop-blur-sm rounded-lg px-3 py-1 text-white/60 text-sm">
+      <div className="fixed top-4 left-4 bg-black/30 backdrop-blur-sm rounded-lg px-3 py-1 text-white/60 text-sm z-50">
         📺 {channel}
       </div>
 
-      <div className="space-y-4 mt-8">
-        {highlightedMessages.map((msg, index) => (
+      {/* Messages container with proper spacing from edges */}
+      <div className="flex-1 flex flex-col justify-end p-6 pb-8 max-h-screen overflow-hidden">
+        <div className="space-y-4 max-h-full overflow-y-auto">
+          {highlightedMessages.map((msg, index) => (
           <div
             key={`${msg.id}-${msg.timestamp}`}
             className={`animate-slide-in-right bg-gradient-to-r from-purple-900/95 via-blue-900/95 to-indigo-900/95 backdrop-blur-lg rounded-xl border-2 border-yellow-400/80 shadow-2xl transition-all ${getAnimationClass()}`}
@@ -173,7 +175,8 @@ function ChatOverlayContent() {
               <div className="absolute inset-0 rounded-xl border-2 border-yellow-400/60 animate-border-glow"></div>
             </div>
           </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Settings overlay (hidden by default, can be shown with ?settings=true) */}
