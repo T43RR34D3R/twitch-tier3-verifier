@@ -23,7 +23,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
     
-    // Remove duplicates and sort
+    // Remove duplicates and sort, filter out messages older than 1 minute
+    const oneMinuteAgo = Date.now() - (60 * 1000); // 1 minute ago
     const uniqueHighlights = allHighlights
       .filter((highlight, index, arr) => {
         const h = highlight as { id: string };
@@ -31,6 +32,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const i = item as { id: string };
           return i.id === h.id;
         });
+      })
+      .filter((highlight) => {
+        const h = highlight as { timestamp: number };
+        return h.timestamp && h.timestamp > oneMinuteAgo;
       })
       .sort((a, b) => {
         const aItem = a as { timestamp: number };
@@ -106,6 +111,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       padding: 20px;
       width: 100vw;
       height: 100vh;
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 12px;
     }
     
     @keyframes fade-in {
@@ -134,8 +144,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     .message {
       animation: fade-in 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-      margin-bottom: 16px;
       position: relative;
+      max-width: 800px;
+      width: auto;
+      display: inline-block;
     }
     
     /* Outer glow container */
@@ -159,6 +171,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
       position: relative;
       padding: 16px 20px;
+      width: auto;
+      display: block;
     }
     
     /* Inner subtle glow */

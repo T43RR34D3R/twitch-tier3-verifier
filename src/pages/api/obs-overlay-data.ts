@@ -23,7 +23,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
     
-    // Remove duplicates and sort
+    // Remove duplicates and sort, filter out messages older than 1 minute
+    const oneMinuteAgo = Date.now() - (60 * 1000); // 1 minute ago
     const uniqueHighlights = allHighlights
       .filter((highlight, index, arr) => {
         const h = highlight as { id: string };
@@ -31,6 +32,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const i = item as { id: string };
           return i.id === h.id;
         });
+      })
+      .filter((highlight) => {
+        const h = highlight as { timestamp: number };
+        return h.timestamp && h.timestamp > oneMinuteAgo;
       })
       .sort((a, b) => {
         const aItem = a as { timestamp: number };
