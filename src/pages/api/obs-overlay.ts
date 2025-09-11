@@ -64,9 +64,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       const messageContent = msg.messageHtml || msg.message || '';
       
-      // Use message timestamp instead of current time to prevent constant hash changes
-      const messageTime = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
-      
       return `
         <div class="message">
           <div class="message-content">
@@ -75,7 +72,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 ${badgesHtml}
               </div>
               <span class="username" style="color: ${msg.color || '#ffffff'}">${msg.displayName}</span>
-              <span class="timestamp">${messageTime}</span>
             </div>
             <div class="message-text">${messageContent}</div>
             <div class="highlight-bar"></div>
@@ -108,14 +104,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     .overlay-container {
       background: transparent;
-      padding: 20px;
+      padding: 40px;
       width: 100vw;
       height: 100vh;
       display: flex;
       flex-direction: column-reverse;
       align-items: center;
       justify-content: flex-start;
-      gap: 12px;
+      gap: 24px;
+      transform: scale(1.5);
+      transform-origin: center;
     }
     
     @keyframes fade-in {
@@ -145,7 +143,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .message {
       animation: fade-in 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
       position: relative;
-      max-width: 800px;
+      max-width: 1200px;
       width: auto;
       display: inline-block;
     }
@@ -166,11 +164,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .message-content {
       background: rgba(0, 0, 0, 0.95);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
+      border-radius: 12px;
       backdrop-filter: blur(12px);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
       position: relative;
-      padding: 16px 20px;
+      padding: 24px 32px;
       width: auto;
       display: block;
     }
@@ -188,8 +186,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .message-header {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
+      gap: 12px;
+      margin-bottom: 12px;
     }
     
     .badges {
@@ -199,44 +197,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     
     .badge {
-      width: 18px;
-      height: 18px;
+      width: 28px;
+      height: 28px;
       border: none;
-      border-radius: 2px;
+      border-radius: 4px;
       display: block;
     }
     
     .username {
       font-weight: bold;
-      font-size: 16px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      text-shadow: 0 0 10px currentColor;
-      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
-    }
-    
-    .timestamp {
-      color: rgba(255, 255, 255, 0.6);
-      font-size: 12px;
-      font-family: 'Courier New', monospace;
+      font-size: 24px;
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin-left: auto;
+      text-shadow: 0 0 15px currentColor;
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
     }
     
     .message-text {
-      font-size: 15px;
+      font-size: 20px;
       color: white;
       font-weight: 500;
-      line-height: 1.5;
-      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+      line-height: 1.6;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
     }
     
     .emote-image {
-      height: 1.4em;
+      height: 1.8em;
       width: auto;
       vertical-align: middle;
-      margin: 0 1px;
+      margin: 0 2px;
       display: inline;
       max-width: none;
     }
@@ -267,9 +256,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       bottom: 0;
       left: 0;
       right: 0;
-      height: 2px;
+      height: 4px;
       background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
-      border-radius: 0 0 8px 8px;
+      border-radius: 0 0 12px 12px;
       animation: pulse-glow 3s ease-in-out infinite;
     }
     

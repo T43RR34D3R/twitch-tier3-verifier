@@ -64,9 +64,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       const messageContent = msg.messageHtml || msg.message || '';
       
-      // Use message timestamp instead of current time to prevent constant hash changes
-      const messageTime = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
-      
       return `
         <div class="message">
           <div class="message-content">
@@ -75,7 +72,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 ${badgesHtml}
               </div>
               <span class="username" style="color: ${msg.color || '#ffffff'}">${msg.displayName}</span>
-              <span class="timestamp">${messageTime}</span>
             </div>
             <div class="message-text">${messageContent}</div>
             <div class="highlight-bar"></div>
