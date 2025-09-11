@@ -1,4 +1,4 @@
-export default function OBSOverlayLayout({
+export default function OBSLayout({
   children,
 }: {
   children: React.ReactNode;
