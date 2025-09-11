@@ -49,36 +49,7 @@ style.textContent = `
     100% { opacity: 0; transform: translateY(-10px); }
   }
   
-  .chat-highlighter-indicator {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    background: rgba(20, 20, 30, 0.95);
-    color: white;
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: bold;
-    z-index: 10001;
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-    cursor: pointer;
-  }
-  
-  .chat-highlighter-indicator:hover {
-    background: rgba(30, 30, 50, 0.98);
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-  }
-  
-  .chat-highlighter-indicator.minimized {
-    padding: 6px 8px;
-    border-radius: 50%;
-    width: auto;
-    height: auto;
-  }
+  /* Chat Highlighter indicator removed per user request */
   
   .chat-highlighter-button {
     position: absolute;
@@ -130,31 +101,21 @@ style.textContent = `
   [data-a-target="chat-line-message"] button[aria-label*="More"],
   [data-a-target="chat-line-message"] button[data-a-target*="more"],
   .chat-line__message button[aria-label*="More"],
-  .chat-line__message button[data-a-target*="more"] {
+  .chat-line__message button[data-a-target*="more"],
+  /* Hide all Twitch native buttons that might appear on hover */
+  [data-a-target="chat-line-message"] button:not([data-highlighter-button="true"]),
+  .chat-line__message button:not([data-highlighter-button="true"]),
+  [data-test-selector="chat-line-message"] button:not([data-highlighter-button="true"]),
+  [class*="Layout-sc-"] button:not([data-highlighter-button="true"]),
+  /* Hide specific Twitch button classes */
+  button[class*="more-actions"],
+  button[class*="MoreActions"],
+  button[class*="chat-line"],
+  button[aria-label*="actions"],
+  button[aria-label*="Actions"],
+  button[data-a-target*="pin"],
+  button[data-a-target*="timestamp"] {
     display: none !important;
-  }
-  
-  .indicator-content {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .indicator-minimize {
-    background: none;
-    border: none;
-    color: #9ca3af;
-    cursor: pointer;
-    padding: 2px 4px;
-    border-radius: 2px;
-    font-size: 14px;
-    font-weight: bold;
-    transition: color 0.2s ease;
-  }
-  
-  .indicator-minimize:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.1);
   }
   
   .chat-highlighter-global-feedback {
@@ -207,13 +168,12 @@ class TwitchChatHighlighter {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.type === 'toggle_extension') {
         this.isEnabled = message.enabled;
-        this.updateUI();
+        // updateUI removed per user request
       }
       sendResponse({ success: true });
     });
 
-    // Add visual indicator
-    this.addIndicator();
+    // Visual indicator removed per user request
   }
 
   async loadSettings() {
@@ -760,64 +720,7 @@ class TwitchChatHighlighter {
     }, 4000);
   }
 
-  addIndicator() {
-    // Add minimal, dismissible status indicator
-    const indicator = document.createElement('div');
-    indicator.id = 'chat-highlighter-indicator';
-    indicator.className = 'chat-highlighter-indicator';
-    indicator.innerHTML = `
-      <span class="indicator-content">
-        <span class="indicator-text">⭐ Chat Highlighter Active</span>
-        <button class="indicator-minimize" title="Minimize">−</button>
-      </span>
-    `;
-    indicator.title = 'Hover over chat messages to see highlight button. Click - to minimize this indicator.';
-    
-    // Add click handler for minimize button
-    const minimizeBtn = indicator.querySelector('.indicator-minimize');
-    let isMinimized = localStorage.getItem('chatHighlighter_minimized') === 'true';
-    
-    const updateIndicatorState = () => {
-      const textElement = indicator.querySelector('.indicator-text');
-      if (isMinimized) {
-        indicator.classList.add('minimized');
-        textElement.textContent = '⭐';
-        minimizeBtn.innerHTML = '+';
-        minimizeBtn.title = 'Expand';
-      } else {
-        indicator.classList.remove('minimized');
-        textElement.textContent = '⭐ Chat Highlighter Active';
-        minimizeBtn.innerHTML = '−';
-        minimizeBtn.title = 'Minimize';
-      }
-    };
-    
-    minimizeBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      isMinimized = !isMinimized;
-      localStorage.setItem('chatHighlighter_minimized', isMinimized.toString());
-      updateIndicatorState();
-    });
-    
-    // Initialize state
-    updateIndicatorState();
-    
-    document.body.appendChild(indicator);
-    this.updateUI();
-  }
-
-  updateUI() {
-    const indicator = document.getElementById('chat-highlighter-indicator');
-    if (indicator) {
-      indicator.style.display = this.isEnabled ? 'block' : 'none';
-    }
-
-    // Update message highlights visibility
-    const highlightedElements = document.querySelectorAll('.chat-highlighter-selected');
-    highlightedElements.forEach(el => {
-      el.style.opacity = this.isEnabled ? '1' : '0.5';
-    });
-  }
+  // Indicator and UI functions removed per user request
 
   observeNewMessages(chatContainer) {
     // Watch for new messages being added to chat
