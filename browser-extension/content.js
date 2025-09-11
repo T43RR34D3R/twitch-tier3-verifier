@@ -272,7 +272,42 @@ class TwitchChatHighlighter {
 
     // Setup observer for new messages
     this.observeNewMessages(chatContainer);
+    
+    // Start periodic cleanup to remove expired highlights
+    this.startExpiredHighlightCleanup();
   }
+  
+  startExpiredHighlightCleanup() {
+    // Check every 10 seconds for expired highlights
+    setInterval(() => {
+      if (!this.isEnabled) return;
+      
+      const now = Date.now();
+      const oneMinuteAgo = now - (60 * 1000);
+      
+      // Find all highlighted message elements
+      const highlightedElements = document.querySelectorAll('.chat-highlighter-selected');
+      
+      highlightedElements.forEach(messageElement => {
+        try {
+          const messageData = this.extractMessageData(messageElement);
+          if (messageData && messageData.timestamp < oneMinuteAgo) {
+            // Message is older than 1 minute, remove highlight
+            console.log('🕐 Auto-removing expired highlight:', messageData.id);
+            
+            // Remove visual highlight
+            messageElement.classList.remove('chat-highlighter-selected');
+            
+            // Remove from tracking
+            this.highlightedMessages.delete(messageData.id);
+            
+            // The CSS will automatically show star instead of X
+          }
+        } catch (error) {
+          console.error('Error checking expired highlight:', error);
+        }
+      });
+    }, 10000); // Check every 10 seconds
   
   // Button creation functions removed - using CSS pseudo-elements instead
 
