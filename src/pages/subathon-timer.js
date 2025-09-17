@@ -9,12 +9,18 @@ export default function SubathonTimer() {
     const fetchTimerState = async () => {
         try {
             const response = await fetch('/api/subathon-timer');
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
             const data = await response.json();
-            setTimeInSeconds(data.timeInSeconds);
-            setIsRunning(data.isRunning);
-            setStatus(data.status);
+            setTimeInSeconds(data.timeInSeconds || 0);
+            setIsRunning(data.isRunning || false);
+            setStatus(data.status || 'Timer loaded');
         } catch (error) {
             console.error('Error fetching timer state:', error);
+            setStatus('Error loading timer - check connection');
+            setTimeInSeconds(0);
+            setIsRunning(false);
         }
     };
 
@@ -28,12 +34,16 @@ export default function SubathonTimer() {
                 },
                 body: JSON.stringify({ action, time }),
             });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
             const data = await response.json();
-            setTimeInSeconds(data.timeInSeconds);
-            setIsRunning(data.isRunning);
-            setStatus(data.status);
+            setTimeInSeconds(data.timeInSeconds || 0);
+            setIsRunning(data.isRunning || false);
+            setStatus(data.status || 'Action completed');
         } catch (error) {
             console.error('Error sending action:', error);
+            setStatus(`❌ Error: ${action} failed - check connection`);
         }
     };
 

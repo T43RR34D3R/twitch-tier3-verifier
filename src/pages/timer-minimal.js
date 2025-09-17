@@ -9,11 +9,16 @@ export default function MinimalTimer() {
         const fetchTimerState = async () => {
             try {
                 const response = await fetch('/api/subathon-timer');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
                 const data = await response.json();
-                setTimeInSeconds(data.timeInSeconds);
-                setIsRunning(data.isRunning);
+                setTimeInSeconds(data.timeInSeconds || 0);
+                setIsRunning(data.isRunning || false);
             } catch (error) {
                 console.error('Error fetching timer state:', error);
+                setTimeInSeconds(0);
+                setIsRunning(false);
             }
         };
 
