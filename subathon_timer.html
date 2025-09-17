@@ -224,9 +224,11 @@
         let isRunning = false;
 
         function displayTime() {
-            const hours = String(Math.floor(timeInSeconds / 3600)).padStart(2, '0');
-            const minutes = String(Math.floor((timeInSeconds % 3600) / 60)).padStart(2, '0');
-            const seconds = String(timeInSeconds % 60).padStart(2, '0');
+            // Ensure timeInSeconds is a valid number
+            const safeTime = isNaN(timeInSeconds) || timeInSeconds < 0 ? 0 : Math.floor(timeInSeconds);
+            const hours = String(Math.floor(safeTime / 3600)).padStart(2, '0');
+            const minutes = String(Math.floor((safeTime % 3600) / 60)).padStart(2, '0');
+            const seconds = String(Math.floor(safeTime % 60)).padStart(2, '0');
             document.getElementById('timer').innerText = `${hours}:${minutes}:${seconds}`;
             
             // Add visual feedback when timer is running

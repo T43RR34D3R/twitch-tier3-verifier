@@ -9,6 +9,7 @@
   ],
   "host_permissions": [
     "*://www.twitch.tv/popout/moderator/buckfoozle/chat*",
+    "*://dashboard.twitch.tv/*",
     "*://buckfoozle.com/*",
     "*://localhost:*/*",
     "*://*.vercel.app/*",
@@ -17,7 +18,8 @@
   "content_scripts": [
     {
       "matches": [
-        "*://www.twitch.tv/popout/moderator/buckfoozle/chat*"
+        "*://www.twitch.tv/popout/moderator/buckfoozle/chat*",
+        "*://dashboard.twitch.tv/popout/u/*/stream-manager/chat*"
       ],
       "js": ["content.js"],
       "css": ["content-styles.css"],

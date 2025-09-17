@@ -48,9 +48,11 @@ export default function SubathonTimer() {
     }, []);
 
     const formatTime = (seconds) => {
-        const hours = String(Math.floor(seconds / 3600)).padStart(2, '0');
-        const minutes = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
-        const secs = String(seconds % 60).padStart(2, '0');
+        // Ensure seconds is a valid number
+        const safeSeconds = isNaN(seconds) || seconds < 0 ? 0 : Math.floor(seconds);
+        const hours = String(Math.floor(safeSeconds / 3600)).padStart(2, '0');
+        const minutes = String(Math.floor((safeSeconds % 3600) / 60)).padStart(2, '0');
+        const secs = String(Math.floor(safeSeconds % 60)).padStart(2, '0');
         return `${hours}:${minutes}:${secs}`;
     };
 

@@ -174,12 +174,12 @@
   }
 }
 
-/* Star button - appears on hover 40px from right */
+/* Star button - appears on hover 80px from right */
 [data-a-target="chat-line-message"]::after,
 .chat-line__message::after {
   content: '⭐';
   position: absolute;
-  right: 40px;
+  right: 80px;
   top: 50%;
   transform: translateY(-50%);
   opacity: 0;
@@ -198,7 +198,7 @@
 .chat-highlighter-selected::after {
   content: '✖';
   position: absolute;
-  right: 40px;
+  right: 80px;
   top: 50%;
   transform: translateY(-50%);
   opacity: 1 !important;
@@ -206,6 +206,19 @@
   font-size: 16px;
   pointer-events: auto;
   cursor: pointer;
+}
+
+/* Ensure star shows when NOT highlighted - more specific rule */
+[data-a-target="chat-line-message"]:not(.chat-highlighter-selected)::after,
+.chat-line__message:not(.chat-highlighter-selected)::after {
+  content: '⭐';
+  color: #ffd700;
+}
+
+/* Show star on hover for non-highlighted messages */
+[data-a-target="chat-line-message"]:not(.chat-highlighter-selected):hover::after,
+.chat-line__message:not(.chat-highlighter-selected):hover::after {
+  opacity: 1;
 }
 
 /* Better message positioning for feedback */

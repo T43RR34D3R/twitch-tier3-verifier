@@ -260,8 +260,8 @@ class TwitchChatHighlighter {
         const clickX = event.clientX;
         const messageRight = rect.right;
         
-        // If click was within 60px of the right edge (star area)
-        if (clickX >= messageRight - 60) {
+        // If click was within 100px of the right edge (star area at 80px + buffer)
+        if (clickX >= messageRight - 100) {
           console.log('🎯 Star area clicked for message:', messageElement);
           event.preventDefault();
           event.stopPropagation();
@@ -295,13 +295,26 @@ class TwitchChatHighlighter {
             // Message is older than 1 minute, remove highlight
             console.log('🕐 Auto-removing expired highlight:', messageData.id);
             
-            // Remove visual highlight
+            // Remove visual highlight class (this will make button show star instead of X)
+            console.log('🔍 Before class removal, classes:', messageElement.className);
             messageElement.classList.remove('chat-highlighter-selected');
+            console.log('🔍 After class removal, classes:', messageElement.className);
             
             // Remove from tracking
             this.highlightedMessages.delete(messageData.id);
             
-            // The CSS will automatically show star instead of X
+            // Delete from database
+            this.deleteHighlightFromDatabase(messageData.id, messageData);
+            
+            console.log('⭐ Button should now show star for expired message:', messageData.id);
+            
+            // Force a style recalculation to ensure CSS updates
+            messageElement.offsetHeight;
+            
+            // Additional force refresh by triggering a reflow
+            messageElement.style.display = 'none';
+            messageElement.offsetHeight;
+            messageElement.style.display = '';
           }
         } catch (error) {
           console.error('Error checking expired highlight:', error);
@@ -676,6 +689,59 @@ class TwitchChatHighlighter {
     }
   }
 
+  async deleteHighlightFromDatabase(messageId, messageData) {
+    let retries = 3;
+    
+    while (retries > 0) {
+      try {
+        // Get server URL from extension settings
+        const result = await chrome.storage.sync.get(['serverUrl', 'channelName']);
+        const serverUrl = result.serverUrl || 'http://localhost:3000';
+        const configuredChannel = result.channelName || 'general';
+        
+        // Extract channel from URL or use configured channel
+        const urlChannel = this.getChannelFromUrl();
+        const channel = urlChannel || configuredChannel || 'general';
+        
+        console.log(`🗑️ Deleting expired highlight from database: ${messageId}`);
+        console.log(`📤 DELETE to: ${serverUrl}/api/highlights/${channel}/${messageId}`);
+        
+        const response = await fetch(`${serverUrl}/api/highlights/${channel}/${messageId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          mode: 'cors'
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`❌ Delete failed HTTP ${response.status}: ${response.statusText}`);
+          console.error(`❌ Response body:`, errorText);
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const responseData = await response.json();
+        console.log(`✅ Highlight deleted from database:`, responseData);
+        
+        return; // Success, exit retry loop
+        
+      } catch (error) {
+        console.error(`❌ Failed to delete highlight from database (attempt ${4 - retries}):`, error);
+        
+        retries--;
+        
+        if (retries > 0) {
+          console.log(`🔄 Retrying delete in 1 second... (${retries} attempts left)`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } else {
+          console.error(`❌ All delete retries failed for message ${messageId}`);
+          // Don't show user error for automatic cleanup failures
+        }
+      }
+    }
+  }
+
   showFeedback(element, message, type) {
     // Create feedback element
     const feedback = document.createElement('div');
@@ -754,6 +820,7 @@ class TwitchChatHighlighter {
         /twitch\.tv\/popout\/([^\/#?]+)\/chat/, // Regular popout chat
         /twitch\.tv\/embed\/([^\/#?]+)/, // Embed
         /twitch\.tv\/moderator\/([^\/#?]+)/, // Moderator view
+        /dashboard\.twitch\.tv\/popout\/u\/([^\/#?]+)\/stream-manager\/chat/, // Dashboard stream manager chat
       ];
       
       for (const pattern of patterns) {
