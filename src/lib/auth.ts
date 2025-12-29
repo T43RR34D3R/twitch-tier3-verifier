@@ -147,10 +147,11 @@ export const authOptions: AuthOptions = {
  */
 async function refreshAccessToken(token: Record<string, unknown>) {
   try {
-    // Discord tokens don't need refresh in the same way - they have longer expiry
-    // Only refresh Twitch tokens
+    // Different OAuth providers have different token refresh mechanisms
+    // Currently, we only implement Twitch token refresh
+    // Discord tokens have a longer default expiry and would use a different refresh flow
     if (token.provider !== 'twitch') {
-      console.log('Skipping refresh for non-Twitch provider:', token.provider);
+      console.log('Token refresh not implemented for provider:', token.provider);
       return token;
     }
 

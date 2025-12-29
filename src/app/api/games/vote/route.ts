@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { query } from '@/lib/railway-db';
 
+// Configuration: Maximum votes per user
+const MAX_VOTES_PER_USER = 3;
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -56,16 +59,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user has reached the vote limit (3 votes)
+    // Check if user has reached the vote limit
     const voteCount = await query(
       'SELECT COUNT(*) as count FROM game_votes WHERE user_id = $1',
       [session.user.id]
     );
 
     const currentVotes = parseInt(voteCount.rows[0].count);
-    if (currentVotes >= 3) {
+    if (currentVotes >= MAX_VOTES_PER_USER) {
       return NextResponse.json(
-        { error: 'You have reached the maximum of 3 votes. Please remove a vote before adding a new one.' },
+        { error: `You have reached the maximum of ${MAX_VOTES_PER_USER} votes. Please remove a vote before adding a new one.` },
         { status: 403 }
       );
     }

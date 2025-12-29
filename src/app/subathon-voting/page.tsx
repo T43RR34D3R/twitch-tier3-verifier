@@ -5,6 +5,9 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
+// Configuration: Maximum votes per user (should match server-side limit)
+const MAX_VOTES_PER_USER = 3;
+
 interface Game {
   id: number;
   name: string;
