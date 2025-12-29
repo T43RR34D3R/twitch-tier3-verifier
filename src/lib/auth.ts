@@ -13,7 +13,7 @@ export const authOptions: AuthOptions = {
         params: {
           scope: [
             'openid',
-            'user:read:subscriptions',
+            'channel:read:subscriptions',
           ].join(' ')
         }
       }
