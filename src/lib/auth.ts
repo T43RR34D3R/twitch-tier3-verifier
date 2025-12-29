@@ -54,14 +54,15 @@ export const authOptions: AuthOptions = {
             user.name,
             user.name, // display name
             user.email || null,
-            user.image || null
+            user.image || null,
+            account.provider
           ).catch(error => {
             console.error('Failed to store user in Railway:', error)
           })
         }
         
-        // Store token for background data collection
-        if (account.access_token && account.refresh_token && token.sub) {
+        // Store token for background data collection (only for Twitch)
+        if (account.provider === 'twitch' && account.access_token && account.refresh_token && token.sub) {
           await storeUserToken(
             token.sub,
             user.name || 'Unknown',
@@ -146,6 +147,13 @@ export const authOptions: AuthOptions = {
  */
 async function refreshAccessToken(token: Record<string, unknown>) {
   try {
+    // Discord tokens don't need refresh in the same way - they have longer expiry
+    // Only refresh Twitch tokens
+    if (token.provider !== 'twitch') {
+      console.log('Skipping refresh for non-Twitch provider:', token.provider);
+      return token;
+    }
+
     const url = "https://id.twitch.tv/oauth2/token"
     
     const response = await fetch(url, {
@@ -185,16 +193,20 @@ async function refreshAccessToken(token: Record<string, unknown>) {
 
 /**
  * Store user information in Railway database
+ * Note: The database schema uses twitch_* column names for historical reasons,
+ * but these columns now store user IDs from any OAuth provider (Discord, Twitch, etc.)
  */
 async function storeUserInRailway(
-  twitchUserId: string, 
+  userId: string, 
   username: string, 
   displayName: string | null,
   email: string | null,
-  profileImageUrl: string | null
+  profileImageUrl: string | null,
+  provider: string
 ): Promise<void> {
   try {
     // Store in main users table
+    // Note: Column names say "twitch_*" but they store any OAuth provider's data
     await query(`
       INSERT INTO users (
         twitch_user_id, 
@@ -215,9 +227,9 @@ async function storeUserInRailway(
         last_login_at = NOW(),
         is_active = true,
         updated_at = NOW()
-    `, [twitchUserId, username, displayName || username, email, profileImageUrl]);
+    `, [userId, username, displayName || username, email, profileImageUrl]);
     
-    console.log(`Stored/updated user in Railway: ${username}`);
+    console.log(`Stored/updated user in Railway: ${username} (provider: ${provider})`);
   } catch (error) {
     console.error('Error storing user in Railway:', error);
     throw error;

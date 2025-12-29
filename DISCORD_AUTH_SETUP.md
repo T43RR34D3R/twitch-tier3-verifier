@@ -59,14 +59,8 @@ TWITCH_CLIENT_ID=your_twitch_client_id
 TWITCH_CLIENT_SECRET=your_twitch_client_secret
 ```
 
-### 6. Database Configuration
-
-Ensure your database is properly configured. The system uses the `RAILWAY_DATABASE_URL` or equivalent PostgreSQL connection string:
-
-```env
-# Database
-RAILWAY_DATABASE_URL=postgresql://user:password@host:port/database
-```
+**Important Note about Database Schema:**
+The database uses column names like `twitch_user_id` and `twitch_username` for historical reasons. These columns now store user IDs and usernames from any OAuth provider (Discord, Twitch, etc.). No database migration is needed - the existing schema works for all providers.
 
 ### 7. IGDB Integration
 

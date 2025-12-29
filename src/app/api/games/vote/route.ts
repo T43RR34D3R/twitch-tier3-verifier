@@ -86,6 +86,7 @@ export async function POST(request: NextRequest) {
     `, [gameId]);
 
     // Update or insert voting user record
+    // Note: Column names say "twitch_*" for historical reasons, but they store any OAuth provider's data
     await query(`
       INSERT INTO voting_users (
         twitch_user_id, 
