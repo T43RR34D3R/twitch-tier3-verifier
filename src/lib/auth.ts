@@ -1,5 +1,6 @@
 import { AuthOptions } from "next-auth"
 import TwitchProvider from "next-auth/providers/twitch"
+import DiscordProvider from "next-auth/providers/discord"
 import { storeUserToken } from "./data-collector"
 import { logSuccessfulLogin } from "./login-logger"
 import { query } from "./railway-db"
@@ -18,6 +19,15 @@ export const authOptions: AuthOptions = {
         }
       }
     }),
+    DiscordProvider({
+      clientId: process.env.DISCORD_CLIENT_ID!,
+      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          scope: 'identify email'
+        }
+      }
+    }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
   session: {
@@ -33,6 +43,7 @@ export const authOptions: AuthOptions = {
           accessToken: account.access_token,
           refreshToken: account.refresh_token,
           accessTokenExpires: account.expires_at ? account.expires_at * 1000 : Date.now() + 4 * 60 * 60 * 1000, // 4 hours
+          provider: account.provider,
           user,
         }
         
@@ -100,6 +111,7 @@ export const authOptions: AuthOptions = {
       // Send properties to the client
       session.accessToken = token.accessToken;
       session.error = token.error;
+      session.provider = token.provider;
       return session;
     },
     async redirect({ url, baseUrl }) {

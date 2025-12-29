@@ -43,6 +43,7 @@ export default function SubathonVoting() {
   
   const [games, setGames] = useState<Game[]>([]);
   const [votedGames, setVotedGames] = useState<Set<number>>(new Set());
+  const [totalVotes, setTotalVotes] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('current_vote_count');
@@ -103,6 +104,7 @@ export default function SubathonVoting() {
       if (response.ok) {
         const data = await response.json();
         setVotedGames(new Set(data.votedGames));
+        setTotalVotes(data.totalVotes || 0);
       }
     } catch (error) {
       console.error('Error loading user votes:', error);
@@ -167,6 +169,12 @@ export default function SubathonVoting() {
   const handleVote = async (gameId: number) => {
     const hasVoted = votedGames.has(gameId);
     
+    // Check if user has reached vote limit before voting
+    if (!hasVoted && totalVotes >= 3) {
+      alert('You have reached the maximum of 3 votes. Please remove a vote before adding a new one.');
+      return;
+    }
+    
     try {
       const response = await fetch('/api/games/vote', {
         method: hasVoted ? 'DELETE' : 'POST',
@@ -181,8 +189,10 @@ export default function SubathonVoting() {
         const newVotedGames = new Set(votedGames);
         if (hasVoted) {
           newVotedGames.delete(gameId);
+          setTotalVotes(totalVotes - 1);
         } else {
           newVotedGames.add(gameId);
+          setTotalVotes(totalVotes + 1);
         }
         setVotedGames(newVotedGames);
 
@@ -387,8 +397,18 @@ export default function SubathonVoting() {
             🎮 Buck&apos;s Subathon Game Voting
           </h1>
           <p className="text-gray-300 text-lg">
-            Vote for the games you want to see during the subathon! Each user can vote once per game.
+            Vote for the games you want to see during the subathon!
           </p>
+          <div className="mt-3">
+            <span className={`text-xl font-bold ${totalVotes >= 3 ? 'text-red-400' : 'text-green-400'}`}>
+              {totalVotes}/3 votes used
+            </span>
+            {totalVotes >= 3 && (
+              <p className="text-yellow-400 text-sm mt-1">
+                ⚠️ You&apos;ve used all your votes! Remove a vote to vote for another game.
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Controls */}
@@ -486,12 +506,15 @@ export default function SubathonVoting() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleVote(game.id)}
-                      disabled={addLoading}
+                      disabled={addLoading || (!votedGames.has(game.id) && totalVotes >= 3)}
                       className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                         votedGames.has(game.id)
                           ? 'bg-red-600 hover:bg-red-700 text-white'
+                          : totalVotes >= 3
+                          ? 'bg-gray-600 cursor-not-allowed text-white'
                           : 'bg-purple-600 hover:bg-purple-700 text-white'
                       } disabled:opacity-50`}
+                      title={!votedGames.has(game.id) && totalVotes >= 3 ? 'Remove a vote first to vote for this game' : ''}
                     >
                       {votedGames.has(game.id) ? '❤️ Voted' : '🗳️ Vote'}
                     </button>
