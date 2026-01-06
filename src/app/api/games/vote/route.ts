@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { query } from '@/lib/railway-db';
 
+// Configuration: Maximum votes per user
+const MAX_VOTES_PER_USER = 3;
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -56,6 +59,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if user has reached the vote limit
+    const voteCount = await query(
+      'SELECT COUNT(*) as count FROM game_votes WHERE user_id = $1',
+      [session.user.id]
+    );
+
+    const currentVotes = parseInt(voteCount.rows[0].count);
+    if (currentVotes >= MAX_VOTES_PER_USER) {
+      return NextResponse.json(
+        { error: `You have reached the maximum of ${MAX_VOTES_PER_USER} votes. Please remove a vote before adding a new one.` },
+        { status: 403 }
+      );
+    }
+
     // Add the vote
     await query(`
       INSERT INTO game_votes (game_id, user_id, username, voted_at)
@@ -72,6 +89,7 @@ export async function POST(request: NextRequest) {
     `, [gameId]);
 
     // Update or insert voting user record
+    // Note: Column names say "twitch_*" for historical reasons, but they store any OAuth provider's data
     await query(`
       INSERT INTO voting_users (
         twitch_user_id, 
@@ -187,7 +205,15 @@ export async function GET(request: NextRequest) {
     const gameIds = searchParams.get('gameIds')?.split(',').map(id => parseInt(id));
 
     if (!gameIds || gameIds.length === 0) {
-      return NextResponse.json({ votedGames: [] });
+      // Get total vote count for user
+      const voteCountResult = await query(
+        'SELECT COUNT(*) as count FROM game_votes WHERE user_id = $1',
+        [session.user.id]
+      );
+      return NextResponse.json({ 
+        votedGames: [],
+        totalVotes: parseInt(voteCountResult.rows[0].count)
+      });
     }
 
     const placeholders = gameIds.map((_, index) => `$${index + 2}`).join(',');
@@ -199,8 +225,15 @@ export async function GET(request: NextRequest) {
 
     const votedGameIds = result.rows.map(row => row.game_id);
 
+    // Also get total vote count for user
+    const voteCountResult = await query(
+      'SELECT COUNT(*) as count FROM game_votes WHERE user_id = $1',
+      [session.user.id]
+    );
+
     return NextResponse.json({
-      votedGames: votedGameIds
+      votedGames: votedGameIds,
+      totalVotes: parseInt(voteCountResult.rows[0].count)
     });
 
   } catch (error) {

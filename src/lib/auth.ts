@@ -1,5 +1,6 @@
 import { AuthOptions } from "next-auth"
 import TwitchProvider from "next-auth/providers/twitch"
+import DiscordProvider from "next-auth/providers/discord"
 import { storeUserToken } from "./data-collector"
 import { logSuccessfulLogin } from "./login-logger"
 import { query } from "./railway-db"
@@ -20,6 +21,15 @@ export const authOptions: AuthOptions = {
         }
       }
     }),
+    DiscordProvider({
+      clientId: process.env.DISCORD_CLIENT_ID!,
+      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          scope: 'identify email'
+        }
+      }
+    }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
   session: {
@@ -35,6 +45,7 @@ export const authOptions: AuthOptions = {
           accessToken: account.access_token,
           refreshToken: account.refresh_token,
           accessTokenExpires: account.expires_at ? account.expires_at * 1000 : Date.now() + 4 * 60 * 60 * 1000, // 4 hours
+          provider: account.provider,
           user,
         }
         
@@ -45,14 +56,15 @@ export const authOptions: AuthOptions = {
             user.name,
             user.name, // display name
             user.email || null,
-            user.image || null
+            user.image || null,
+            account.provider
           ).catch(error => {
             console.error('Failed to store user in Railway:', error)
           })
         }
         
-        // Store token for background data collection
-        if (account.access_token && account.refresh_token && token.sub) {
+        // Store token for background data collection (only for Twitch)
+        if (account.provider === 'twitch' && account.access_token && account.refresh_token && token.sub) {
           await storeUserToken(
             token.sub,
             user.name || 'Unknown',
@@ -102,6 +114,7 @@ export const authOptions: AuthOptions = {
       // Send properties to the client
       session.accessToken = token.accessToken;
       session.error = token.error;
+      session.provider = token.provider;
       return session;
     },
     async redirect({ url, baseUrl }) {
@@ -136,6 +149,14 @@ export const authOptions: AuthOptions = {
  */
 async function refreshAccessToken(token: Record<string, unknown>) {
   try {
+    // Different OAuth providers have different token refresh mechanisms
+    // Currently, we only implement Twitch token refresh
+    // Discord tokens have a longer default expiry and would use a different refresh flow
+    if (token.provider !== 'twitch') {
+      console.log('Token refresh not implemented for provider:', token.provider);
+      return token;
+    }
+
     const url = "https://id.twitch.tv/oauth2/token"
     
     const response = await fetch(url, {
@@ -175,16 +196,20 @@ async function refreshAccessToken(token: Record<string, unknown>) {
 
 /**
  * Store user information in Railway database
+ * Note: The database schema uses twitch_* column names for historical reasons,
+ * but these columns now store user IDs from any OAuth provider (Discord, Twitch, etc.)
  */
 async function storeUserInRailway(
-  twitchUserId: string, 
+  userId: string, 
   username: string, 
   displayName: string | null,
   email: string | null,
-  profileImageUrl: string | null
+  profileImageUrl: string | null,
+  provider: string
 ): Promise<void> {
   try {
     // Store in main users table
+    // Note: Column names say "twitch_*" but they store any OAuth provider's data
     await query(`
       INSERT INTO users (
         twitch_user_id, 
@@ -205,9 +230,9 @@ async function storeUserInRailway(
         last_login_at = NOW(),
         is_active = true,
         updated_at = NOW()
-    `, [twitchUserId, username, displayName || username, email, profileImageUrl]);
+    `, [userId, username, displayName || username, email, profileImageUrl]);
     
-    console.log(`Stored/updated user in Railway: ${username}`);
+    console.log(`Stored/updated user in Railway: ${username} (provider: ${provider})`);
   } catch (error) {
     console.error('Error storing user in Railway:', error);
     throw error;

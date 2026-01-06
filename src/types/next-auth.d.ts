@@ -5,12 +5,14 @@ declare module "next-auth" {
   interface Session {
     accessToken?: string
     error?: string
+    provider?: string
     user: {
       id: string
       name?: string | null
       email?: string | null
       image?: string | null
       twitchId?: string
+      discordId?: string
     }
   }
 
@@ -20,6 +22,7 @@ declare module "next-auth" {
     email?: string | null
     image?: string | null
     twitchId?: string
+    discordId?: string
   }
 }
 
@@ -29,5 +32,6 @@ declare module "next-auth/jwt" {
     accessTokenExpires?: number
     refreshToken?: string
     error?: string
+    provider?: string
   }
 }
